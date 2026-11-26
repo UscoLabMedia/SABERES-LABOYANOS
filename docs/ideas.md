@@ -31,7 +31,8 @@ Solo anotado. Sin diseño ni código todavía.
   - Se puede jugar en **modo solitario** o **concursando con compañeros**.
   - Gana quien acierte la mayoría de teclas o tenga el mayor puntaje.
   - Al ganar el concurso de baile se entrega la **corona**.
-- Pendiente: si el concurso de música también suma al puntaje del reinado, y cómo se muestra el ranking en red.
+- El **concurso de música es otro modo de juego**, aparte del reinado. No suma al puntaje de la corona.
+- Pendiente: cómo se muestra el ranking en red.
 
 ## La Orquídera: decisiones de diseño (anotado el 2026-11-26)
 
@@ -39,4 +40,5 @@ Solo anotado. Sin diseño ni código todavía.
 - **Opción A (para jugar):** sombrero suaceño de iraca, blusa clara, delantal, canasto cafetero y falda larga.
 - **Opción B (premio):** traje de sanjuanera del Festival del Bambuco.
 - **Trenza:** cae por la espalda hasta la **mitad de la espalda**. De frente no debe verse larga.
+- Se busca que los personajes sean más **tiernos y lindos**, sin llegar a estilo Disney ni apariencia infantil. Pendiente de definir cuánto (ver bosquejos).
 - Estilo visual buscado: Painterly Stylized 3D (referencia: Kena: Bridge of Spirits). Aún en etapa de bosquejos, sin modelado.
