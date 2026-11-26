@@ -25,6 +25,18 @@ Solo anotado. Sin diseño ni código todavía.
 - Es la **etapa final** del juego. Reúne todo lo aprendido en los niveles anteriores.
 - Dos concursos dentro del festival:
   - **Concurso de música**, estilo *Zelda* tocando la ocarina: el jugador repite o interpreta melodías. Instrumentos a considerar: tiple, bandola y guitarra, que son los del trío andino colombiano.
-  - **Concurso de baile**, estilo *Dance Contest* de Club Penguin: baile por ritmo, con indicaciones que aparecen al compás. Referencia: https://clubpenguin.fandom.com/es/wiki/Concurso_de_Baile. Falta confirmar con el usuario qué mecánica exacta quiere de esa imagen.
+  - **Concurso de baile**, estilo *Dance Contest* de Club Penguin: juego de ritmo con flechas (confirmado por el usuario) que simula los pasos del sanjuanero. Referencia: https://clubpenguin.fandom.com/es/wiki/Concurso_de_Baile.
 - El **traje de sanjuanera (opción B de La Orquídera)** es el premio de esta etapa: blusa blanca con cuello bandeja, falda ancha con flores y tocado de flores.
-- Pendiente de decidir: cómo se gana el reinado (puntaje de ambos concursos, trivia, o ambos) y si hay modo en red.
+- **Cómo se gana (decidido):**
+  - Se puede jugar en **modo solitario** o **concursando con compañeros**.
+  - Gana quien acierte la mayoría de teclas o tenga el mayor puntaje.
+  - Al ganar el concurso de baile se entrega la **corona**.
+- Pendiente: si el concurso de música también suma al puntaje del reinado, y cómo se muestra el ranking en red.
+
+## La Orquídera: decisiones de diseño (anotado el 2026-11-26)
+
+- Personaje femenino principal, joven de ~18 años, cuerpo esbelto y no muy alta (7 cabezas), rostro natural sin estilo Disney.
+- **Opción A (para jugar):** sombrero suaceño de iraca, blusa clara, delantal, canasto cafetero y falda larga.
+- **Opción B (premio):** traje de sanjuanera del Festival del Bambuco.
+- **Trenza:** cae por la espalda hasta la **mitad de la espalda**. De frente no debe verse larga.
+- Estilo visual buscado: Painterly Stylized 3D (referencia: Kena: Bridge of Spirits). Aún en etapa de bosquejos, sin modelado.
