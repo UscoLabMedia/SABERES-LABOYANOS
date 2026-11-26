@@ -1,0 +1,300 @@
+<title>Muñeco Laboyano</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+SC:wght@700;800&family=Alegreya:ital,wght@0,400;0,600;1,400&family=Alegreya+Sans:wght@400;500;700&display=swap">
+<style>
+/* Layout: hoja de diseño de personaje. Visor 3D a la izquierda (arrastrar para girar), ficha de papel a la derecha; en celular, visor arriba y ficha abajo. Un solo tema: escritorio cálido. */
+:root{
+  --desk:#1b120c; --desk-2:#2a1b12; --paper:#efe3c6; --paper-2:#e0cfa6; --ink:#2a1c11; --ink-soft:#6b5640;
+  --cherry:#a8262b; --leaf:#3e6a3a; --gold:#d9ae55; --on-desk:#f2e7d0;
+  --f-display:"Alegreya SC","Palatino Linotype",Georgia,serif;
+  --f-body:"Alegreya",Georgia,"Times New Roman",serif;
+  --f-ui:"Alegreya Sans","Segoe UI",system-ui,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+[hidden]{display:none!important}
+body{margin:0;background:var(--desk);color:var(--on-desk);font-family:var(--f-ui)}
+:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+.wrap{min-height:100%;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,25rem);gap:0}
+.stage{position:relative;min-height:100vh;min-height:100dvh}
+#view{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:grab;touch-action:none}
+#view:active{cursor:grabbing}
+.stage-top{position:absolute;left:0;right:0;top:0;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;pointer-events:none;
+  padding-block:max(16px, env(safe-area-inset-top,0px)) 0;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:16px}
+.stage-top > *{pointer-events:auto}
+.title .kicker{margin:0;font-size:.75rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);font-weight:700}
+.title h1{margin:.15rem 0 0;font-family:var(--f-display);font-size:clamp(1.7rem,3.4vw,2.6rem);line-height:1;color:var(--paper)}
+.modes{display:inline-flex;border:1.5px solid rgba(242,231,208,.4);background:rgba(27,18,12,.6)}
+.modes button{font-family:var(--f-display);font-weight:700;font-size:.95rem;background:transparent;color:var(--on-desk);border:0;padding:.5rem .9rem;cursor:pointer}
+.modes button + button{border-left:1.5px solid rgba(242,231,208,.4)}
+.modes button[aria-pressed="true"]{background:var(--paper);color:var(--ink)}
+.stage-bottom{position:absolute;left:0;right:0;bottom:0;display:flex;flex-wrap:wrap;gap:8px;justify-content:center;pointer-events:none;
+  padding-block:0 max(16px, env(safe-area-inset-bottom,0px));padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:16px}
+.stage-bottom > *{pointer-events:auto}
+.chip{font-family:var(--f-ui);font-weight:700;font-size:.88rem;background:rgba(27,18,12,.65);color:var(--on-desk);border:1px solid rgba(242,231,208,.3);padding:.45rem .8rem;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--paper);color:var(--ink);border-color:var(--paper)}
+.drag-hint{position:absolute;right:16px;bottom:64px;font-size:.82rem;color:#a8977a;pointer-events:none}
+.labels{position:absolute;inset:0;pointer-events:none}
+.labels span{position:absolute;transform:translate(-50%,0);font-family:var(--f-display);font-weight:700;font-size:.9rem;color:var(--paper);text-align:center;white-space:nowrap;text-shadow:0 1px 0 rgba(0,0,0,.6)}
+.labels span small{display:block;font-family:var(--f-ui);font-weight:500;font-size:.72rem;color:#bfae8c}
+
+.sheet{background:var(--paper);color:var(--ink);overflow:auto;max-height:100vh;max-height:100dvh;
+  background-image:radial-gradient(ellipse at 20% 0%,rgba(255,255,255,.35),transparent 55%),radial-gradient(ellipse at 100% 100%,rgba(140,100,50,.18),transparent 60%);
+  padding-block:max(24px, env(safe-area-inset-top,0px)) max(24px, env(safe-area-inset-bottom,0px));
+  padding-left:24px;padding-right:max(24px, env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:1.1rem}
+.sheet h2{font-family:var(--f-display);font-size:1.25rem;margin:0;letter-spacing:.02em}
+.sheet p{font-family:var(--f-body);font-size:1.05rem;line-height:1.5;margin:0}
+.sheet .lead{font-size:1.12rem}
+.stage-list{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.stage-list button{width:100%;text-align:left;display:grid;grid-template-columns:2rem minmax(0,1fr);gap:.2rem .6rem;background:transparent;border:1.5px solid rgba(42,28,17,.2);padding:.6rem .7rem;cursor:pointer;color:var(--ink);font:inherit}
+.stage-list button[aria-pressed="true"]{border-color:var(--ink);background:rgba(42,28,17,.07)}
+.stage-list .n{grid-row:1 / span 3;font-family:var(--f-display);font-weight:800;font-size:1.3rem;color:var(--cherry);line-height:1}
+.stage-list b{font-family:var(--f-display);font-size:1.02rem}
+.stage-list .adds{font-size:.9rem;color:var(--ink-soft)}
+.stage-list .perk{font-size:.86rem;color:var(--leaf);font-weight:700}
+.build{margin:0;padding:0;list-style:none;display:grid;gap:.45rem;font-size:.95rem}
+.build li{display:grid;grid-template-columns:6.5rem minmax(0,1fr);gap:.6rem}
+.build li b{font-weight:700}
+.q{border-left:4px solid var(--cherry);padding:.6rem .8rem;background:rgba(168,38,43,.06)}
+.q p{font-size:1rem}
+.q ol{margin:.4rem 0 0;padding-left:1.2rem;font-family:var(--f-body);font-size:1rem;line-height:1.45}
+.fallback{position:fixed;inset:0;display:grid;place-items:center;padding:24px;text-align:center;font-family:var(--f-body);font-size:1.1rem;background:var(--desk);z-index:5}
+@media (max-width:860px){
+  .wrap{grid-template-columns:1fr}
+  .stage{min-height:0;height:68vh;height:68dvh}
+  .sheet{max-height:none;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px))}
+  .drag-hint{display:none}
+  .build li{grid-template-columns:1fr;gap:0}
+}
+</style>
+
+<div class="wrap">
+  <div class="stage">
+    <canvas id="view" aria-label="Muñeco de papel en 3D sobre un pedestal; arrastra para girarlo"></canvas>
+    <div class="labels" id="labels" hidden></div>
+    <div class="stage-top">
+      <div class="title"><p class="kicker">Propuesta de personaje</p><h1>El muñeco laboyano</h1></div>
+      <div class="modes" role="group" aria-label="Modo de vista">
+        <button aria-pressed="true" data-mode="detalle">Detalle</button>
+        <button aria-pressed="false" data-mode="evolucion">Los 5 atuendos</button>
+      </div>
+    </div>
+    <div class="stage-bottom" id="controls">
+      <button class="chip" data-view="frente">Frente</button>
+      <button class="chip" data-view="tres">Tres cuartos</button>
+      <button class="chip" data-view="perfil">Perfil</button>
+      <button class="chip" data-view="espalda">Espalda</button>
+      <button class="chip" id="walkBtn" aria-pressed="true">Caminando</button>
+    </div>
+    <p class="drag-hint">Arrastra para girar</p>
+  </div>
+
+  <aside class="sheet" aria-label="Ficha del personaje">
+    <p class="lead">Un muñeco de papel plegado con volumen, de cabeza grande y sombrero ancho, como el del video de referencia. Cada nivel superado le suma una prenda tradicional, hasta completar el atuendo laboyano.</p>
+
+    <section>
+      <h2>Atuendo por nivel</h2>
+      <ul class="stage-list" id="stages"></ul>
+    </section>
+
+    <section>
+      <h2>Cómo está construido</h2>
+      <ul class="build">
+        <li><b>Volumen</b><span>Piezas facetadas, como papel doblado: cuerpo de 6 caras, cabeza de 20 triángulos, sin curvas lisas.</span></li>
+        <li><b>Pliegues</b><span>Líneas claras en las aristas, como el doblez de la cartulina.</span></li>
+        <li><b>Textura</b><span>Fibra de papel generada por código, la misma del libro y la finca.</span></li>
+        <li><b>Proporción</b><span>Unas 3 cabezas de alto: se lee bien desde la cámara alta del juego.</span></li>
+        <li><b>Movimiento</b><span>Piernas y brazos con bisagra; se gira hacia donde camina y mira a quien le habla.</span></li>
+        <li><b>Costo</b><span>$0: sin modelos ni imágenes externas.</span></li>
+      </ul>
+    </section>
+
+    <section class="q">
+      <h2>Para decidir antes de ponerlo en el juego</h2>
+      <ol>
+        <li>¿Un solo personaje, o el jugador elige entre un muñeco y una muñeca (con falda de sanjuanera en el atuendo final)?</li>
+        <li>¿Las prendas de cada nivel están bien, o las cambiamos por otras más propias de Laboyos?</li>
+        <li>¿Los personajes de la finca (Don Arnulfo, Doña Rosa, Lucía) se hacen con este mismo muñeco?</li>
+      </ol>
+    </section>
+  </aside>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(() => {
+'use strict';
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+if (typeof THREE==='undefined'){ document.body.insertAdjacentHTML('beforeend','<div class="fallback">No se pudo cargar el motor 3D. Revisa la conexión y recarga la página.</div>'); return; }
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* -------- Atuendos (propuesta) -------- */
+const STAGES = [
+  {name:'Al empezar', adds:'Camiseta, jean, gorra, tenis y morral: un estudiante cualquiera.', perk:null},
+  {name:'Saber del Café', adds:'Sombrero de paja y mochila tejida en lugar del morral.', perk:'Mejora: el sombrero da +10 s en el minijuego de estaciones.'},
+  {name:'Saber de los Caballos', adds:'Pañuelo rojo al cuello y alpargatas.', perk:'Mejora: camina más rápido por los escenarios.'},
+  {name:'Saber de la Música y la Danza', adds:'Camisa blanca y faja roja a la cintura.', perk:'Mejora: un verso extra en las batallas.'},
+  {name:'Saber de la Alfarería', adds:'Poncho al hombro y pantalón blanco: el atuendo completo.', perk:'Mejora: puede crear su propio muro en la comunidad.'},
+];
+
+/* -------- Papel -------- */
+const mk=(w,h)=>{ const c=document.createElement('canvas'); c.width=w; c.height=h; return c; };
+const rnd=(a,b)=>a+Math.random()*(b-a);
+function fiberCanvas(base){ const c=mk(256,256), g=c.getContext('2d'); g.fillStyle=base; g.fillRect(0,0,256,256);
+  for (let i=0;i<900;i++){ const x=rnd(0,256),y=rnd(0,256),a=rnd(0,Math.PI),l=rnd(2,9);
+    g.strokeStyle=Math.random()<.5?`rgba(255,255,255,${rnd(.15,.45)})`:`rgba(60,35,10,${rnd(.05,.18)})`; g.lineWidth=rnd(.5,1.2);
+    g.beginPath(); g.moveTo(x,y); g.lineTo(x+Math.cos(a)*l,y+Math.sin(a)*l); g.stroke(); } return c; }
+const tex=(c,rep=1)=>{ const t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(rep,rep); t.anisotropy=8; return t; };
+const PAPER=tex(fiberCanvas('#f4efe4'),1);
+const STRAW=(()=>{ const c=mk(256,256), g=c.getContext('2d'); g.fillStyle='#e2b65a'; g.fillRect(0,0,256,256);
+  for (let r=4;r<190;r+=7){ g.strokeStyle=r%14?'#c99a3e':'#f0cd7a'; g.lineWidth=3; g.beginPath(); g.arc(128,128,r,0,7); g.stroke(); }
+  for (let a=0;a<64;a++){ g.strokeStyle='rgba(150,105,40,.35)'; g.lineWidth=1; g.beginPath(); g.moveTo(128,128); g.lineTo(128+Math.cos(a/10)*190,128+Math.sin(a/10)*190); g.stroke(); }
+  return tex(c); })();
+const WEAVE=(()=>{ const c=mk(128,128), g=c.getContext('2d'); const cols=['#c0262c','#f2c94c','#2f6b8a','#f4efe4','#2f8a5a','#e07a2b'];
+  for (let y=0;y<128;y+=10){ g.fillStyle=cols[(y/10)%cols.length]; g.fillRect(0,y,128,10); g.fillStyle='rgba(0,0,0,.15)'; for(let x=0;x<128;x+=8) g.fillRect(x,y+((x/8)%2)*5,4,5); }
+  return tex(c); })();
+const PONCHO=(()=>{ const c=mk(128,128), g=c.getContext('2d'); g.fillStyle='#f4efe4'; g.fillRect(0,0,128,128);
+  g.fillStyle='#2a1c11'; [10,18,110,118].forEach(x=>g.fillRect(x,0,3,128)); g.fillStyle='#a8262b'; [14,114].forEach(x=>g.fillRect(x,0,2,128)); return tex(c); })();
+const DENIM=tex(fiberCanvas('#3d5a80'),2);
+
+const mats={};
+function mat(color, map=PAPER){ const k=color+(map?map.uuid:''); if (!mats[k]) mats[k]=new THREE.MeshStandardMaterial({color, map, flatShading:true, roughness:.95, metalness:0}); return mats[k]; }
+const FOLD=new THREE.LineBasicMaterial({color:'#fff6e2', transparent:true, opacity:.5});
+function piece(geo, m, {folds=true}={}){ const mesh=new THREE.Mesh(geo,m); mesh.castShadow=true; mesh.receiveShadow=true;
+  if (folds){ const e=new THREE.LineSegments(new THREE.EdgesGeometry(geo,25),FOLD); mesh.add(e); } return mesh; }
+
+/* -------- El muñeco -------- */
+const SKIN='#b07a52', HAIR='#2a1c11';
+function buildMuneco(stage){
+  const root=new THREE.Group(), body=new THREE.Group(); root.add(body);
+  const shirt = stage>=3 ? '#f6f1e4' : '#2f8a7a';
+  const pants = stage>=4 ? '#efe8d8' : null;
+  const pantsMat = pants ? mat(pants) : mat('#ffffff',DENIM);
+  // piernas con bisagra en la cadera
+  const legs=[];
+  [-1,1].forEach(s=>{ const hip=new THREE.Group(); hip.position.set(s*.075,.42,0);
+    const leg=piece(new THREE.CylinderGeometry(.055,.048,.34,5), pantsMat); leg.position.y=-.17; hip.add(leg);
+    const shoeCol = stage>=2 ? '#e9dcc0' : '#f4f4f0';
+    const shoe=piece(new THREE.BoxGeometry(.1,.07,.17), mat(shoeCol)); shoe.position.set(0,-.36,.025); hip.add(shoe);
+    const sole=piece(new THREE.BoxGeometry(.105,.025,.175), mat(stage>=2?'#5a3a22':'#c0262c'),{folds:false}); sole.position.set(0,-.39,.025); hip.add(sole);
+    body.add(hip); legs.push(hip); });
+  // cadera y torso de 6 caras
+  const hipBlock=piece(new THREE.CylinderGeometry(.15,.135,.1,6), pantsMat); hipBlock.position.y=.45; body.add(hipBlock);
+  const torso=piece(new THREE.CylinderGeometry(.125,.155,.32,6), mat(shirt)); torso.position.y=.65; body.add(torso);
+  if (stage>=3){ const faja=piece(new THREE.CylinderGeometry(.158,.158,.06,6), mat('#a8262b')); faja.position.y=.52; body.add(faja); }
+  const neck=piece(new THREE.CylinderGeometry(.045,.05,.06,5), mat(SKIN),{folds:false}); neck.position.y=.83; body.add(neck);
+  // cabeza grande
+  const head=new THREE.Group(); head.position.y=.99; body.add(head);
+  const skull=piece(new THREE.IcosahedronGeometry(.175,1), mat(SKIN)); skull.scale.set(1,.95,.98); head.add(skull);
+  const hair=piece(new THREE.IcosahedronGeometry(.18,1), mat(HAIR)); hair.scale.set(1.01,.9,1); hair.position.set(0,.03,-.025); head.add(hair);
+  const eyeM=new THREE.MeshBasicMaterial({color:'#1a120c'});
+  [-1,1].forEach(s=>{ const e=new THREE.Mesh(new THREE.SphereGeometry(.02,8,6),eyeM); e.position.set(s*.065,-.005,.16); head.add(e);
+    const ch=new THREE.Mesh(new THREE.CircleGeometry(.03,10),new THREE.MeshBasicMaterial({color:'#e08a7a',transparent:true,opacity:.55})); ch.position.set(s*.105,-.05,.142); ch.rotation.y=s*.5; head.add(ch); });
+  const nose=piece(new THREE.TetrahedronGeometry(.025), mat(SKIN),{folds:false}); nose.position.set(0,-.035,.17); head.add(nose);
+  // cubre-cabeza: gorra o sombrero
+  if (stage===0){
+    const cap=piece(new THREE.SphereGeometry(.188,8,4,0,Math.PI*2,0,Math.PI/2), mat('#c0262c')); cap.position.y=.015; head.add(cap);
+    const visor=piece(new THREE.BoxGeometry(.24,.02,.14), mat('#c0262c')); visor.position.set(0,.03,.2); visor.rotation.x=-.12; head.add(visor);
+  } else {
+    const hat=new THREE.Group(); hat.position.y=.1; hat.rotation.x=-.06; head.add(hat);
+    const brim=piece(new THREE.CylinderGeometry(.36,.36,.018,16), mat('#ffffff',STRAW)); hat.add(brim);
+    const crown=piece(new THREE.CylinderGeometry(.13,.16,.15,10), mat('#e2b65a')); crown.position.y=.083; hat.add(crown);
+    const band=piece(new THREE.CylinderGeometry(.163,.163,.035,10), mat('#2a1c11'),{folds:false}); band.position.y=.03; hat.add(band);
+    root.userData.hat=hat;
+  }
+  // brazos con bisagra en el hombro
+  const arms=[];
+  [-1,1].forEach(s=>{ const sh=new THREE.Group(); sh.position.set(s*.165,.77,0); sh.rotation.z=s*.12;
+    const sleeveLong = stage>=1;
+    if (sleeveLong){ const a=piece(new THREE.CylinderGeometry(.042,.036,.29,5), mat(shirt)); a.position.y=-.145; sh.add(a); }
+    else { const up=piece(new THREE.CylinderGeometry(.046,.044,.1,5), mat(shirt)); up.position.y=-.05; sh.add(up);
+      const lo=piece(new THREE.CylinderGeometry(.036,.034,.19,5), mat(SKIN)); lo.position.y=-.19; sh.add(lo); }
+    const hand=piece(new THREE.IcosahedronGeometry(.045,0), mat(SKIN),{folds:false}); hand.position.y=-.32; sh.add(hand);
+    body.add(sh); arms.push(sh); });
+  // pañuelo rojo
+  if (stage>=2){ const p=piece(new THREE.ConeGeometry(.085,.13,3), mat('#b3262b')); p.rotation.x=Math.PI; p.position.set(0,.74,.125); p.scale.z=.35; body.add(p);
+    const knot=piece(new THREE.IcosahedronGeometry(.035,0), mat('#b3262b'),{folds:false}); knot.position.set(0,.8,.11); body.add(knot); }
+  // morral o mochila tejida
+  if (stage===0){ const bag=piece(new THREE.BoxGeometry(.22,.26,.1), mat('#e0a43a')); bag.position.set(0,.66,-.19); body.add(bag);
+    const flap=piece(new THREE.BoxGeometry(.225,.1,.105), mat('#c07f22')); flap.position.set(0,.76,-.19); body.add(flap); }
+  else { const strap=piece(new THREE.BoxGeometry(.03,.5,.015), mat('#c0262c'),{folds:false}); strap.position.set(-.02,.63,.15); strap.rotation.z=-.62; body.add(strap);
+    const strap2=strap.clone(); strap2.position.z=-.15; body.add(strap2);
+    const moch=piece(new THREE.CylinderGeometry(.11,.1,.2,8), mat('#ffffff',WEAVE)); moch.scale.z=.45; moch.position.set(.2,.45,.02); body.add(moch); }
+  // poncho al hombro
+  if (stage>=4){ const po=piece(new THREE.BoxGeometry(.11,.03,.34), mat('#ffffff',PONCHO)); po.position.set(-.12,.81,0); po.rotation.z=.45; body.add(po);
+    const hangF=piece(new THREE.BoxGeometry(.1,.2,.015), mat('#ffffff',PONCHO)); hangF.position.set(-.12,.7,.15); hangF.rotation.z=.1; body.add(hangF);
+    const hangB=hangF.clone(); hangB.position.z=-.155; body.add(hangB); }
+  root.userData={...root.userData, body, legs, arms, head, phase:Math.random()*6};
+  return root;
+}
+function animate(m, t, walking){
+  const u=m.userData, p=t*7+u.phase;
+  if (walking && !reduce){ const s=Math.sin(p);
+    u.legs[0].rotation.x=s*.55; u.legs[1].rotation.x=-s*.55; u.arms[0].rotation.x=-s*.5; u.arms[1].rotation.x=s*.5;
+    u.body.position.y=Math.abs(Math.cos(p))*.035; u.body.rotation.y=s*.06; u.head.rotation.z=Math.sin(p*.5)*.03; }
+  else { const b=reduce?0:Math.sin(t*2+u.phase);
+    u.legs.forEach(l=>l.rotation.x*=.85); u.arms.forEach((a,i)=>a.rotation.x=b*.04*(i?1:-1)); u.body.position.y=0; u.body.rotation.y=0;
+    u.body.scale.y=1+b*.008; u.head.rotation.z=b*.03; }
+}
+
+/* -------- Escena -------- */
+const canvas=$('#view');
+let renderer; try { renderer=new THREE.WebGLRenderer({canvas,antialias:true}); } catch(e){ document.body.insertAdjacentHTML('beforeend','<div class="fallback">Este navegador no puede mostrar gráficos 3D (WebGL).</div>'); return; }
+renderer.outputEncoding=THREE.sRGBEncoding; renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.08;
+renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap; renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
+const scene=new THREE.Scene(); scene.background=new THREE.Color('#1b120c');
+const camera=new THREE.PerspectiveCamera(30,1,.05,100);
+scene.add(new THREE.HemisphereLight('#fff1d6','#3a2414',.65));
+const key=new THREE.DirectionalLight('#ffdcaa',1.25); key.position.set(-2.5,5,3.5); key.castShadow=true; key.shadow.mapSize.set(2048,2048); key.shadow.radius=4; key.shadow.bias=-.0005;
+Object.assign(key.shadow.camera,{left:-4,right:4,top:4,bottom:-4,near:.5,far:20}); scene.add(key);
+const rim=new THREE.DirectionalLight('#9fc2ff',.35); rim.position.set(3,2.5,-3); scene.add(rim);
+// mesa y pedestal de cartón
+const desk=new THREE.Mesh(new THREE.PlaneGeometry(60,60), new THREE.MeshStandardMaterial({color:'#3a2416',roughness:.85})); desk.rotation.x=-Math.PI/2; desk.receiveShadow=true; scene.add(desk);
+const pedestal=new THREE.Group(); scene.add(pedestal);
+const disc=new THREE.Mesh(new THREE.CylinderGeometry(.75,.78,.08,48), mat('#efe3c6')); disc.position.y=.04; disc.receiveShadow=true; disc.castShadow=true; pedestal.add(disc);
+const ring=new THREE.Mesh(new THREE.TorusGeometry(.7,.006,4,64), new THREE.MeshBasicMaterial({color:'#a8977a'})); ring.rotation.x=Math.PI/2; ring.position.y=.081; pedestal.add(ring);
+const lineup=new THREE.Group(); scene.add(lineup); lineup.visible=false;
+const lineupMen=[]; STAGES.forEach((s,i)=>{ const base=new THREE.Mesh(new THREE.CylinderGeometry(.36,.38,.06,36), mat('#efe3c6')); base.position.set((i-2)*.95,.03,0); base.receiveShadow=true; lineup.add(base);
+  const m=buildMuneco(i); m.position.set((i-2)*.95,.06,0); m.rotation.y=-.35; lineup.add(m); lineupMen.push(m); });
+
+let stage=4, hero=null, walking=true, mode='detalle';
+function setStage(i){ stage=i; if (hero) pedestal.remove(hero); hero=buildMuneco(i); hero.position.y=.08; hero.scale.setScalar(1.35); pedestal.add(hero);
+  $$('#stages button').forEach((b,j)=>b.setAttribute('aria-pressed', j===i)); }
+
+/* -------- Cámara orbital -------- */
+let yaw=-.55, pitch=.2, targetYaw=yaw, auto=!reduce, dragging=false, lx=0, ly=0;
+const VIEWS={frente:0, tres:-.75, perfil:-Math.PI/2, espalda:Math.PI};
+function layoutCam(){ const narrow=innerWidth<=860;
+  if (mode==='detalle'){ const d=camera.aspect<1?7.4:6.2; const ly2=.9;
+    camera.position.set(Math.sin(yaw)*Math.cos(pitch)*d, ly2+Math.sin(pitch)*d, Math.cos(yaw)*Math.cos(pitch)*d); camera.lookAt(0,ly2*.92,0); }
+  else { const d=camera.aspect<1?13:9.4; camera.position.set(0,2.2+(narrow?1:0),d); camera.lookAt(0,.6,0); } }
+canvas.addEventListener('pointerdown',e=>{ dragging=true; auto=false; lx=e.clientX; ly=e.clientY; canvas.setPointerCapture(e.pointerId); });
+canvas.addEventListener('pointermove',e=>{ if (!dragging || mode!=='detalle') return; targetYaw-= (e.clientX-lx)*.01; pitch=Math.max(-.1,Math.min(.9,pitch+(e.clientY-ly)*.005)); lx=e.clientX; ly=e.clientY; });
+canvas.addEventListener('pointerup',()=>dragging=false);
+$$('[data-view]').forEach(b=>b.addEventListener('click',()=>{ auto=false; targetYaw=VIEWS[b.dataset.view]; pitch=.15; }));
+$('#walkBtn').addEventListener('click',e=>{ walking=!walking; e.currentTarget.setAttribute('aria-pressed',walking); e.currentTarget.textContent=walking?'Caminando':'Quieto'; });
+$$('[data-mode]').forEach(b=>b.addEventListener('click',()=>{ mode=b.dataset.mode; $$('[data-mode]').forEach(x=>x.setAttribute('aria-pressed',x===b));
+  pedestal.visible=mode==='detalle'; lineup.visible=mode==='evolucion'; $('#labels').hidden=mode!=='evolucion'; $('#controls').hidden=mode!=='detalle'; }));
+
+$('#stages').innerHTML=STAGES.map((s,i)=>`<li><button data-stage="${i}"><span class="n">${i}</span><b>${s.name}</b><span class="adds">${s.adds}</span>${s.perk?`<span class="perk">${s.perk}</span>`:''}</button></li>`).join('');
+$$('[data-stage]').forEach(b=>b.addEventListener('click',()=>{ setStage(+b.dataset.stage); if (mode!=='detalle') $('[data-mode="detalle"]').click(); }));
+$('#labels').innerHTML=STAGES.map((s,i)=>`<span data-l="${i}">${i}<small>${s.name.replace('Saber de la ','').replace('Saber de los ','').replace('Saber del ','')}</small></span>`).join('');
+
+function resize(){ const r=canvas.parentElement.getBoundingClientRect(); renderer.setSize(r.width,r.height,false); camera.aspect=r.width/r.height; camera.updateProjectionMatrix(); }
+addEventListener('resize',resize);
+const t0=performance.now(); const v=new THREE.Vector3();
+function frame(){
+  const t=(performance.now()-t0)/1000;
+  if (auto) targetYaw-=.004; yaw+=(targetYaw-yaw)*.12;
+  if (hero) animate(hero,t,walking); lineupMen.forEach(m=>animate(m,t,false));
+  layoutCam();
+  if (mode==='evolucion'){ const r=canvas.getBoundingClientRect(); lineupMen.forEach((m,i)=>{ v.set(m.position.x,-.08,m.position.z+.3).project(camera); const el=$(`[data-l="${i}"]`);
+    el.style.left=((v.x+1)/2*r.width)+'px'; el.style.top=((1-v.y)/2*r.height)+'px'; }); }
+  renderer.render(scene,camera); requestAnimationFrame(frame);
+}
+setStage(4); resize(); frame();
+})();
+</script>

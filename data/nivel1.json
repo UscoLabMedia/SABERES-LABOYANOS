@@ -1,0 +1,69 @@
+{
+  "nivel": 1,
+  "titulo": "El Café",
+  "escenario": "La finca",
+  "objetivo": "Habla con la gente de la finca y reúne las 3 pistas del café laboyano.",
+  "npcs": [
+    {
+      "id": "arnulfo",
+      "nombre": "Don Arnulfo",
+      "oficio": "Caficultor",
+      "pista": "altura",
+      "saludo": "Ya le conté lo de la altura. ¡Mire su cuaderno!",
+      "dialogo": [
+        "¡Buenas, {nombre}! Bienvenido a la finca. ¿Sí ve esas montañas? De allá baja el fresco de la tarde.",
+        "Pitalito queda a unos 1.300 metros sobre el nivel del mar, y los cafetales del valle suben todavía más, hasta cerca de 2.000.",
+        "Con la altura, la cereza madura despacio: días templados y noches frescas. Esa calma le da al café dulzor y acidez.",
+        "Le dejé una cápsula aquí al ladito. Recójala y apúntela en su cuaderno."
+      ]
+    },
+    {
+      "id": "rosa",
+      "nombre": "Doña Rosa",
+      "oficio": "Recolectora",
+      "pista": "cosecha",
+      "saludo": "Grano por grano, {nombre}. Así se hace.",
+      "dialogo": [
+        "Ay, {nombre}, cuidado con el canasto. Aquí se recoge grano por grano.",
+        "Solo se coge la cereza roja, bien madura. La verde amarga la taza, y la pintona todavía no está lista.",
+        "Después, en el beneficiadero, se despulpa el mismo día, se deja fermentar, se lava con agua limpia y se seca despacio.",
+        "Si uno se afana y revuelve verdes con maduras, se pierde el trabajo de todo el año. Tenga, esta pista es suya."
+      ]
+    },
+    {
+      "id": "lucia",
+      "nombre": "Lucía",
+      "oficio": "Catadora",
+      "pista": "especial",
+      "saludo": "Cuando quiera volvemos a catar, {nombre}.",
+      "dialogo": [
+        "¡Hola, {nombre}! Estoy catando el café de la última cosecha. Huela esta taza.",
+        "En la catación se huele, se sorbe y se califica: aroma, sabor, acidez, cuerpo, dulzor.",
+        "Cuando una taza pasa de 80 puntos sobre 100, se considera café especial. Así se paga mejor el trabajo de la familia.",
+        "Fincas del Huila compiten en concursos de calidad con cafés así. Tome esta pista y cuídela."
+      ]
+    }
+  ],
+  "pistas": [
+    {
+      "id": "altura",
+      "titulo": "Altura y microclima",
+      "texto": "Pitalito está a unos 1.300 m sobre el nivel del mar y los cafetales del Valle de Laboyos llegan hasta cerca de 2.000 m. La altura y el clima templado hacen que la cereza madure lento; por eso el café gana dulzor, acidez y aroma."
+    },
+    {
+      "id": "cosecha",
+      "titulo": "Cosecha selectiva y beneficio",
+      "texto": "La cosecha selectiva consiste en recoger a mano solo las cerezas maduras. Luego viene el beneficio: despulpar el mismo día, fermentar, lavar y secar el grano hasta que quede con una humedad de entre 10 y 12 %."
+    },
+    {
+      "id": "especial",
+      "titulo": "Cómo se reconoce un café especial",
+      "texto": "Un café especial se reconoce en la catación: se califican el aroma, el sabor, la acidez, el cuerpo y el dulzor de la taza. Si obtiene más de 80 puntos sobre 100, se considera especial. Las fincas del Huila compiten en concursos de calidad con este tipo de café."
+    }
+  ],
+  "cierre": {
+    "titulo": "¡Llegó la cosecha!",
+    "texto": "Se viene el aguacero y hay café maduro en todo el cafetal. Hay que recoger, despulpar, lavar y secar antes de que caiga el agua.",
+    "siguiente": "Ir a la cosecha"
+  }
+}

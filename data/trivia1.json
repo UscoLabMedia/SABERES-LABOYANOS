@@ -1,0 +1,80 @@
+{
+  "nivel": 1,
+  "titulo": "Trivia del café",
+  "porPartida": 5,
+  "segundos": 20,
+  "preguntas": [
+    {
+      "id": "altura-pitalito",
+      "pista": "altura",
+      "pregunta": "¿A qué altura aproximada sobre el nivel del mar está Pitalito?",
+      "opciones": ["Unos 300 metros", "Unos 1.300 metros", "Unos 2.600 metros", "Unos 4.000 metros"],
+      "correcta": 1,
+      "explicacion": "Pitalito está a unos 1.300 m, y los cafetales del valle suben hasta cerca de 2.000 m."
+    },
+    {
+      "id": "altura-sabor",
+      "pista": "altura",
+      "pregunta": "¿Por qué la altura le conviene al café?",
+      "opciones": ["Porque la cereza madura más despacio y gana dulzor y acidez", "Porque llueve menos y no hay que secarlo", "Porque el grano crece más grande y pesa más", "Porque las plantas no necesitan sombra"],
+      "correcta": 0,
+      "explicacion": "Con días templados y noches frescas la cereza madura lento, y eso le da más dulzor, acidez y aroma a la taza."
+    },
+    {
+      "id": "cosecha-selectiva",
+      "pista": "cosecha",
+      "pregunta": "En la cosecha selectiva, ¿qué cerezas se recogen?",
+      "opciones": ["Todas las que tenga la rama", "Solo las verdes, porque pesan más", "Solo las rojas, bien maduras", "Las que ya cayeron al suelo"],
+      "correcta": 2,
+      "explicacion": "Se recogen a mano solo las cerezas rojas y maduras. Las verdes amargan la taza y las pintonas aún no están listas."
+    },
+    {
+      "id": "orden-beneficio",
+      "pista": "cosecha",
+      "pregunta": "¿Cuál es el orden del beneficio del café?",
+      "opciones": ["Secar, lavar, despulpar y fermentar", "Despulpar, fermentar, lavar y secar", "Lavar, secar, fermentar y despulpar", "Fermentar, secar, despulpar y lavar"],
+      "correcta": 1,
+      "explicacion": "Primero se despulpa el mismo día de la cosecha, luego se fermenta, se lava con agua limpia y por último se seca."
+    },
+    {
+      "id": "humedad",
+      "pista": "cosecha",
+      "pregunta": "¿Con cuánta humedad debe quedar el grano después del secado?",
+      "opciones": ["Entre 10 y 12 %", "Entre 30 y 40 %", "Cerca del 60 %", "Sin nada de humedad, 0 %"],
+      "correcta": 0,
+      "explicacion": "El café pergamino seco debe quedar con una humedad de entre 10 y 12 %. Más húmedo se daña; más seco pierde calidad."
+    },
+    {
+      "id": "puntos-especial",
+      "pista": "especial",
+      "pregunta": "En la catación, ¿desde cuántos puntos se considera especial un café?",
+      "opciones": ["Desde 50 puntos", "Desde 65 puntos", "Más de 80 puntos", "Solo con 100 puntos"],
+      "correcta": 2,
+      "explicacion": "Una taza que supera los 80 puntos sobre 100 se considera café especial."
+    },
+    {
+      "id": "que-se-califica",
+      "pista": "especial",
+      "pregunta": "¿Qué se califica en la catación de un café?",
+      "opciones": ["El color del saco y el peso", "El aroma, el sabor, la acidez, el cuerpo y el dulzor", "Solo qué tan caliente está la taza", "El tamaño de la finca"],
+      "correcta": 1,
+      "explicacion": "Los catadores huelen, sorben y califican aroma, sabor, acidez, cuerpo y dulzor."
+    },
+    {
+      "id": "gentilicio",
+      "pista": null,
+      "pregunta": "¿Cómo se les dice a las personas de Pitalito?",
+      "opciones": ["Pitaleños", "Opitas del sur", "Laboyanos", "Magdalenenses"],
+      "correcta": 2,
+      "explicacion": "A la gente de Pitalito se le dice laboyana, por el Valle de Laboyos."
+    },
+    {
+      "id": "departamento",
+      "pista": null,
+      "pregunta": "¿En qué departamento de Colombia queda Pitalito?",
+      "opciones": ["Tolima", "Cauca", "Caquetá", "Huila"],
+      "correcta": 3,
+      "explicacion": "Pitalito queda en el sur del Huila, en el Valle de Laboyos."
+    }
+  ]
+}

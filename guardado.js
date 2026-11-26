@@ -1,0 +1,85 @@
+/* guardado.js — perfiles y progreso de "Saberes de Laboyos".
+   - Cada equipo puede tener varios perfiles (uno por estudiante).
+   - El progreso se guarda en el navegador y, si config.js tiene Supabase, también en la nube.
+   - Un código de respaldo permite llevar el progreso a otro equipo.
+   API: Guardado.perfil(), .perfiles(), .progreso(), .guardar(prog), .crearPerfil(nombre),
+        .usarPerfil(id), .actualizarPerfil({nombre, avatar}), .codigo(), .importar(codigo),
+        .nube.estado ('local' | 'sincronizado' | 'pendiente' | 'error'), .sincronizar() */
+(() => {
+'use strict';
+const CFG = (window.LABOYOS_CONFIG || {}).supabase || {};
+const LS = {
+  get(k, d){ try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } },
+};
+const K = { perfiles:'laboyos.perfiles', activo:'laboyos.perfil', prog:id=>'laboyos.progreso.'+id, pend:id=>'laboyos.pendiente.'+id, ajustes:'laboyos.settings' };
+function nuevoId(){ const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let s=''; for (let i=0;i<6;i++) s+=A[Math.random()*A.length|0]; return 'LAB-'+s; }
+
+let perfiles = LS.get(K.perfiles, []);
+let activo = LS.get(K.activo, null);
+// Primera vez: crea un perfil y trae el progreso de la versión anterior.
+if (!perfiles.length){
+  const aj = LS.get(K.ajustes, {});
+  const p = { id:nuevoId(), nombre:(aj.name||'').trim() || 'Jugador 1', avatar:aj.avatar || 'muneco' };
+  perfiles = [p]; activo = p.id;
+  const viejo = LS.get('laboyos.progress', null);
+  if (viejo) LS.set(K.prog(p.id), { ...viejo, actualizado:Date.now() });
+  LS.set(K.perfiles, perfiles); LS.set(K.activo, activo);
+}
+if (!perfiles.find(p => p.id === activo)){ activo = perfiles[0].id; LS.set(K.activo, activo); }
+
+const perfil = () => perfiles.find(p => p.id === activo);
+const progreso = () => Object.assign({ etapa:0 }, LS.get(K.prog(activo), {}));
+function guardar(prog){ prog.actualizado = Date.now(); LS.set(K.prog(activo), prog); LS.set(K.pend(activo), true); nube.subir(); return prog; }
+function sincAjustes(){ const aj = LS.get(K.ajustes, {}); const p = perfil(); aj.name = p.nombre; aj.avatar = p.avatar; LS.set(K.ajustes, aj); }
+function crearPerfil(nombre){ const p = { id:nuevoId(), nombre:(nombre||'').trim().slice(0,24) || `Jugador ${perfiles.length+1}`, avatar:'muneco' };
+  perfiles.push(p); LS.set(K.perfiles, perfiles); return p; }
+function usarPerfil(id){ if (!perfiles.find(p => p.id === id)) return false; activo = id; LS.set(K.activo, id); sincAjustes(); return true; }
+function actualizarPerfil(cambios){ const p = perfil(); if (cambios.nombre !== undefined) p.nombre = String(cambios.nombre).trim().slice(0,24) || p.nombre;
+  if (cambios.avatar) p.avatar = cambios.avatar; LS.set(K.perfiles, perfiles); sincAjustes(); nube.subir(); return p; }
+
+// Código de respaldo: perfil + progreso en un texto que se puede copiar.
+function codigo(){ const json = JSON.stringify({ v:1, perfil:perfil(), progreso:progreso() });
+  return btoa(unescape(encodeURIComponent(json))).replace(/=+$/,''); }
+function importar(cod){
+  let data; try { data = JSON.parse(decodeURIComponent(escape(atob(String(cod).trim())))); } catch (e) { throw new Error('El código no es válido. Revisa que esté completo.'); }
+  if (!data || data.v !== 1 || !data.perfil || !data.perfil.id) throw new Error('El código no es de este juego.');
+  const p = { id:data.perfil.id, nombre:data.perfil.nombre || 'Jugador', avatar:data.perfil.avatar || 'muneco' };
+  const i = perfiles.findIndex(q => q.id === p.id); if (i >= 0) perfiles[i] = p; else perfiles.push(p);
+  LS.set(K.perfiles, perfiles); activo = p.id; LS.set(K.activo, activo);
+  const local = LS.get(K.prog(p.id), null), remoto = data.progreso || {};
+  if (!local || (remoto.actualizado||0) >= (local.actualizado||0)) LS.set(K.prog(p.id), remoto);
+  sincAjustes(); return p;
+}
+
+// Nube opcional (Supabase): funciones leer_progreso y guardar_progreso (ver docs/guardado.md).
+const nube = {
+  activa: !!(CFG.url && CFG.key),
+  estado: 'local',
+  _set(e){ this.estado = e; window.dispatchEvent(new CustomEvent('laboyos:nube', { detail:e })); },
+  _h(){ return { apikey:CFG.key, Authorization:'Bearer '+CFG.key, 'Content-Type':'application/json' }; },
+  async subir(){
+    if (!this.activa) return; const id = activo, prog = progreso(), p = perfil();
+    try {
+      const r = await fetch(`${CFG.url}/rest/v1/rpc/guardar_progreso`, { method:'POST', headers:this._h(),
+        body:JSON.stringify({ p_id:id, p_nombre:p.nombre, p_avatar:p.avatar||'muneco', p_datos:prog }) });
+      if (!r.ok) throw new Error(r.status); LS.set(K.pend(id), false); this._set('sincronizado');
+    } catch (e) { this._set(navigator.onLine === false ? 'pendiente' : 'error'); }
+  },
+  async bajar(){
+    if (!this.activa) return; const id = activo;
+    try {
+      const r = await fetch(`${CFG.url}/rest/v1/rpc/leer_progreso`, { method:'POST', headers:this._h(), body:JSON.stringify({ p_id:id }) });
+      if (!r.ok) throw new Error(r.status); const [fila] = await r.json();
+      const local = progreso();
+      if (fila && (fila.datos?.actualizado||0) > (local.actualizado||0)){ LS.set(K.prog(id), fila.datos); window.dispatchEvent(new CustomEvent('laboyos:progreso')); }
+      if (LS.get(K.pend(id), false)) await this.subir(); else this._set('sincronizado');
+    } catch (e) { this._set(navigator.onLine === false ? 'pendiente' : 'error'); }
+  },
+};
+addEventListener('online', () => { if (LS.get(K.pend(activo), false)) nube.subir(); });
+sincAjustes();
+if (nube.activa) nube.bajar();
+
+window.Guardado = { perfil, perfiles:()=>perfiles.slice(), progreso, guardar, crearPerfil, usarPerfil, actualizarPerfil, codigo, importar, nube, sincronizar:()=>nube.bajar() };
+})();

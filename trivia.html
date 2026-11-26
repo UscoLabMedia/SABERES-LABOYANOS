@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Trivia del café · Nivel 1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+SC:wght@700;800&family=Alegreya:ital,wght@0,400;0,600;1,400&family=Alegreya+Sans:wght@400;500;700&display=swap">
+<style>
+/* Layout: escenario de papel arriba (presentador y jugador); tarjeta de pregunta abajo con 4 respuestas en cuadrícula; marcador y comodines en la franja superior. Un solo tema cálido. */
+:root{
+  --desk:#1b120c; --paper:#efe3c6; --paper-2:#e0cfa6; --ink:#2a1c11; --ink-soft:#6b5640;
+  --cherry:#c8101e; --leaf:#3e6a3a; --ok:#2f7a3a; --gold:#d9ae55; --on-desk:#f2e7d0;
+  --f-display:"Alegreya SC","Palatino Linotype",Georgia,serif;
+  --f-body:"Alegreya",Georgia,"Times New Roman",serif;
+  --f-ui:"Alegreya Sans","Segoe UI",system-ui,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+[hidden]{display:none!important}
+body{background:var(--desk);color:var(--on-desk);font-family:var(--f-ui);overflow:hidden}
+:root.big-text{font-size:18px}
+:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+#scene{position:fixed;inset:0;width:100%;height:100%;display:block}
+.top{position:fixed;left:0;right:0;top:0;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;z-index:5;
+  padding-block:max(12px, env(safe-area-inset-top,0px)) 0;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px))}
+.score{background:var(--paper);color:var(--ink);padding:.4rem .9rem .5rem;box-shadow:0 4px 0 #b9a47a,0 10px 20px rgba(0,0,0,.4)}
+.score b{display:block;font-family:var(--f-display);font-size:1.3rem;line-height:1.1}
+.score span{font-size:.85rem;color:var(--ink-soft);font-weight:700}
+.dots{display:flex;gap:6px;margin-top:.3rem}
+.dots i{width:14px;height:14px;border-radius:50%;border:2px solid var(--ink-soft)}
+.dots i.ok{background:var(--ok);border-color:var(--ok)}
+.dots i.bad{background:var(--cherry);border-color:var(--cherry)}
+.dots i.now{border-color:var(--ink);box-shadow:0 0 0 2px var(--gold)}
+.helps{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.help{font-family:var(--f-display);font-weight:700;font-size:.95rem;background:rgba(27,18,12,.75);color:var(--on-desk);border:1.5px solid rgba(242,231,208,.45);padding:.45rem .8rem;cursor:pointer}
+.help:disabled{opacity:.35;cursor:not-allowed}
+.help small{font-family:var(--f-ui);font-weight:500;color:#c9b894}
+.icon-btn{width:44px;height:44px;border-radius:50%;border:1px solid rgba(242,231,208,.25);background:rgba(27,18,12,.65);color:var(--on-desk);display:grid;place-items:center;cursor:pointer;text-decoration:none}
+.icon-btn svg{width:20px;height:20px}
+
+.card{position:fixed;left:50%;bottom:max(16px, env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:min(52rem,calc(100% - 32px));z-index:6;
+  background:var(--paper);color:var(--ink);padding:1rem 1.2rem 1.2rem;box-shadow:0 24px 50px rgba(0,0,0,.55);
+  background-image:radial-gradient(ellipse at 15% 0%,rgba(255,255,255,.35),transparent 60%)}
+.card .meta{display:flex;justify-content:space-between;align-items:center;gap:1rem;font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:var(--cherry)}
+.timer{height:8px;background:rgba(42,28,17,.15);margin:.5rem 0 .7rem}
+.timer i{display:block;height:100%;background:var(--leaf);transform-origin:left}
+.timer.low i{background:var(--cherry)}
+.card h2{font-family:var(--f-display);font-size:clamp(1.3rem,2.6vw,1.75rem);line-height:1.15;margin:0 0 .8rem;text-wrap:balance}
+.answers{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;list-style:none;margin:0;padding:0}
+.answers button{width:100%;min-height:3.4rem;text-align:left;display:flex;gap:.7rem;align-items:center;font-family:var(--f-body);font-size:1.08rem;line-height:1.25;color:var(--ink);
+  background:#fbf5e6;border:2px solid rgba(42,28,17,.25);padding:.55rem .8rem;cursor:pointer;transition:transform .12s, background .2s}
+.answers button:hover:not(:disabled){transform:translateY(-2px);border-color:var(--ink)}
+.answers kbd{flex:none;width:1.8rem;height:1.8rem;display:grid;place-items:center;font-family:var(--f-display);font-weight:800;font-size:1rem;background:var(--ink);color:var(--paper)}
+.answers button.right{background:#d6ecc0;border-color:var(--ok)}
+.answers button.right kbd{background:var(--ok)}
+.answers button.wrong{background:#f2c4bd;border-color:var(--cherry)}
+.answers button.wrong kbd{background:var(--cherry)}
+.answers button.gone{opacity:.25}
+.answers button:disabled{cursor:default}
+.feedback{margin-top:.8rem;display:flex;gap:1rem;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.feedback p{margin:0;font-family:var(--f-body);font-size:1.05rem;line-height:1.4;flex:1 1 20rem}
+.feedback p b{font-family:var(--f-display)}
+.btn{font-family:var(--f-display);font-weight:700;font-size:1rem;padding:.6rem 1.2rem;border:1.5px solid var(--ink);background:transparent;color:var(--ink);cursor:pointer;text-decoration:none;display:inline-block}
+.btn.solid{background:var(--cherry);border-color:var(--cherry);color:#fff3e6}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.note{margin-top:.7rem;padding:.6rem .8rem;background:rgba(62,106,58,.1);border-left:4px solid var(--leaf);font-family:var(--f-body);font-size:1rem;line-height:1.4}
+.note b{font-family:var(--f-display)}
+
+.scrim{position:fixed;inset:0;background:rgba(10,6,3,.6);display:grid;place-items:center;z-index:20;
+  padding-block:max(16px, env(safe-area-inset-top,0px)) max(16px, env(safe-area-inset-bottom,0px));
+  padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px))}
+.sheet{position:relative;width:min(38rem,100%);max-height:100%;overflow:auto;background:var(--paper);color:var(--ink);padding:1.3rem 1.5rem 1.5rem;box-shadow:0 30px 60px rgba(0,0,0,.55);
+  background-image:radial-gradient(ellipse at 20% 0%,rgba(255,255,255,.35),transparent 55%),radial-gradient(ellipse at 100% 100%,rgba(140,100,50,.18),transparent 60%)}
+.sheet .kicker{font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--cherry);font-weight:700;margin:0 0 .2rem}
+.sheet h2{font-family:var(--f-display);font-size:1.9rem;margin:0}
+.sheet p,.sheet li{font-family:var(--f-body);font-size:1.06rem;line-height:1.45}
+.sheet ul{padding-left:1.2rem;margin:.4rem 0}
+.actions{display:flex;flex-wrap:wrap;gap:.6rem;justify-content:flex-end;margin-top:1.1rem}
+.big{font-family:var(--f-display);font-size:3rem;font-weight:800;color:var(--cherry);line-height:1;margin:.4rem 0}
+.big small{font-size:1.1rem;color:var(--ink-soft)}
+.fallback{position:fixed;inset:0;display:grid;place-items:center;padding:24px;text-align:center;font-family:var(--f-body);font-size:1.1rem;z-index:40;background:var(--desk)}
+@media (max-width:640px){
+  .answers{grid-template-columns:1fr}
+  .answers button{min-height:2.9rem;font-size:1rem}
+  .card{padding:.8rem .9rem 1rem}
+  .help{font-size:.85rem;padding:.35rem .6rem}
+  .help small{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<canvas id="scene" aria-hidden="true"></canvas>
+
+<div class="top">
+  <div class="score"><b id="argCount">0 saberes</b><span id="streak">Racha: 0</span><div class="dots" id="dots"></div></div>
+  <div class="helps" id="helps" aria-label="Comodines">
+    <button class="help" data-help="mitad">50/50 <small>quita dos</small></button>
+    <button class="help" data-help="tiempo">+10 s</button>
+    <button class="help" data-help="cuaderno">Cuaderno <small>ver la pista</small></button>
+    <a class="icon-btn" href="finca.html" aria-label="Salir a la finca" title="Salir a la finca">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>
+    </a>
+  </div>
+</div>
+
+<section class="card" id="card" hidden aria-live="polite">
+  <div class="meta"><span id="qNum"></span><span id="qTime"></span></div>
+  <div class="timer" id="timer"><i id="timerBar"></i></div>
+  <h2 id="qText"></h2>
+  <ul class="answers" id="answers"></ul>
+  <div class="note" id="note" hidden></div>
+  <div class="feedback" id="feedback" hidden><p id="fbText"></p><button class="btn solid" id="nextBtn">Siguiente</button></div>
+</section>
+
+<div class="scrim" id="start">
+  <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="sTitle">
+    <p class="kicker">Nivel 1 · El Café</p>
+    <h2 id="sTitle">Trivia del café</h2>
+    <p>Don Arnulfo pregunta y el grupo responde: 5 preguntas, 20 segundos cada una. Cada acierto suma <b>saberes</b>. Con 3 aciertos o más terminas el Nivel 1.</p>
+    <ul>
+      <li>Responde con clic o con las teclas <b>1</b> a <b>4</b>.</li>
+      <li>Responder rápido y encadenar aciertos da saberes extra.</li>
+      <li id="helpInfo"></li>
+    </ul>
+    <div class="actions"><a class="btn" href="finca.html">Volver a la finca</a><button class="btn solid" id="goBtn" disabled>Cargando…</button></div>
+  </section>
+</div>
+
+<div class="scrim" id="end" hidden>
+  <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="eTitle">
+    <p class="kicker">Trivia del café</p>
+    <h2 id="eTitle"></h2>
+    <div class="big" id="eArgs"></div>
+    <p id="eText"></p>
+    <div class="actions"><a class="btn" href="finca.html">Volver a la finca</a><button class="btn" id="again">Jugar otra vez</button><a class="btn solid" id="endNext" href="index.html#abierto">Volver al libro</a></div>
+  </section>
+</div>
+
+<script src="config.js"></script>
+<script src="guardado.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="papel.js"></script>
+<script src="muneco.js"></script>
+<script>
+(() => {
+'use strict';
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+function fail(m){ document.body.insertAdjacentHTML('beforeend',`<div class="fallback">${m}</div>`); }
+if (typeof THREE==='undefined' || !window.Papel || !window.Muneco){ fail('No se pudo cargar el motor 3D. Revisa la conexión y recarga la página.'); return; }
+const { S, Sound, cutout, D, texFrom, paperMat, boxMesh, mk } = Papel;
+document.documentElement.classList.toggle('big-text', S.text==='grande');
+let PROG=Guardado.progreso();
+const saveProg=()=>{ Guardado.guardar(PROG); };
+
+/* ---------------- Escenario de papel ---------------- */
+const canvas=$('#scene'); let renderer;
+try { renderer=new THREE.WebGLRenderer({canvas,antialias:true}); } catch(e){ fail('Este navegador no puede mostrar gráficos 3D (WebGL).'); return; }
+renderer.outputEncoding=THREE.sRGBEncoding; renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+const scene=new THREE.Scene(); scene.background=new THREE.Color('#2a1d14');
+const camera=new THREE.PerspectiveCamera(32,1,.1,100);
+scene.add(new THREE.HemisphereLight('#fff1d6','#3a2414',.65));
+const key=new THREE.DirectionalLight('#ffdcaa',1.15); key.position.set(-3,7,6); key.castShadow=true; key.shadow.mapSize.set(1024,1024); key.shadow.radius=4; Object.assign(key.shadow.camera,{left:-6,right:6,top:6,bottom:-6}); scene.add(key);
+const front=new THREE.DirectionalLight('#ffe8cc',.35); front.position.set(0,2,8); scene.add(front);
+const spot=new THREE.PointLight('#ffd36b',0,8); spot.position.set(0,3,2); scene.add(spot);
+// tarima, telón de montañas y letrero
+const stage=boxMesh(8,.4,3.2,paperMat('#8a5a32')); stage.position.set(0,-.4,0); scene.add(stage);
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(60,60),new THREE.MeshStandardMaterial({color:'#3a2416',roughness:.9})); floor.rotation.x=-Math.PI/2; floor.position.y=-.4; scene.add(floor);
+function cardMesh(cv,h){ const t=texFrom(cv), w=h*cv.width/cv.height, g=new THREE.PlaneGeometry(w,h); g.translate(0,h/2,0);
+  const m=new THREE.Mesh(g,new THREE.MeshStandardMaterial({map:t,alphaTest:.5,side:THREE.DoubleSide,roughness:.9})); m.castShadow=true; m.customDepthMaterial=new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking,map:t,alphaTest:.5}); return m; }
+[[-3.2,-1.6],[2.8,-1.7]].forEach(([x,z])=>{ const m=cardMesh(cutout(900,380,D.mountains()),2.4); m.position.set(x,0,z); scene.add(m); });
+const sign=(()=>{ const c=mk(640,200), g=c.getContext('2d'); g.fillStyle='#a8743f'; g.fillRect(0,0,640,150); g.strokeStyle='#6b4224'; g.lineWidth=8; g.strokeRect(4,4,632,142);
+  g.fillStyle='#6b4224'; g.fillRect(150,150,20,50); g.fillRect(470,150,20,50); g.fillStyle='#fff3dc'; g.font='800 70px "Alegreya SC", serif'; g.textAlign='center'; g.fillText('Trivia del café',320,100); return c; })();
+const signM=cardMesh(cutout(640,200,(g)=>g.drawImage(sign,0,0)),1.1); signM.position.set(0,1.75,-1.2); scene.add(signM);
+[-2.6,2.6].forEach(x=>{ const m=cardMesh(cutout(260,300,D.coffee()),1.1); m.position.set(x,0,-.6); scene.add(m); });
+// presentador y jugador
+const host=Muneco.npc('caficultor'); host.position.set(1.15,0,.2); host.rotation.y=-.45; scene.add(host);
+const player=Muneco.jugador(PROG.etapa||0, S.avatar==='muneca'); player.position.set(-1.15,0,.3); player.rotation.y=.45; scene.add(player);
+const podium=boxMesh(.7,.5,.5,paperMat('#c8101e')); podium.position.set(-1.15,0,.85); scene.add(podium);
+// confeti de papel
+const confetti=[]; const CC=['#c8101e','#f2c94c','#2f6b8a','#2f8a5a','#f4efe3'];
+function burst(){ if (S.motion) return; for(let i=0;i<40;i++){ const m=new THREE.Mesh(new THREE.PlaneGeometry(.08,.12),new THREE.MeshBasicMaterial({color:CC[i%5],side:THREE.DoubleSide}));
+  m.position.set(-1.15+(Math.random()-.5)*.4,1.4,.4); m.userData.v=new THREE.Vector3((Math.random()-.5)*3,2+Math.random()*2.5,(Math.random()-.2)*2); m.userData.r=new THREE.Vector3(Math.random()*8,Math.random()*8,0); scene.add(m); confetti.push(m); } }
+
+function resize(){ renderer.setSize(innerWidth,innerHeight,false); renderer.setPixelRatio(Math.min(devicePixelRatio||1, S.quality==='baja'?1:1.5)); camera.aspect=innerWidth/innerHeight;
+  const narrow=camera.aspect<1; camera.position.set(0,narrow?2.6:2.2,narrow?12:8.2); camera.lookAt(0,1,0);
+  camera.setViewOffset(innerWidth,innerHeight,0,innerHeight*(narrow?.3:.24),innerWidth,innerHeight); camera.updateProjectionMatrix(); }
+addEventListener('resize',resize);
+let mood='idle', moodT=0, last=performance.now();
+function frame(now){ const dt=Math.min((now-last)/1000,.05); last=now; moodT+=dt;
+  Muneco.animar(host,dt,false,S.motion); Muneco.animar(player,dt,false,S.motion);
+  if (!S.motion){
+    if (mood==='ok'){ player.position.y=Math.max(0,Math.sin(moodT*9))*.25*Math.max(0,1-moodT/1.2); player.userData.arms.forEach(a=>a.rotation.x=-2.6); player.userData.arms.forEach((a,i)=>a.rotation.z=(i?-1:1)*.3); }
+    else if (mood==='bad'){ player.userData.head.rotation.y=Math.sin(moodT*14)*.35*Math.max(0,1-moodT/1); player.userData.arms.forEach(a=>a.rotation.x=0); }
+    else { player.position.y=0; player.userData.head.rotation.y*=.9; player.userData.arms.forEach(a=>{ a.rotation.z*=.85; }); }
+    host.userData.arms[1].rotation.x = mood==='ask' ? -1.3+Math.sin(moodT*3)*.1 : host.userData.arms[1].rotation.x*.9; }
+  spot.intensity += ((mood==='ok'?1.6:0)-spot.intensity)*.1;
+  for (let i=confetti.length-1;i>=0;i--){ const m=confetti[i], u=m.userData; u.v.y-=6*dt; m.position.addScaledVector(u.v,dt); m.rotation.x+=u.r.x*dt; m.rotation.y+=u.r.y*dt; if (m.position.y<-.3){ scene.remove(m); confetti.splice(i,1); } }
+  renderer.render(scene,camera); requestAnimationFrame(frame); }
+
+/* ---------------- Trivia ---------------- */
+let DATA=null, PISTAS={}, game=null, tick=null;
+const extraOleadas = (PROG.oleadas||0)>=2 ? 1 : 0;
+const helpsBase = 1 + Math.max(0, Math.min(3, PROG.cosecha||0)) + extraOleadas;
+$('#helpInfo').textContent = `Tienes ${helpsBase} ${helpsBase>1?'comodines':'comodín'}: 1 de base${PROG.cosecha?`, ${PROG.cosecha} por las estrellas de la cosecha`:''}${extraOleadas?' y 1 por defender el cafetal':''}. Úsalos cuando quieras.`;
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.random()*(i+1)|0; [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function newGame(){
+  const qs=shuffle(DATA.preguntas.slice()).slice(0,DATA.porPartida).map(q=>{ const order=shuffle([0,1,2,3]); return {...q, opciones:order.map(i=>q.opciones[i]), correcta:order.indexOf(q.correcta)}; });
+  game={qs,i:0,args:0,streak:0,best:0,results:[],helps:helpsBase,left:0,answered:false};
+  $$('.help').forEach(b=>b.disabled=false); updateTop(); }
+function updateTop(){
+  $('#argCount').textContent=`${game.args} saber${game.args===1?'':'es'}`; $('#streak').textContent=`Racha: ${game.streak}`;
+  $('#dots').innerHTML=game.qs.map((_,i)=>`<i class="${game.results[i]===true?'ok':game.results[i]===false?'bad':i===game.i?'now':''}"></i>`).join('');
+  $$('.help').forEach(b=>{ if (!game.helps || game.answered) b.disabled=true; });
+  $$('.help').forEach(b=>b.title=`Comodines: ${game.helps}`); }
+function showQ(){
+  const q=game.qs[game.i]; game.answered=false; game.left=DATA.segundos; game.total=DATA.segundos; mood='ask'; moodT=0;
+  $('#qNum').textContent=`Pregunta ${game.i+1} de ${game.qs.length}`; $('#qText').textContent=q.pregunta;
+  $('#answers').innerHTML=q.opciones.map((o,i)=>`<li><button data-i="${i}"><kbd>${i+1}</kbd><span>${o}</span></button></li>`).join('');
+  $('#note').hidden=true; $('#feedback').hidden=true; $('#card').hidden=false;
+  $$('.help').forEach(b=>{ if (b.dataset.used!=='1') b.disabled=!game.helps; });
+  $$('#answers button').forEach(b=>b.addEventListener('click',()=>answer(+b.dataset.i)));
+  $('#answers button').focus(); updateTop();
+  clearInterval(tick); tick=setInterval(()=>{ game.left-=.1; drawTimer(); if (game.left<=0) answer(-1); },100); drawTimer(); }
+function drawTimer(){ const f=Math.max(0,game.left/game.total); $('#timerBar').style.transform=`scaleX(${f})`; $('#timer').classList.toggle('low',game.left<6); $('#qTime').textContent=`${Math.ceil(Math.max(0,game.left))} s`;
+  if (game.left<6 && game.left>0 && Math.abs(game.left-Math.round(game.left))<.05) Sound.tick(); }
+function answer(i){
+  if (game.answered) return; game.answered=true; clearInterval(tick);
+  const q=game.qs[game.i], ok=i===q.correcta; game.results[game.i]=ok;
+  $$('#answers button').forEach((b,j)=>{ b.disabled=true; if (j===q.correcta) b.classList.add('right'); else if (j===i) b.classList.add('wrong'); });
+  let gained=0, extra='';
+  if (ok){ gained=1; game.streak++; if (game.left>=DATA.segundos/2){ gained++; extra=' Respuesta rápida: +1 saber.'; } if (game.streak===3){ gained++; extra+=' ¡Racha de 3! +1 saber.'; }
+    game.args+=gained; mood='ok'; moodT=0; Sound.chime(); burst(); }
+  else { game.streak=0; mood='bad'; moodT=0; Sound.pop(0); }
+  game.best=Math.max(game.best,game.streak);
+  $('#fbText').innerHTML = (ok?`<b>¡Correcto!</b> +${gained} saber${gained>1?'es':''}.${extra} `:(i<0?'<b>Se acabó el tiempo.</b> ':'<b>No era esa.</b> ')) + q.explicacion;
+  $('#nextBtn').textContent = game.i<game.qs.length-1 ? 'Siguiente' : 'Ver resultado';
+  $('#feedback').hidden=false; $('#nextBtn').focus(); updateTop(); }
+function next(){ mood='idle'; if (game.i<game.qs.length-1){ game.i++; showQ(); } else finish(); }
+$('#nextBtn').addEventListener('click',next);
+function finish(){
+  $('#card').hidden=true; const ok=game.results.filter(Boolean).length;
+  $('#eTitle').textContent = ok===game.qs.length ? '¡Las cinco! Sabes de café' : ok>=3 ? 'Buen saber cafetero' : 'Hay que volver al cuaderno';
+  $('#eArgs').innerHTML=`${game.args} <small>saber${game.args===1?'':'es'} del café</small>`;
+  const pasa=ok>=3, primera=pasa && !PROG.nivel1;
+  if (pasa){ PROG.nivel1=true; PROG.etapa=Math.max(PROG.etapa||0,1); }
+  PROG.saberes1=Math.max(PROG.saberes1||0,game.args); PROG.trivia1=Math.max(PROG.trivia1||0,ok); saveProg();
+  $('#eText').textContent=`Acertaste ${ok} de ${game.qs.length}. Mejor racha: ${game.best}. `+(pasa ? (primera?'¡Terminaste el Nivel 1! Tu personaje gana la mochila tejida y las alpargatas, y se despliega Los Caballos en el libro.':'Nivel 1 superado.') : 'Necesitas 3 aciertos para terminar el nivel. Repasa el cuaderno de saberes y vuelve a intentarlo.');
+  $('#endNext').hidden=!pasa;
+  $('#end').hidden=false; $('#again').focus(); }
+$('#again').addEventListener('click',()=>{ $('#end').hidden=true; newGame(); showQ(); });
+
+// comodines
+$('#helps').addEventListener('click',e=>{ const b=e.target.closest('[data-help]'); if (!b || b.disabled || !game || game.answered || !game.helps) return;
+  const q=game.qs[game.i], k=b.dataset.help; game.helps--; b.disabled=true; b.dataset.used='1'; Sound.tick();
+  if (k==='mitad'){ const wrong=shuffle([0,1,2,3].filter(i=>i!==q.correcta)).slice(0,2); wrong.forEach(i=>{ const btn=$(`#answers button[data-i="${i}"]`); btn.disabled=true; btn.classList.add('gone'); }); }
+  if (k==='tiempo'){ game.left+=10; game.total+=10; }
+  if (k==='cuaderno'){ const p=q.pista && PISTAS[q.pista]; $('#note').innerHTML = p ? `<b>${p.titulo}.</b> ${p.texto}` : 'Esta pregunta no viene de una pista del cuaderno: es saber general de Pitalito.'; $('#note').hidden=false; }
+  updateTop(); });
+addEventListener('keydown',e=>{ if (!game || $('#card').hidden) return; const n=+e.key; if (n>=1 && n<=4 && !game.answered){ const b=$(`#answers button[data-i="${n-1}"]`); if (b && !b.disabled) answer(n-1); } });
+
+$('#goBtn').addEventListener('click',()=>{ $('#start').hidden=true; Sound.init(); Sound.apply(); Sound.fast=true; Sound.startMusic(); newGame(); showQ(); });
+
+(async()=>{
+  resize(); requestAnimationFrame(frame);
+  try { const [t,n]=await Promise.all([fetch('data/trivia1.json').then(r=>{ if(!r.ok) throw 0; return r.json(); }), fetch('data/nivel1.json').then(r=>r.ok?r.json():{pistas:[]}).catch(()=>({pistas:[]}))]);
+    DATA=t; (n.pistas||[]).forEach(p=>PISTAS[p.id]=p); }
+  catch(e){ fail('No se pudieron cargar las preguntas (data/trivia1.json). Abre el juego desde un servidor web o desde GitHub Pages.'); return; }
+  $('#goBtn').disabled=false; $('#goBtn').textContent='Empezar'; $('#goBtn').focus();
+})();
+})();
+</script>
+</body>
+</html>
