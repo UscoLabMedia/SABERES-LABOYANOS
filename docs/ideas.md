@@ -17,3 +17,14 @@ Va después del minijuego de la cosecha, en el Nivel 1.
 ## Uso del ratón (anotado y hecho el 2026-11-26)
 
 En la defensa del cafetal (oleadas) y en las estaciones de la cosecha, el ratón debe servir para atacar y activar acciones: clic para golpear hacia el puntero y clic en las estaciones para tomar, soltar o usar. Debe convivir con teclado, mando y táctil, y funcionar en red.
+
+## Etapa final: Festival del Bambuco y Reinado (anotado el 2026-11-26)
+
+Solo anotado. Sin diseño ni código todavía.
+
+- Es la **etapa final** del juego. Reúne todo lo aprendido en los niveles anteriores.
+- Dos concursos dentro del festival:
+  - **Concurso de música**, estilo *Zelda* tocando la ocarina: el jugador repite o interpreta melodías. Instrumentos a considerar: tiple, bandola y guitarra, que son los del trío andino colombiano.
+  - **Concurso de baile**, estilo *Dance Contest* de Club Penguin: baile por ritmo, con indicaciones que aparecen al compás. Referencia: https://clubpenguin.fandom.com/es/wiki/Concurso_de_Baile. Falta confirmar con el usuario qué mecánica exacta quiere de esa imagen.
+- El **traje de sanjuanera (opción B de La Orquídera)** es el premio de esta etapa: blusa blanca con cuello bandeja, falda ancha con flores y tocado de flores.
+- Pendiente de decidir: cómo se gana el reinado (puntaje de ambos concursos, trivia, o ambos) y si hay modo en red.
