@@ -2,6 +2,28 @@
 
 Proyecto: "Saberes de Laboyos". Antes de nada lee `LEEME-PRIMERO.md` (estado, decisiones y tareas). No pidas al usuario que lo explique de nuevo.
 
+## Reglas fijas (se aplican en cada conversación)
+
+### Estilo caveman
+Responde siempre en español, en estilo caveman: frases cortas, palabras simples, sin saludos, sin relleno y sin repetir lo ya dicho. Primero el resultado, después lo mínimo necesario. Código, comandos, rutas y nombres de archivo van exactos, sin acortar. Si hay un riesgo o algo que el usuario debe decidir, dilo claro aunque ocupe una línea más. No cambies este estilo hasta que el usuario pida respuestas normales.
+
+### Superpowers
+Si los skills de superpowers están disponibles, úsalos según el tamaño de la tarea:
+- **Diseño nuevo, nivel nuevo o funcionalidad nueva:** invoca `superpowers:brainstorming` antes de construir y muestra la propuesta.
+- **Error o comportamiento inesperado:** invoca `superpowers:systematic-debugging` antes de proponer una corrección.
+- **Antes de decir "listo" o de subir cambios:** invoca `superpowers:verification-before-completion` y comprueba con una prueba o un comando, no con suposiciones.
+- **Cambio pequeño** (texto, color, un parámetro, un dato en JSON): no hace falta ningún skill ni plan escrito. Hazlo directo.
+Si superpowers no está disponible, aplica igual estas tres prácticas a mano.
+
+### Elegir modelo y esfuerzo
+Yo no puedo cambiar mi propio modelo. Lo que sí hago:
+1. Al empezar una tarea, si no coincide con el modelo actual, digo en una línea qué modelo y esfuerzo conviene (según la tabla de abajo) y le pido al usuario que cambie con `/model`.
+2. Delego en subagentes con el modelo más barato que sirva: búsquedas y lecturas con `explorador` (Haiku); ediciones mecánicas con Sonnet. El esfuerzo del subagente solo lo fijo si el usuario lo pide.
+3. Subo de modelo solo si el más barato falla o la tarea es de diseño o arquitectura.
+
+### Ponytail
+Pendiente: el usuario aún no ha dicho qué es ni dónde encontrarlo. No inventar su contenido. Cuando se defina, escribir aquí su regla.
+
 ## Cómo trabajar
 
 1. **Respuestas cortas.** Primero el resultado, sin repetir lo ya dicho.
