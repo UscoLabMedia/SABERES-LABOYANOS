@@ -21,8 +21,16 @@ Yo no puedo cambiar mi propio modelo. Lo que sí hago:
 2. Delego en subagentes con el modelo más barato que sirva: búsquedas y lecturas con `explorador` (Haiku); ediciones mecánicas con Sonnet. El esfuerzo del subagente solo lo fijo si el usuario lo pide.
 3. Subo de modelo solo si el más barato falla o la tarea es de diseño o arquitectura.
 
-### Ponytail
-Pendiente: el usuario aún no ha dicho qué es ni dónde encontrarlo. No inventar su contenido. Cuando se defina, escribir aquí su regla.
+### Ponytail (código mínimo)
+Ponytail es un plugin de https://github.com/DietrichGebert/ponytail. Si está instalado, úsalo. Si no, aplica su idea a mano: el mejor código es el que no se escribe. Antes de escribir código, recorre esta escalera y para en el primer paso que sirva:
+1. ¿Esta función debe existir?
+2. ¿Ya está en el proyecto? Reúsala.
+3. ¿Lo resuelve la biblioteca estándar o una función nativa del navegador?
+4. ¿Lo resuelve algo ya instalado (Three.js, `papel.js`, `muneco.js`)?
+5. ¿Cabe en una línea?
+6. Si no, escribe lo mínimo que funcione.
+
+Escribe solo lo que pide la tarea. No recortes validación, manejo de errores, seguridad ni accesibilidad. Si hay ramas, bucles, dinero o seguridad, deja una prueba pequeña. En este proyecto, antes de crear una pieza nueva, busca si ya existe en `papel.js`, `muneco.js`, `red.js` o `guardado.js`.
 
 ## Cómo trabajar
 
