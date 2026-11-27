@@ -25,13 +25,13 @@ Nivel 1, El Café, completo:
 5. La trivia.
 
 Además:
-- Perfiles por estudiante y código de respaldo.
-- Guardado en la nube opcional con Supabase.
+- Cuentas con usuario y contraseña: cada estudiante tiene varias partidas, y cada una guarda su propio progreso.
+- Guardado en la nube con Supabase (ver `docs/guardado.md` y `docs/supabase.sql`).
 
 ## Documentación
 
 - `LEEME-PRIMERO.md`: estado del proyecto, decisiones de diseño y tareas pendientes (para continuar el desarrollo).
-- `docs/guardado.md`: guardado, Supabase y juego en red.
+- `docs/guardado.md`: cuentas, partidas, Supabase y juego en red.
 - `docs/ideas.md`: ideas anotadas.
 
 Hecho con Three.js. Todo el arte y el sonido se generan por código.
