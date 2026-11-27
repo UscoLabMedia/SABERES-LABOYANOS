@@ -1,0 +1,218 @@
+{
+  "nivel": 2,
+  "titulo": "Trivia del barro",
+  "porPartida": 5,
+  "segundos": 20,
+  "preguntas": [
+    {
+      "id": "mina",
+      "pista": "barro",
+      "pregunta": "¿De qué minas sale sobre todo la arcilla para la cerámica de Pitalito?",
+      "opciones": [
+        "De las minas del Salesiano y de Guachicos",
+        "De las minas de sal de Zipaquirá",
+        "De las minas de esmeraldas de Boyacá",
+        "De las minas de carbón del Cerrejón"
+      ],
+      "correcta": 0,
+      "explicacion": "La resolución que protege la «Chiva de Pitalito» dice que la arcilla de cerámica sale principalmente de las minas del Salesiano y Guachicos.",
+      "fuente": "https://www.redalyc.org/journal/4175/417575468010/html/"
+    },
+    {
+      "id": "composicion",
+      "pista": "barro",
+      "pregunta": "¿Qué tiene la arcilla de Pitalito que la hace buena para modelar?",
+      "opciones": [
+        "Caolín, feldespato, cuarzo y carbonato de calcio, que con agua se vuelven moldeables",
+        "Solo arena de río",
+        "Cenizas del volcán Puracé",
+        "Cáscara de café molida"
+      ],
+      "correcta": 0,
+      "explicacion": "Según la resolución, la arcilla contiene caolín, feldespato, cuarzo y carbonato de calcio; mezclados con agua sirven para modelar piezas.",
+      "fuente": "https://www.redalyc.org/journal/4175/417575468010/html/"
+    },
+    {
+      "id": "materia",
+      "pista": "barro",
+      "pregunta": "¿Con qué materia prima se hace la chiva de Pitalito?",
+      "opciones": [
+        "Con cerámica de arcilla de la zona",
+        "Con madera de roble",
+        "Con hojalata",
+        "Con plástico reciclado"
+      ],
+      "correcta": 0,
+      "explicacion": "La Superintendencia de Industria y Comercio la describe como un objeto artesanal de cerámica hecho con arcilla de la zona geográfica delimitada.",
+      "fuente": "https://sedeelectronica.sic.gov.co/temas/propiedad-industrial/direccion-de-signos-distintivos/denominaciones-de-origen/chiva-de-pitalito"
+    },
+    {
+      "id": "creadora",
+      "pista": "chiva",
+      "pregunta": "¿Quién creó la chiva de barro de Pitalito?",
+      "opciones": [
+        "La maestra Cecilia Vargas Muñoz",
+        "Un ingeniero de la Federación de Cafeteros",
+        "Una alcaldesa de Pitalito",
+        "Un maestro de la Feria de Cali"
+      ],
+      "correcta": 0,
+      "explicacion": "La Ley 1891 de 2018 exalta la obra artística de la maestra Cecilia Vargas Muñoz, reconocida como creadora de la chiva.",
+      "fuente": "https://sidn.ramajudicial.gov.co/SIDN/NORMATIVA/TEXTOS_COMPLETOS/7_LEYES/LEYES%202018%20(1877-)/Ley%201891%20de%202018%20(Exalta%20la%20obra%20art%C3%ADstica%20de%20la%20maestra%20Cecilia%20Vargas%20Mu%C3%B1oz).pdf"
+    },
+    {
+      "id": "nace",
+      "pista": "chiva",
+      "pregunta": "Según la Ley 1891 de 2018, ¿dónde nació Cecilia Vargas Muñoz?",
+      "opciones": [
+        "En Pitalito, Huila",
+        "En Cartagena",
+        "En Medellín",
+        "En Bogotá"
+      ],
+      "correcta": 0,
+      "explicacion": "La ley habla de Pitalito, Huila, como el lugar de su nacimiento y relaciona su homenaje con el bicentenario del municipio.",
+      "fuente": "https://sidn.ramajudicial.gov.co/SIDN/NORMATIVA/TEXTOS_COMPLETOS/7_LEYES/LEYES%202018%20(1877-)/Ley%201891%20de%202018%20(Exalta%20la%20obra%20art%C3%ADstica%20de%20la%20maestra%20Cecilia%20Vargas%20Mu%C3%B1oz).pdf"
+    },
+    {
+      "id": "ley1891",
+      "pista": "chiva",
+      "pregunta": "¿Qué hizo la Ley 1891 de 2018?",
+      "opciones": [
+        "Exaltó la obra de la maestra Cecilia Vargas Muñoz",
+        "Prohibió fabricar chivas de barro",
+        "Declaró feriado el Día del Café",
+        "Creó el Centro Artesanal"
+      ],
+      "correcta": 0,
+      "explicacion": "La Nación se asoció a la exaltación de su obra artística y dispuso honores como una Ruta de la Chiva y sellos postales.",
+      "fuente": "https://sidn.ramajudicial.gov.co/SIDN/NORMATIVA/TEXTOS_COMPLETOS/7_LEYES/LEYES%202018%20(1877-)/Ley%201891%20de%202018%20(Exalta%20la%20obra%20art%C3%ADstica%20de%20la%20maestra%20Cecilia%20Vargas%20Mu%C3%B1oz).pdf"
+    },
+    {
+      "id": "ruta",
+      "pista": "chiva",
+      "pregunta": "¿Qué sitios une «La Ruta de la Chiva»?",
+      "opciones": [
+        "San Agustín, Pitalito, Isnos y Saladoblanco",
+        "Neiva, Garzón, Gigante y Campoalegre",
+        "Bogotá, Tunja, Duitama y Sogamoso",
+        "Cali, Popayán, Pasto e Ipiales"
+      ],
+      "correcta": 0,
+      "explicacion": "La ley dio ese nombre al anillo turístico del sur del Huila que conecta San Agustín, Pitalito, Isnos y Saladoblanco.",
+      "fuente": "https://sidn.ramajudicial.gov.co/SIDN/NORMATIVA/TEXTOS_COMPLETOS/7_LEYES/LEYES%202018%20(1877-)/Ley%201891%20de%202018%20(Exalta%20la%20obra%20art%C3%ADstica%20de%20la%20maestra%20Cecilia%20Vargas%20Mu%C3%B1oz).pdf"
+    },
+    {
+      "id": "denom",
+      "pista": "origen",
+      "pregunta": "¿Qué significa que la «Chiva de Pitalito» tenga denominación de origen?",
+      "opciones": [
+        "Que solo la chiva hecha en la zona, con su arcilla y sus métodos tradicionales, puede llevar ese nombre",
+        "Que se puede fabricar en cualquier país",
+        "Que es un juguete para niños",
+        "Que se vende solo en la feria"
+      ],
+      "correcta": 0,
+      "explicacion": "La denominación protege el nombre: el producto debe hacerse en la zona delimitada con su arcilla y los métodos tradicionales de sus artesanos.",
+      "fuente": "https://sedeelectronica.sic.gov.co/temas/propiedad-industrial/direccion-de-signos-distintivos/denominaciones-de-origen/chiva-de-pitalito"
+    },
+    {
+      "id": "anio",
+      "pista": "origen",
+      "pregunta": "¿En qué año protegió la Superintendencia de Industria y Comercio la denominación de origen «Chiva de Pitalito»?",
+      "opciones": [
+        "En 2017",
+        "En 1957",
+        "En 1985",
+        "En 2024"
+      ],
+      "correcta": 0,
+      "explicacion": "La Resolución 23889 del 8 de mayo de 2017 declaró la protección.",
+      "fuente": "https://sedeelectronica.sic.gov.co/temas/propiedad-industrial/direccion-de-signos-distintivos/denominaciones-de-origen/chiva-de-pitalito"
+    },
+    {
+      "id": "coarpi",
+      "pista": "origen",
+      "pregunta": "¿Quién autoriza el uso de la denominación de origen «Chiva de Pitalito»?",
+      "opciones": [
+        "La Cooperativa Multiactiva de Artesanos de Pitalito (COARPI)",
+        "Cualquier tienda de recuerdos",
+        "La Federación de Cafeteros",
+        "El equipo de fútbol del pueblo"
+      ],
+      "correcta": 0,
+      "explicacion": "La Superintendencia delegó en COARPI la facultad de autorizar el uso de la denominación.",
+      "fuente": "https://tsmnoticias.com/proteccion-a-la-denominacion-de-origen-chiva-de-pitalito/"
+    },
+    {
+      "id": "proceso",
+      "pista": "chiva",
+      "pregunta": "¿Cuál es el orden del trabajo de una chiva de barro?",
+      "opciones": [
+        "Modelar, secar, quemar en el horno y pintar",
+        "Pintar, modelar, secar y quemar",
+        "Quemar, pintar, modelar y secar",
+        "Secar, pintar, quemar y modelar"
+      ],
+      "correcta": 0,
+      "explicacion": "La pieza se modela a mano, se deja secar, se quema en el horno y después se pinta; la carga se pega a la carrocería.",
+      "fuente": "http://pitalitoanac.blogspot.com/2015/04/la-chiva-laboyana.html"
+    },
+    {
+      "id": "partes",
+      "pista": "chiva",
+      "pregunta": "¿Quién suele hacer las partes de una chiva de barro?",
+      "opciones": [
+        "Cada parte suele hacerla un artesano distinto: unos la carrocería y otros la carga",
+        "Una sola máquina en una fábrica",
+        "Los turistas durante la visita",
+        "Siempre un solo artesano sin ayuda"
+      ],
+      "correcta": 0,
+      "explicacion": "Los artesanos de Pitalito suelen especializarse: algunos moldean las carrocerías y otros elaboran la carga de la chiva.",
+      "fuente": "https://noticiasalsur.co/los-secretos-de-la-chiva-de-pitalito/"
+    },
+    {
+      "id": "ashuarte",
+      "pista": "origen",
+      "pregunta": "¿Qué es Ashuarte?",
+      "opciones": [
+        "La Asociación de Artesanos del Sur del Huila",
+        "Una variedad de café",
+        "Un río del Valle de Laboyos",
+        "Un baile del San Juan"
+      ],
+      "correcta": 0,
+      "explicacion": "Ashuarte es la Asociación de Artesanos del Sur del Huila, una de las organizaciones de los artesanos de Pitalito.",
+      "fuente": "https://artesaniasdecolombia.com.co/PortalAC/Noticia/pitalito-poder-artesanal_14795"
+    },
+    {
+      "id": "centro",
+      "pista": "origen",
+      "pregunta": "¿Cuándo abrió el Centro Artesanal de Pitalito?",
+      "opciones": [
+        "En los años 80",
+        "En los años 1800",
+        "En el año 2020",
+        "En los años 30"
+      ],
+      "correcta": 0,
+      "explicacion": "Artesanías de Colombia cuenta que en los años 80 se abrió el Centro Artesanal; en los 90 llegaron asociaciones y cooperativas.",
+      "fuente": "https://artesaniasdecolombia.com.co/PortalAC/Noticia/pitalito-poder-artesanal_14795"
+    },
+    {
+      "id": "chiva",
+      "pista": "chiva",
+      "pregunta": "¿Qué es una «chiva» de barro de Pitalito?",
+      "opciones": [
+        "Una figura de cerámica de un bus de escalera, hecha y pintada a mano",
+        "Un animal de la finca",
+        "Una herramienta para el café",
+        "Un instrumento musical"
+      ],
+      "correcta": 0,
+      "explicacion": "Es una artesanía en cerámica que representa la chiva, el bus de escalera colombiano, con su carga y personajes.",
+      "fuente": "https://origenhuila.com/chiva-de-pitalito/"
+    }
+  ]
+}

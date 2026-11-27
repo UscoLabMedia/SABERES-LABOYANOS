@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Trivia del café · Nivel 1</title>
+<title>Trivia · Nivel</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+SC:wght@700;800&family=Alegreya:ital,wght@0,400;0,600;1,400&family=Alegreya+Sans:wght@400;500;700&display=swap">
@@ -118,25 +118,25 @@ body{background:var(--desk);color:var(--on-desk);font-family:var(--f-ui);overflo
 
 <div class="scrim" id="start">
   <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="sTitle">
-    <p class="kicker">Nivel 1 · El Café</p>
+    <p class="kicker" id="sKicker">Nivel 1 · El Café</p>
     <h2 id="sTitle">Trivia del café</h2>
-    <p>Don Arnulfo pregunta y el grupo responde: 5 preguntas, 20 segundos cada una. Cada acierto suma <b>saberes</b>. Con 3 aciertos o más terminas el Nivel 1.</p>
+    <p id="sIntro">Don Arnulfo pregunta y el grupo responde: 5 preguntas, 20 segundos cada una. Cada acierto suma <b>saberes</b>. Con 3 aciertos o más terminas el Nivel 1.</p>
     <ul>
       <li>Responde con clic o con las teclas <b>1</b> a <b>4</b>.</li>
       <li>Responder rápido y encadenar aciertos da saberes extra.</li>
       <li id="helpInfo"></li>
     </ul>
-    <div class="actions"><a class="btn" href="finca.html">Volver a la finca</a><button class="btn solid" id="goBtn" disabled>Cargando…</button></div>
+    <div class="actions"><a class="btn" id="sVolver" href="finca.html">Volver a la finca</a><button class="btn solid" id="goBtn" disabled>Cargando…</button></div>
   </section>
 </div>
 
 <div class="scrim" id="end" hidden>
   <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="eTitle">
-    <p class="kicker">Trivia del café</p>
+    <p class="kicker" id="eKicker">Trivia del café</p>
     <h2 id="eTitle"></h2>
     <div class="big" id="eArgs"></div>
     <p id="eText"></p>
-    <div class="actions"><a class="btn" href="finca.html">Volver a la finca</a><button class="btn" id="again">Jugar otra vez</button><a class="btn solid" id="endNext" href="index.html#abierto">Volver al libro</a></div>
+    <div class="actions"><a class="btn" id="eVolver" href="finca.html">Volver a la finca</a><button class="btn" id="again">Jugar otra vez</button><a class="btn solid" id="endNext" href="index.html#abierto">Volver al libro</a></div>
   </section>
 </div>
 
@@ -155,6 +155,9 @@ const { S, Sound, cutout, D, texFrom, paperMat, boxMesh, mk } = Papel;
 document.documentElement.classList.toggle('big-text', S.text==='grande');
 let PROG=Guardado.progreso();
 const saveProg=()=>{ Guardado.guardar(PROG); };
+// Nivel: ?nivel=N (por defecto 1). Textos y datos salen de data/nivel{N}.json y data/trivia{N}.json
+const NIV=Math.max(1,Math.min(4,+new URLSearchParams(location.search).get('nivel')||1));
+let CFG={kicker:'Nivel 1 · El Café',titulo:'Trivia del café',saber:'del café',quien:'Don Arnulfo',premio:'Tu personaje gana la mochila tejida y las alpargatas, y se despliega La Alfarería en el libro.',siguiente:'La Alfarería',juegos:['cosecha','oleadas'],nombres:['la cosecha','la defensa del cafetal'],volver:'finca.html'};
 
 /* ---------------- Escenario de papel ---------------- */
 const canvas=$('#scene'); let renderer;
@@ -174,7 +177,8 @@ function cardMesh(cv,h){ const t=texFrom(cv), w=h*cv.width/cv.height, g=new THRE
 [[-3.2,-1.6],[2.8,-1.7]].forEach(([x,z])=>{ const m=cardMesh(cutout(900,380,D.mountains()),2.4); m.position.set(x,0,z); scene.add(m); });
 const sign=(()=>{ const c=mk(640,200), g=c.getContext('2d'); g.fillStyle='#a8743f'; g.fillRect(0,0,640,150); g.strokeStyle='#6b4224'; g.lineWidth=8; g.strokeRect(4,4,632,142);
   g.fillStyle='#6b4224'; g.fillRect(150,150,20,50); g.fillRect(470,150,20,50); g.fillStyle='#fff3dc'; g.font='800 70px "Alegreya SC", serif'; g.textAlign='center'; g.fillText('Trivia del café',320,100); return c; })();
-const signM=cardMesh(cutout(640,200,(g)=>g.drawImage(sign,0,0)),1.1); signM.position.set(0,1.75,-1.2); scene.add(signM);
+let signM=null; const dibujaCartel=txt=>{ const g=sign.getContext('2d'); g.fillStyle='#a8743f'; g.fillRect(8,8,624,134); g.fillStyle='#fff3dc'; g.font='800 62px "Alegreya SC", serif'; g.textAlign='center'; g.fillText(txt,320,100);
+  if (signM) scene.remove(signM); signM=cardMesh(cutout(640,200,(g2)=>g2.drawImage(sign,0,0)),1.1); signM.position.set(0,1.75,-1.2); scene.add(signM); }; dibujaCartel('Trivia del café');
 [-2.6,2.6].forEach(x=>{ const m=cardMesh(cutout(260,300,D.coffee()),1.1); m.position.set(x,0,-.6); scene.add(m); });
 // presentador y jugador
 const host=Muneco.npc('caficultor'); host.position.set(1.15,0,.2); host.rotation.y=-.45; scene.add(host);
@@ -203,9 +207,9 @@ function frame(now){ const dt=Math.min((now-last)/1000,.05); last=now; moodT+=dt
 
 /* ---------------- Trivia ---------------- */
 let DATA=null, PISTAS={}, game=null, tick=null;
-const extraOleadas = (PROG.oleadas||0)>=2 ? 1 : 0;
-const helpsBase = 1 + Math.max(0, Math.min(3, PROG.cosecha||0)) + extraOleadas;
-$('#helpInfo').textContent = `Tienes ${helpsBase} ${helpsBase>1?'comodines':'comodín'}: 1 de base${PROG.cosecha?`, ${PROG.cosecha} por las estrellas de la cosecha`:''}${extraOleadas?' y 1 por defender el cafetal':''}. Úsalos cuando quieras.`;
+let helpsBase=1;
+function calcHelps(){ const [a,b]=CFG.juegos, [na,nb]=CFG.nombres, est=Math.max(0,Math.min(3,PROG[a]||0)), extra=(PROG[b]||0)>=2?1:0; helpsBase=1+est+extra;
+  $('#helpInfo').textContent=`Tienes ${helpsBase} ${helpsBase>1?'comodines':'comodín'}: 1 de base${est?`, ${est} por las estrellas de ${na}`:''}${extra?` y 1 por ${nb}`:''}. Úsalos cuando quieras.`; }
 function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.random()*(i+1)|0; [a[i],a[j]]=[a[j],a[i]]; } return a; }
 function newGame(){
   const qs=shuffle(DATA.preguntas.slice()).slice(0,DATA.porPartida).map(q=>{ const order=shuffle([0,1,2,3]); return {...q, opciones:order.map(i=>q.opciones[i]), correcta:order.indexOf(q.correcta)}; });
@@ -243,12 +247,12 @@ function next(){ mood='idle'; if (game.i<game.qs.length-1){ game.i++; showQ(); }
 $('#nextBtn').addEventListener('click',next);
 function finish(){
   $('#card').hidden=true; const ok=game.results.filter(Boolean).length;
-  $('#eTitle').textContent = ok===game.qs.length ? '¡Las cinco! Sabes de café' : ok>=3 ? 'Buen saber cafetero' : 'Hay que volver al cuaderno';
-  $('#eArgs').innerHTML=`${game.args} <small>saber${game.args===1?'':'es'} del café</small>`;
-  const pasa=ok>=3, primera=pasa && !PROG.nivel1;
-  if (pasa){ PROG.nivel1=true; PROG.etapa=Math.max(PROG.etapa||0,1); }
-  PROG.saberes1=Math.max(PROG.saberes1||0,game.args); PROG.trivia1=Math.max(PROG.trivia1||0,ok); saveProg();
-  $('#eText').textContent=`Acertaste ${ok} de ${game.qs.length}. Mejor racha: ${game.best}. `+(pasa ? (primera?'¡Terminaste el Nivel 1! Tu personaje gana la mochila tejida y las alpargatas, y se despliega La Alfarería en el libro.':'Nivel 1 superado.') : 'Necesitas 3 aciertos para terminar el nivel. Repasa el cuaderno de saberes y vuelve a intentarlo.');
+  $('#eTitle').textContent = ok===game.qs.length ? `¡Las cinco! Sabes ${CFG.saber}` : ok>=3 ? 'Buen saber' : 'Hay que volver al cuaderno';
+  $('#eArgs').innerHTML=`${game.args} <small>saber${game.args===1?'':'es'} ${CFG.saber}</small>`;
+  const pasa=ok>=3, primera=pasa && !PROG['nivel'+NIV];
+  if (pasa){ PROG['nivel'+NIV]=true; PROG.etapa=Math.max(PROG.etapa||0,NIV); }
+  PROG['saberes'+NIV]=Math.max(PROG['saberes'+NIV]||0,game.args); PROG['trivia'+NIV]=Math.max(PROG['trivia'+NIV]||0,ok); saveProg();
+  $('#eText').textContent=`Acertaste ${ok} de ${game.qs.length}. Mejor racha: ${game.best}. `+(pasa ? (primera?`¡Terminaste el Nivel ${NIV}! ${CFG.premio}`:`Nivel ${NIV} superado.`) : 'Necesitas 3 aciertos para terminar el nivel. Repasa el cuaderno de saberes y vuelve a intentarlo.');
   $('#endNext').hidden=!pasa;
   $('#end').hidden=false; $('#again').focus(); }
 $('#again').addEventListener('click',()=>{ $('#end').hidden=true; newGame(); showQ(); });
@@ -266,9 +270,14 @@ $('#goBtn').addEventListener('click',()=>{ $('#start').hidden=true; Sound.init()
 
 (async()=>{
   resize(); requestAnimationFrame(frame);
-  try { const [t,n]=await Promise.all([fetch('data/trivia1.json').then(r=>{ if(!r.ok) throw 0; return r.json(); }), fetch('data/nivel1.json').then(r=>r.ok?r.json():{pistas:[]}).catch(()=>({pistas:[]}))]);
-    DATA=t; (n.pistas||[]).forEach(p=>PISTAS[p.id]=p); }
-  catch(e){ fail('No se pudieron cargar las preguntas (data/trivia1.json). Abre el juego desde un servidor web o desde GitHub Pages.'); return; }
+  try { const [t,n]=await Promise.all([fetch(`data/trivia${NIV}.json`).then(r=>{ if(!r.ok) throw 0; return r.json(); }), fetch(`data/nivel${NIV}.json`).then(r=>r.ok?r.json():{pistas:[]}).catch(()=>({pistas:[]}))]);
+    if (!t.preguntas||!t.preguntas.length) throw 0;
+    DATA=t; (n.pistas||[]).forEach(p=>PISTAS[p.id]=p); if (n.trivia) CFG={...CFG,...n.trivia}; }
+  catch(e){ fail(`No se pudieron cargar las preguntas (data/trivia${NIV}.json). Abre el juego desde un servidor web o desde GitHub Pages.`); return; }
+  document.title=`${CFG.titulo} · Nivel ${NIV}`; $('#sKicker').textContent=CFG.kicker; $('#sTitle').textContent=CFG.titulo; $('#eKicker').textContent=CFG.titulo;
+  $('#sIntro').innerHTML=`${CFG.quien} pregunta y el grupo responde: ${DATA.porPartida} preguntas, ${DATA.segundos} segundos cada una. Cada acierto suma <b>saberes</b>. Con 3 aciertos o más terminas el Nivel ${NIV}.`;
+  $('#sVolver').href=$('#eVolver').href=CFG.volver; $('#sVolver').textContent=$('#eVolver').textContent=NIV===1?'Volver a la finca':'Volver al taller'; calcHelps(); if (NIV!==1) dibujaCartel(CFG.titulo);
+  if (location.hash==='#prueba') window.__t={get game(){ return game; },answer,newGame,showQ,PROG};
   $('#goBtn').disabled=false; $('#goBtn').textContent='Empezar'; $('#goBtn').focus();
 })();
 })();

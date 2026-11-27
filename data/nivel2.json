@@ -1,0 +1,43 @@
+{
+  "nivel": 2,
+  "titulo": "La Alfarería",
+  "trivia": {
+    "kicker": "Nivel 2 · La Alfarería",
+    "titulo": "Trivia del barro",
+    "saber": "del barro",
+    "quien": "La pintora de chivas",
+    "premio": "Tu personaje gana el poncho (o el tocado de flores y la mochila) y se despliega Los Caballos en el libro.",
+    "siguiente": "Los Caballos",
+    "juegos": [
+      "fabrica",
+      "carrera"
+    ],
+    "nombres": [
+      "la fabricación",
+      "la carrera"
+    ],
+    "volver": "finca.html?nivel=2"
+  },
+  "pistas": [
+    {
+      "id": "barro",
+      "titulo": "El barro de Pitalito",
+      "texto": "La arcilla para la cerámica de Pitalito sale principalmente de las minas del Salesiano y de Guachicos. Tiene caolín, feldespato, cuarzo y carbonato de calcio y, mezclada con agua, se vuelve blanda y buena para modelar piezas."
+    },
+    {
+      "id": "chiva",
+      "titulo": "La chiva de barro",
+      "texto": "La chiva de barro la creó la maestra Cecilia Vargas Muñoz, nacida en Pitalito. En 2018 la Ley 1891 exaltó su obra y llamó «La Ruta de la Chiva» al anillo turístico del sur del Huila que une San Agustín, Pitalito, Isnos y Saladoblanco."
+    },
+    {
+      "id": "origen",
+      "titulo": "Solo de Pitalito",
+      "texto": "Desde 2017 la «Chiva de Pitalito» tiene denominación de origen (Resolución 23889 de la Superintendencia de Industria y Comercio): solo la chiva de cerámica hecha con arcilla de la zona y con los métodos tradicionales de sus artesanos puede llevar ese nombre. La Cooperativa Multiactiva de Artesanos de Pitalito (COARPI) autoriza su uso."
+    }
+  ],
+  "cierre": {
+    "titulo": "¡Hay pedidos en el taller!",
+    "texto": "Llegaron encargos de vasijas y chivas. Hay que preparar el barro, modelar, secar, hornear y pintar. Después, a diseñar tu chiva y a correr.",
+    "siguiente": "Ir al taller"
+  }
+}
