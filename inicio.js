@@ -24,7 +24,7 @@ function pantallaLogin(msg){
     <p class="in-err" id="inErr" role="alert">${esc(msg || '')}</p>
     <button class="btn solid" id="inGo">Entrar</button>
     <p class="in-alt">¿No tienes usuario? <button type="button" class="in-link" id="inReg">Crear usuario</button></p>
-    <p class="in-ayuda" id="inOlvide">¿Olvidaste tu contraseña? No se puede recuperar sola: pide ayuda a tu docente.</p></form>`;
+    <p class="in-ayuda" id="inOlvide"><b>¿Olvidaste tu contraseña?</b> No se puede recuperar. Crea un usuario nuevo con otro nombre: tus partidas guardadas no se recuperan y empiezas una partida nueva.</p></form>`;
   $('#inUser').focus(); $('#inReg').onclick = () => pantallaRegistro();
   paso.querySelector('form').onsubmit = async e => { e.preventDefault(); const b = $('#inGo'), err = $('#inErr'); err.textContent = ''; ocupado(b, 'Entrando…');
     try { await C.entrar($('#inUser').value, $('#inPass').value); await pantallaPartidas(); } catch (x) { err.textContent = x.message; libre(b); } };
@@ -33,7 +33,7 @@ function pantallaRegistro(){
   titulo('Crear usuario');
   paso.innerHTML = `<form class="in-form" novalidate>${campo('inUser', 'Usuario (un apodo, sin apellidos)', 'text', 'autocomplete="username" autocapitalize="none" maxlength="20" placeholder="ana_07"')}
     <span class="in-ayuda">3 a 20 letras, números o guion bajo.</span>
-    <p class="in-aviso"><b>Anota tu usuario y tu contraseña.</b> Si la olvidas no se puede recuperar sola: tendrás que pedir ayuda a tu docente. Usa un apodo, no tu nombre completo.</p>
+    <p class="in-aviso"><b>Anota tu usuario y tu contraseña.</b> Si la olvidas no se puede recuperar: tendrás que crear un usuario nuevo y perderás tus partidas guardadas. Usa un apodo, no tu nombre completo.</p>
     ${campo('inPass', 'Contraseña (mínimo 6)', 'password', 'autocomplete="new-password"')}
     ${campo('inPass2', 'Repite la contraseña', 'password', 'autocomplete="new-password"')}
     <p class="in-err" id="inErr" role="alert"></p>
