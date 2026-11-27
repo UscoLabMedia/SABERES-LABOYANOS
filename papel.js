@@ -66,6 +66,14 @@ const Sound = {
     s.buffer=b; f.type='bandpass'; f.frequency.setValueAtTime(400,t); f.frequency.exponentialRampToValueAtTime(1800,t+.5); f.Q.value=.8;
     g.gain.value=.9; s.connect(f); f.connect(g); g.connect(this.fx); s.start(t);
   },
+  // Sonido grabado (archivo en assets/): se descarga una vez y se guarda; si falla, suena 'alterno'
+  sonar(url, alterno){
+    if (!this.ctx) return; const c=this.ctx, B=this._buf||(this._buf={});
+    const go=b=>{ const s=c.createBufferSource(); s.buffer=b; s.connect(this.fx); s.start(); };
+    if (B[url] instanceof AudioBuffer) return go(B[url]);
+    (B[url]=B[url]||fetch(url).then(r=>{ if (!r.ok) throw 0; return r.arrayBuffer(); }).then(a=>new Promise((ok,no)=>c.decodeAudioData(a,ok,no))))
+      .then(b=>{ B[url]=b; go(b); }).catch(()=>{ delete B[url]; alterno&&alterno.call(this); });
+  },
   pop(i=0){
     if (!this.ctx) return; const c=this.ctx, t=c.currentTime, o=c.createOscillator(), g=c.createGain();
     o.type='sine'; o.frequency.setValueAtTime(520+i*40,t); o.frequency.exponentialRampToValueAtTime(180,t+.12);

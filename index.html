@@ -317,6 +317,7 @@ kbd{font-family:var(--f-ui);font-weight:700;font-size:.8rem;border:1px solid var
     <h2 id="credTitle">Créditos</h2>
     <p>Un recorrido por la identidad laboyana: el café, los caballos, la música y la danza, y la alfarería del Valle de Laboyos.</p>
     <p>Prototipo de pantalla de inicio. Escena hecha con Three.js; piezas de papel, texturas y música generadas por código, sin imágenes externas. Tipografías Alegreya, Alegreya SC y Alegreya Sans.</p>
+    <p>Sonido de abrir el libro: «Book opening», de soumages (Pixabay, licencia de contenido de Pixabay).</p>
     <p>Las fotografías históricas y los saberes de la comunidad se sumarán desde la Torre de los saberes, con su ficha y su cesión de derechos.</p>
     <div class="sheet-actions"><span></span><button class="btn solid" data-close>Cerrar</button></div>
   </section>
@@ -633,7 +634,7 @@ let last=clock(), popIdx=0;
 
 function openBook(){
   if (state!=='closed') return;
-  Sound.init(); Sound.apply(); Sound.whoosh(); Sound.startMusic();
+  Sound.init(); Sound.apply(); Sound.sonar('assets/libro-abrir.mp3',Sound.whoosh); Sound.startMusic();
   state='opening'; openT0=clock();
   $('#intro').classList.add('gone'); $('#intro').setAttribute('aria-hidden','true');
   goTo(openView(), 2.6);
