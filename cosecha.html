@@ -588,6 +588,7 @@ function labels(){
   const techo=Math.max(0,...['.clock','#orders','.tools'].map(q=>{ const e=document.querySelector(q); return e?e.getBoundingClientRect().bottom:0; }))+4;
   const puestos=[]; ST.filter(s=>s.el).sort((a,b)=>b.ly-a.ly).forEach(s=>{ const w=s.el.offsetWidth, h=s.el.offsetHeight; let y=s.ly, baja=false;
     for (let k=0;k<8;k++){ const o=puestos.find(q=>Math.abs(q.x-s.lx)<(q.w+w)/2+2 && y>q.y-q.h-2 && y-h<q.y+2); if (!o) break; y=baja?o.y+h+3:o.y-o.h-3; if (!baja && y-h<techo){ baja=true; y=s.ly; } }
+    if (y-h<techo) y=techo+h;   // nunca debajo del HUD de arriba
     puestos.push({x:s.lx,y,w,h}); s.el.style.left=s.lx+'px'; s.el.style.top=y+'px'; });
   players.forEach(p=>{ const [x,y]=project(p.x,0,p.z+.35); p.el.style.left=x+'px'; p.el.style.top=y+'px';
     p.el.textContent=p.nombre+(p.slot===mySlot()&&players.length>1?' (tú)':'')+(p.carry?` · ${NAMES[p.carry.type]}${p.carry.type==='canasto'?` ${p.carry.n}/${R.canasto}`:''} · ${qual(p.carry)} pts`:''); });
