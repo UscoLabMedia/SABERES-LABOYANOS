@@ -622,7 +622,9 @@ const ease=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
 function resize(){ const w=innerWidth,h=innerHeight; renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix(); applyQuality();
   if (!tween.active){ const v = state==='closed'?closedView(): state==='focus'&&focusKey?focusView(focusKey):openView(); camState.pos.copy(v.pos); camState.look.copy(v.look); } }
 function applyQuality(){ const dpr=Math.min(devicePixelRatio||1,2); renderer.setPixelRatio(S.quality==='alta'?dpr:S.quality==='media'?Math.min(dpr,1.5):1);
-  lamp.castShadow=!!S.shadows && S.quality!=='baja'; lamp.shadow.mapSize.setScalar(S.quality==='alta'?2048:1024);
+  const tipo=S.quality==='alta'?THREE.PCFSoftShadowMap:THREE.BasicShadowMap;   // alta: bordes suaves; media: una sola muestra (mucho más liviana)
+  if (renderer.shadowMap.type!==tipo){ renderer.shadowMap.type=tipo; scene.traverse(o=>{ [].concat(o.material||[]).forEach(m=>m.needsUpdate=true); }); }
+  lamp.castShadow=!!S.shadows && S.quality!=='baja'; lamp.shadow.mapSize.setScalar(2048);
   if (lamp.shadow.map){ lamp.shadow.map.dispose(); lamp.shadow.map=null; } }
 
 /* ---------------- Estado y bucle ---------------- */
