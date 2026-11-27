@@ -283,6 +283,15 @@ let ground;
 
 /* ---------------- Piezas que se despliegan cerca del jugador ---------------- */
 const pops=[]; const colliders=[]; // {x,z,r} o {x0,x1,z0,z1}
+// Techos que se vuelven casi transparentes cuando el personaje está debajo o cuando lo taparían desde la cámara.
+const roofs=[]; const _bx=new THREE.Box3(), _pv=new THREE.Vector3();
+function techos(dt){ if (!player) return; camera.updateMatrixWorld();
+  roofs.forEach(r=>{ const dx=Math.abs(player.x-r.x), dz=Math.abs(player.z-r.z), debajo=dx<r.w/2+.5 && dz<r.d/2+.5; let tapa=false;
+    if (!debajo && player.z<r.z && dx<r.w/2+1){            // el personaje queda detrás: ¿el techo lo cubre en pantalla?
+      r.mesh.updateWorldMatrix(true,false); _bx.setFromObject(r.mesh); let x0=9,x1=-9,y0=9,y1=-9;
+      for (let i=0;i<8;i++){ _pv.set(i&1?_bx.max.x:_bx.min.x, i&2?_bx.max.y:_bx.min.y, i&4?_bx.max.z:_bx.min.z).project(camera); x0=Math.min(x0,_pv.x); x1=Math.max(x1,_pv.x); y0=Math.min(y0,_pv.y); y1=Math.max(y1,_pv.y); }
+      _pv.set(player.x,1.1,player.z).project(camera); tapa=_pv.x>x0 && _pv.x<x1 && _pv.y>y0 && _pv.y<y1; }
+    r.op+=((debajo||tapa?.18:1)-r.op)*Math.min(1,dt*(S.motion?60:8)); const m=r.mesh.material; m.opacity=r.op; m.depthWrite=r.op>.6; }); }
 function popItem(obj,kind,x,z,{radius=9,always=false}={}){ const p={obj,kind,x,z,radius,always,val:0,vel:0,target:0}; pops.push(p); applyPop(p); return p; }
 function applyPop(p){ p.obj.visible = p.val>.015 || p.target>0;
   if (p.kind==='rot') p.obj.rotation.x=-Math.PI/2*(1-p.val); else p.obj.scale.y=Math.max(.02,p.val); }
@@ -299,7 +308,7 @@ function buildFinca(){
   // casa de la finca
   { const h=new THREE.Group(), wt=wallTex('finca'), wm=paperMat('#f3ecdc',wt), plain=paperMat('#f3ecdc');
     const body=boxMesh(3.6,1.5,2.2,[wm,wm,plain,plain,wm,wm]); h.add(body);
-    const roof=hipRoof(4.4,3.0,1.2,new THREE.MeshStandardMaterial({map:tiles,roughness:.9})); roof.position.y=1.5; h.add(roof);
+    const roof=hipRoof(4.4,3.0,1.2,new THREE.MeshStandardMaterial({map:tiles,roughness:.9,transparent:true})); roof.position.y=1.5; h.add(roof); roofs.push({mesh:roof,x:SPOTS.house.x,z:SPOTS.house.z,w:4.4,d:3.0,op:1});
     const step=boxMesh(4.2,.12,3.0,paperMat('#c9b48e')); h.add(step);
     addBuild(h,SPOTS.house.x,SPOTS.house.z); box(-2.1,2.1,-2.1,.6); }
   addCard(cut('sign-casa',260,220,F.sign('Casa')),.9,2.6,1.6);
@@ -319,7 +328,7 @@ function buildFinca(){
   { const b=new THREE.Group(), wood=paperMat('#8a5a32');
     const floor=boxMesh(5.2,.14,4.2,paperMat('#b7a27c')); b.add(floor);
     [[-2.4,-1.9],[2.4,-1.9],[-2.4,1.9],[2.4,1.9]].forEach(([x,z])=>{ const p=boxMesh(.16,2.2,.16,wood); p.position.set(x,0,z); b.add(p); });
-    const roof=hipRoof(6,5,1.1,new THREE.MeshStandardMaterial({map:tiles,roughness:.9})); roof.position.y=2.2; b.add(roof);
+    const roof=hipRoof(6,5,1.1,new THREE.MeshStandardMaterial({map:tiles,roughness:.9,transparent:true})); roof.position.y=2.2; b.add(roof); roofs.push({mesh:roof,x:SPOTS.benef.x,z:SPOTS.benef.z,w:6,d:5,op:1});
     const tankM=paperMat('#8fa3ab'); [-1.4,0,1.4].forEach(x=>{ const t=boxMesh(1.1,.7,1.1,tankM); t.position.set(x,.14,-1.2); b.add(t); });
     addBuild(b,SPOTS.benef.x,SPOTS.benef.z); box(SPOTS.benef.x-2.6,SPOTS.benef.x+2.6,SPOTS.benef.z-2.1,SPOTS.benef.z-.4); }
   addCard(cut('pulper',300,320,F.pulper()),1.3,SPOTS.benef.x+.4,SPOTS.benef.z+.6,{collide:.5});
@@ -521,6 +530,7 @@ function frame(){
     tmp.set(player.x,0,player.z).add(off); camPos.lerp(tmp, S.motion?1:Math.min(1,dt*3)); camLook.lerp(new THREE.Vector3(player.x,.6,player.z-1.2), S.motion?1:Math.min(1,dt*3));
     camera.position.copy(camPos).add(new THREE.Vector3(shake,0,0)); camera.lookAt(camLook);
     sun.position.set(player.x-7,14,player.z+6); sun.target.position.set(player.x,0,player.z); }
+  techos(dt);
   renderer.render(scene,camera); requestAnimationFrame(frame);
 }
 
@@ -544,7 +554,7 @@ async function boot(){
   if (collected.size>=LEVEL.pistas.length){ finished=true; $('#introGames').hidden=false; $('#introGameList').innerHTML=juegosHTML(PROG); $('#startBtn').textContent='Explorar la finca'; }
   $('#introText').textContent=finished?'La finca ya te contó sus saberes. Puedes volver a recorrerla o ir directo a un minijuego.':LEVEL.objetivo; $('#startBtn').disabled=false; $('#startBtn').focus();
   syncHUD(); resize(); camPos.copy(camOffset()).add(new THREE.Vector3(player.x,0,player.z)); camLook.set(player.x,.6,player.z-1.2);
-  if (location.hash==='#prueba'){ start(); } // atajo de prueba
+  if (location.hash==='#prueba'){ start(); window.__f={player:()=>player,roofs,camera,SPOTS}; } // atajo de prueba
   requestAnimationFrame(frame);
 }
 boot();
