@@ -23,7 +23,14 @@ const Sound = {
     this.mus = c.createGain(); this.mus.connect(this.master);
     this.fx = c.createGain(); this.fx.connect(this.master);
     this.apply();
+    // Al volver a la app (o tocar la pantalla) el navegador puede dejar el audio en pausa: se reanuda.
+    const re=()=>this.reanudar();
+    document.addEventListener('visibilitychange',()=>{ if (!document.hidden) re(); });
+    addEventListener('pageshow',re); addEventListener('focus',re);
+    ['pointerdown','touchend','keydown'].forEach(ev=>addEventListener(ev,re,{passive:true,capture:true}));
+    c.onstatechange=()=>{ if (c.state==='interrupted') re(); };
   },
+  reanudar(){ const c=this.ctx; if (c && c.state!=='running' && c.state!=='closed') c.resume().catch(()=>{}); },
   apply(){
     if (!this.ctx) return;
     this.master.gain.value = S.mute ? 0 : 1;

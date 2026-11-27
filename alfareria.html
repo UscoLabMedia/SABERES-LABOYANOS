@@ -121,6 +121,9 @@ kbd{font-family:var(--f-ui);font-weight:700;font-size:.78rem;border:1px solid va
   .clock .time{font-size:1.5rem}
   .banner{margin-bottom:120px;font-size:1rem}
 }
+/* Botones táctiles: mantener pulsado no debe seleccionar el texto ni abrir menús */
+.touch,.touch *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+.touch button{touch-action:manipulation}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -198,6 +201,7 @@ kbd{font-family:var(--f-ui);font-weight:700;font-size:.78rem;border:1px solid va
 <script src="muneco.js"></script>
 <script src="red.js"></script>
 <script>
+addEventListener('contextmenu',e=>{ if (e.target.closest&&e.target.closest('.touch')) e.preventDefault(); });
 (() => {
 'use strict';
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
