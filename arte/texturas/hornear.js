@@ -1,5 +1,5 @@
 // Hornea las texturas del libro y la mesa y las guarda en assets/. Uso (desde la raíz del repo):
-//   node arte/texturas/hornear.js [azul|miel|nogal]
+//   node arte/texturas/hornear.js [azul|miel|nogal|carbon]
 // Necesita Playwright (npm i playwright) y un navegador. Todo lo genera el código; no hay imágenes externas.
 const { chromium } = require('playwright'); const fs = require('fs'), path = require('path');
 (async () => {

@@ -15,7 +15,7 @@ function normalDe(h,W,H,fuerza){const c=document.createElement('canvas');c.width
  for(let y=0;y<H;y++)for(let x=0;x<W;x++){const l=h[y*W+(x+W-1)%W],r=h[y*W+(x+1)%W],u=h[((y+H-1)%H)*W+x],d=h[((y+1)%H)*W+x];let nx=(l-r)*fuerza,ny=(u-d)*fuerza,nz=1;const k=1/Math.hypot(nx,ny,nz);const i=(y*W+x)*4;im.data[i]=(nx*k*.5+.5)*255;im.data[i+1]=(ny*k*.5+.5)*255;im.data[i+2]=(nz*k*.5+.5)*255;im.data[i+3]=255;}
  g.putImageData(im,0,0);return c;}
 /* ---------- MADERA: tablones con veta, nudos, rayones y barniz ---------- */
-const PAL={azul:{tin:[52,66,76],v:6,mul:1.05},miel:{tin:[150,104,58],v:14,mul:1.0},nogal:{tin:[60,37,23],v:6,mul:.98}};let pal=PAL.azul;
+const PAL={azul:{tin:[52,66,76],v:6,mul:1.05},miel:{tin:[150,104,58],v:14,mul:1.0},nogal:{tin:[60,37,23],v:6,mul:.98},carbon:{tin:[46,46,49],v:5,mul:1.0}};let pal=PAL.azul;
 function madera(S=2048,tablones=12){const W=S,H=S,col=new Uint8ClampedArray(W*H*4),alt=new Float32Array(W*H),rug=new Uint8ClampedArray(W*H*4);const th=H/tablones;
  for(let k=0;k<tablones;k++){const y0=Math.round(k*th),y1=Math.round((k+1)*th),seed=k*37.7+3.1,tono=.82+R()*.36,tin=[pal.tin[0]+R()*pal.v,pal.tin[1]+R()*pal.v*.6,pal.tin[2]+R()*pal.v*.5];
   const nudos=[];if(R()<.4)nudos.push({x:W*(.1+R()*.8),y:th*(.3+R()*.4),r:th*(.05+R()*.05)});

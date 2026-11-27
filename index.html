@@ -349,8 +349,8 @@ renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1
 renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 
 const scene=new THREE.Scene();
-scene.background=new THREE.Color('#10161a');
-scene.fog=new THREE.Fog('#10161a', 28, 70);
+scene.background=new THREE.Color('#111113');
+scene.fog=new THREE.Fog('#111113', 28, 70);
 const camera=new THREE.PerspectiveCamera(32, 1, .1, 200);
 
 scene.add(new THREE.HemisphereLight('#ffe9c8','#3a2414',.55));
@@ -367,7 +367,7 @@ const cargarTex=(url,{color=false,rep,ok,fallo}={})=>{ const t=TL.load(url,ok,un
 
 // Mesa: madera de tablones, en un tono frío que contrasta con el libro rojo
 (() => { const mat=new THREE.MeshStandardMaterial({roughness:.78}); mat.color.set('#2d3a42').convertSRGBToLinear();   // r128: los colores hexadecimales son lineales
-  mat.map=cargarTex('assets/mesa-color.jpg',{color:true,ok:()=>{ mat.color.set('#ffffff'); mat.needsUpdate=true; },fallo:()=>{ mat.map=mat.normalMap=mat.roughnessMap=null; mat.roughness=.78; mat.color.set('#34444e').convertSRGBToLinear(); mat.needsUpdate=true; }});
+  mat.map=cargarTex('assets/mesa-color.jpg',{color:true,ok:()=>{ mat.color.set('#ffffff'); mat.needsUpdate=true; },fallo:()=>{ mat.map=mat.normalMap=mat.roughnessMap=null; mat.roughness=.78; mat.color.set('#2c2c2f').convertSRGBToLinear(); mat.needsUpdate=true; }});
   if (!baja){ mat.normalMap=cargarTex('assets/mesa-normal.jpg'); mat.normalScale.set(.9,.9); mat.roughnessMap=cargarTex('assets/mesa-rug.jpg'); mat.roughness=1; }
   const m=new THREE.Mesh(new THREE.PlaneGeometry(52,52), mat);
   m.rotation.x=-Math.PI/2; m.receiveShadow=true; scene.add(m); })();
