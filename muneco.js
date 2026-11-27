@@ -1,5 +1,5 @@
 /* muneco.js — muñecos de papel plegado en 3D para "Saberes de Laboyos".
-   Muneco.jugador(etapa, fem): 0 inicio · 1 café · 2 caballos · 3 música y danza · 4 alfarería
+   Muneco.jugador(etapa, fem): 0 inicio · 1 café · 2 alfarería · 3 caballos · 4 música y danza
    Muneco.npc('caficultor' | 'recolectora' | 'catadora')
    Muneco.animar(modelo, dt, caminando, quieto) y Muneco.retrato(fnQueConstruye) -> dataURL.
    Requiere Three.js r128. */
@@ -123,25 +123,26 @@ function neckScarf(body){ const ring=piece(new THREE.TorusGeometry(.075,.03,5,10
 
 /* Jugador: 0 inicio · 1 café · 2 caballos · 3 música y danza · 4 alfarería */
 function buildMuneco(stage, fem=false){
+  const alf=stage>=2, cab=stage>=3, mus=stage>=4;   // alfarería: poncho / flores · caballos: sombrero y pañuelo · música y danza: traje de fiesta
   const o={ legMat: mat('#ffffff',DENIM), shoe: stage>=1?'#e9dcc0':'#f4f4f0', sole: stage>=1?'#5a3a22':RED };
-  if (!fem){ Object.assign(o,{ torso: stage>=3?'#f6f1e4':'#2f8a7a', shortSleeve: stage===0, cap: stage<2?RED:null, hatOn: stage>=2 });
-    if (stage>=4) o.legMat=mat('#efe8d8'); }
-  else { Object.assign(o,{ torso: stage>=3?'#f6f1e4':'#7b4fb0', torsoW:[.112,.128], shortSleeve: stage===0, lashes:true, earrings:true,
-      hairStyle: stage>=3?'braid':'ponytail', cap: stage<2?'#f2c94c':null, hatOn: stage>=2 && stage<4, flowers: stage>=4 });
-    if (stage<3){ o.skirt='short'; o.legMat=mat('#2a2a30'); }
+  if (!fem){ Object.assign(o,{ torso: mus?'#f6f1e4':'#2f8a7a', shortSleeve: stage===0, cap: stage<3?RED:null, hatOn: cab });
+    if (alf) o.legMat=mat('#efe8d8'); }
+  else { Object.assign(o,{ torso: mus?'#f6f1e4':'#7b4fb0', torsoW:[.112,.128], shortSleeve: stage===0, lashes:true, earrings:true,
+      hairStyle: mus?'braid':'ponytail', cap: stage<2?'#f2c94c':null, hatOn: false, flowers: alf });
+    if (!mus){ o.skirt='short'; o.legMat=mat('#2a2a30'); }
     else { o.skirt='sanjuanera'; o.collar=true; o.puff=true; o.legMat=mat(SKIN); } }
   const m=base(o), body=m.userData.body;
-  if (!fem && stage>=3){ const f=piece(new THREE.CylinderGeometry(.158,.158,.06,6), mat(RED)); f.position.y=.52; body.add(f); }
-  if (fem && stage>=3){ const c=piece(new THREE.CylinderGeometry(.13,.135,.05,6), mat(RED)); c.position.y=.5; body.add(c); }
-  if (stage>=2){ if (fem && stage>=3){ const r=piece(new THREE.TorusGeometry(.06,.02,5,10), mat(RED)); r.rotation.x=Math.PI/2; r.position.y=.83; body.add(r); } else neckScarf(body); }
+  if (!fem && mus){ const f=piece(new THREE.CylinderGeometry(.158,.158,.06,6), mat(RED)); f.position.y=.52; body.add(f); }
+  if (fem && mus){ const c=piece(new THREE.CylinderGeometry(.13,.135,.05,6), mat(RED)); c.position.y=.5; body.add(c); }
+  if (cab){ if (fem && mus){ const r=piece(new THREE.TorusGeometry(.06,.02,5,10), mat(RED)); r.rotation.x=Math.PI/2; r.position.y=.83; body.add(r); } else neckScarf(body); }
   if (stage===0){ const bag=piece(new THREE.BoxGeometry(.22,.26,.1), mat('#e0a43a')); bag.position.set(0,.66,-.19); body.add(bag);
     const flap=piece(new THREE.BoxGeometry(.225,.1,.105), mat('#c07f22')); flap.position.set(0,.76,-.19); body.add(flap); }
-  else if (fem && stage>=4){ // sombrero a la espalda y mochila al costado con cordón café
-    const h=hat(); h.rotation.x=1.35; h.position.set(0,.68,-.22); body.add(h);
+  else if (fem && alf){ // mochila al costado con cordón café; el sombrero (caballos) va a la espalda
+    if (cab){ const h=hat(); h.rotation.x=1.35; h.position.set(0,.68,-.22); body.add(h); }
     const cord=piece(new THREE.BoxGeometry(.018,.46,.012), mat('#5a3a22'),{folds:false}); cord.position.set(.02,.64,.14); cord.rotation.z=.62; body.add(cord);
     const mo=mochila(); mo.rotation.y=Math.PI/2; mo.position.set(.2,.46,.02); mo.scale.setScalar(.85); body.add(mo); }
   else { const mo=mochila(); mo.position.set(0,.62,-.185); body.add(mo); }
-  if (!fem && stage>=4){ const pm=mat('#ffffff',PONCHO), grp=new THREE.Group(); grp.position.set(-.075,.81,0); body.add(grp);
+  if (!fem && alf){ const pm=mat('#ffffff',PONCHO), grp=new THREE.Group(); grp.position.set(-.075,.81,0); body.add(grp);
     grp.add(piece(new THREE.BoxGeometry(.13,.016,.29), pm,{folds:false}));
     [[1,.3],[-1,.24]].forEach(([s,len])=>{ const h=piece(new THREE.BoxGeometry(.13,len,.014), pm,{folds:false}); h.position.set(0,-len/2,s*.142); h.rotation.x=s*-.1; grp.add(h);
       for(let i=0;i<5;i++){ const f=new THREE.Mesh(new THREE.BoxGeometry(.012,.04,.008), mat('#2a1c11')); f.position.set(-.05+i*.025,-len-.015,s*(.142+len*.1)); grp.add(f); } }); }

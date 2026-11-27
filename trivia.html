@@ -248,7 +248,7 @@ function finish(){
   const pasa=ok>=3, primera=pasa && !PROG.nivel1;
   if (pasa){ PROG.nivel1=true; PROG.etapa=Math.max(PROG.etapa||0,1); }
   PROG.saberes1=Math.max(PROG.saberes1||0,game.args); PROG.trivia1=Math.max(PROG.trivia1||0,ok); saveProg();
-  $('#eText').textContent=`Acertaste ${ok} de ${game.qs.length}. Mejor racha: ${game.best}. `+(pasa ? (primera?'¡Terminaste el Nivel 1! Tu personaje gana la mochila tejida y las alpargatas, y se despliega Los Caballos en el libro.':'Nivel 1 superado.') : 'Necesitas 3 aciertos para terminar el nivel. Repasa el cuaderno de saberes y vuelve a intentarlo.');
+  $('#eText').textContent=`Acertaste ${ok} de ${game.qs.length}. Mejor racha: ${game.best}. `+(pasa ? (primera?'¡Terminaste el Nivel 1! Tu personaje gana la mochila tejida y las alpargatas, y se despliega La Alfarería en el libro.':'Nivel 1 superado.') : 'Necesitas 3 aciertos para terminar el nivel. Repasa el cuaderno de saberes y vuelve a intentarlo.');
   $('#endNext').hidden=!pasa;
   $('#end').hidden=false; $('#again').focus(); }
 $('#again').addEventListener('click',()=>{ $('#end').hidden=true; newGame(); showQ(); });

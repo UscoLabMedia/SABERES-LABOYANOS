@@ -400,12 +400,12 @@ const PLACES = {
   finca:  {x:-3.4, z:-1.6, label:'Finca cafetera', level:'Nivel 1 · El Café', open:true,
     text:'Recorre la finca, conversa con recolectores y secadores, y encuentra tres pistas: la altura y el microclima del Valle de Laboyos, la cosecha selectiva y el beneficio, y cómo se reconoce un café especial.',
     chips:['3 pistas','La cosecha','Defensa del cafetal','Trivia']},
-  caballos:{x:3.7, z:-2.4, label:'Criadero de caballos', level:'Nivel 2 · Los Caballos',
-    text:'La tradición caballista laboyana: el cuidado del caballo, el paso, las cabalgatas y los oficios que las rodean.', chips:['Pistas','Minijuego','Trivia'], need:'El Café'},
-  tarima: {x:-1.8, z:2.2, label:'Tarima de música y danza', level:'Nivel 3 · Música y Danza',
+  caballos:{x:3.7, z:-2.4, label:'Criadero de caballos', level:'Nivel 3 · Los Caballos',
+    text:'La tradición caballista laboyana: el cuidado del caballo, el paso, las cabalgatas y los oficios que las rodean.', chips:['Pistas','Minijuego','Trivia'], need:'La Alfarería'},
+  tarima: {x:-1.8, z:2.2, label:'Tarima de música y danza', level:'Nivel 4 · Música y Danza',
     text:'El bambuco y el sanjuanero, los tiples, las bandas y las fiestas de San Juan y San Pedro.', chips:['Pistas','Minijuego','Trivia'], need:'Los Caballos'},
-  taller: {x:4.2, z:2.2, label:'Taller de alfarería', level:'Nivel 4 · La Alfarería',
-    text:'El barro, el torno y el horno: el oficio que da forma a las vasijas y a las chivas de cerámica laboyanas.', chips:['Pistas','Minijuego','Trivia'], need:'Música y Danza'},
+  taller: {x:4.2, z:2.2, label:'Taller de alfarería', level:'Nivel 2 · La Alfarería',
+    text:'El barro, el torno y el horno: el oficio que da forma a las vasijas y a las chivas de cerámica laboyanas.', chips:['Pistas','Fabricación','Carrera de chivas','Trivia'], need:'El Café'},
   torre:  {x:.15, z:-.2, label:'Torre de los saberes', level:'Sala de la comunidad',
     text:'Aquí estarán los tableros temáticos y el archivo de fotografías históricas. Cada tablero se abre cuando superas su nivel, y el moderador cuida lo que se publica.', chips:['Tableros por tema','Archivo fotográfico','Borradores sin conexión'], need:'El Café'},
 };
@@ -747,7 +747,7 @@ function juegosHTML(P){ const st=n=>n==null?'sin jugar':'★'.repeat(n)+'☆'.re
     .map(([h,t,d])=>`<a href="${h}"><b>${t}</b><span>${d}</span></a>`).join(''); }
 /* ---------------- Perfil y progreso ---------------- */
 let PROG=Guardado.progreso();
-const LEVELS=[['El Café','nivel1'],['Los Caballos','nivel2'],['Música y Danza','nivel3'],['La Alfarería','nivel4']];
+const LEVELS=[['El Café','nivel1'],['La Alfarería','nivel2'],['Los Caballos','nivel3'],['Música y Danza','nivel4']];
 function syncProgress(){ PROG=Guardado.progreso(); const done=LEVELS.filter(l=>PROG[l[1]]).length;
   $('#progTitle').textContent=`RECORRIDO · ${done} DE 4`;
   $('#progList').innerHTML=LEVELS.map(([n,k],i)=>{ const ok=!!PROG[k], avail=i===0||!!PROG[LEVELS[i-1][1]];
@@ -787,6 +787,7 @@ async function boot(){
   if (location.hash==='#abierto'){ openBook(); openT0-=10; pops.forEach(p=>{ p.val=p.target; p.started=true; applyPop(p); }); tween.active=false; const o=openView(); camState.pos.copy(o.pos); camState.look.copy(o.look); }
 }
 addEventListener('resize', resize);
+if (location.hash==='#prueba') window.__i={PLACES,LEVELS,juegosHTML,syncProgress,get PROG(){ return PROG; }};   // gancho de prueba
 boot();
 })();
 </script>

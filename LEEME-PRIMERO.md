@@ -18,7 +18,7 @@ Videojuego web educativo y cultural sobre la identidad de **Pitalito (Valle de L
 
 ## 2. Diseño decidido (no reabrir sin preguntar)
 
-**Niveles (ejes):** 1 El Café · 2 Los Caballos · 3 La Música y la Danza · 4 La Alfarería.
+**Niveles (ejes):** 1 El Café · 2 La Alfarería · 3 Los Caballos · 4 La Música y la Danza (festival, baile y reinado, etapa final). Orden cambiado el 27 de nov de 2026 por decisión del usuario.
 
 **Ciclo de cada nivel:**
 1. Exploración tranquila (*cozy*): escenario pop-up, 2–3 personajes con diálogos breves y 3 pistas en cápsulas.
@@ -41,9 +41,9 @@ Videojuego web educativo y cultural sobre la identidad de **Pitalito (Valle de L
 |---|---|
 | 0 Inicio | Gorra, camiseta, jean, tenis, morral |
 | 1 Café | Mochila tejida a la espalda y alpargatas |
-| 2 Caballos | Sombrero de paja y pañuelo rojo alrededor del cuello |
-| 3 Música y Danza | Él: camisa blanca y faja roja. Ella: traje de sanjuanera (blusa blanca con cuello bandeja de encaje, falda ancha con flores) |
-| 4 Alfarería | Él: poncho al hombro. Ella: tocado de flores, sombrero a la espalda y mochila al costado (para que no choque con el sombrero) |
+| 2 Alfarería | Él: poncho al hombro. Ella: tocado de flores y mochila al costado |
+| 3 Caballos | Sombrero de paja y pañuelo rojo alrededor del cuello (ella lo lleva a la espalda por las flores) |
+| 4 Música y Danza | Él: camisa blanca y faja roja. Ella: traje de sanjuanera (blusa blanca con cuello bandeja de encaje, falda ancha con flores) |
 
 - Los rojos del muñeco deben ser intensos (`#c8101e`).
 - Los NPC usan el mismo muñeco, más genéricos y sin prendas de premio: Don Arnulfo (caficultor), Doña Rosa (recolectora) y Lucía (catadora).
@@ -71,7 +71,7 @@ Todo el Nivel 1 está jugable, de principio a fin:
 | `oleadas.html` | Defensa del cafetal (con **ratón**: clic o mantener para golpear hacia el puntero): 12 cafetos, 5 oleadas de broca, roya (salta al vecino) y ojo de gallo (con lluvia). Ataque con palo. Reglas en `FOE`, `WAVES` y `ATK`. |
 | `trivia.html` | 5 preguntas al azar de `data/trivia1.json`, 20 s cada una. Comodines 50/50, +10 s y Cuaderno. Saberes por acierto, rapidez y racha. |
 | `papel.js` | Utilidades compartidas: ajustes (`S`), sonido sintetizado (`Sound`), recortes troquelados (`cutout`), dibujos (`D`), texturas, cajas y techos. |
-| `muneco.js` | `Muneco.jugador(etapa, fem)`, `Muneco.npc(tipo)`, `Muneco.animar()` y `Muneco.retrato()`. |
+| `muneco.js` | `Muneco.jugador(etapa, fem)` (etapa = niveles superados en orden), `Muneco.npc(tipo)`, `Muneco.animar()` y `Muneco.retrato()`. |
 | `guardado.js` | Cuentas y partidas con Supabase Auth. Para los minijuegos la API no cambia: `Guardado.progreso()`, `.guardar()`, `.perfil()`, `.actualizarPerfil({avatar})`. Cuentas en `Guardado.cuenta`. Ver `docs/guardado.md`. |
 | `inicio.js` | Pantalla de entrada: usuario y contraseña, crear usuario, continuar o nueva partida, borrar partidas y borrar cuenta. |
 | `red.js` | Salas en red con PeerJS: `Red.sala(contenedor, opciones)` arma la pantalla de sala (Solo, Crear sala, Unirme). Modelo: el anfitrión simula; los invitados envían controles y reciben el estado a 15 Hz. |
@@ -120,7 +120,7 @@ Todo el Nivel 1 está jugable, de principio a fin:
    - Traje de la sanjuanera.
    - Nombres del mapa del libro.
 3. **Llevar el personaje 3D al libro (`index.html`):** los muñecos del mapa siguen siendo recortes planos. Mostrar el atuendo ganado.
-4. **Nivel 2: Los Caballos**, con el mismo ciclo: exploración, minijuego de oficio, oleadas con amenazas propias y trivia. Reusar `muneco.js`, `red.js` y `guardado.js`, y el patrón de `cosecha.html` y `oleadas.html` (snapshot del anfitrión y `clientFrame` en los invitados).
+4. **Nivel 2: La Alfarería** (diseño en `docs/superpowers/specs/2026-11-27-nivel2-alfareria-design.md`, plan en `docs/superpowers/plans/`, datos en `docs/nivel2-fuentes.md`). Luego **Nivel 3: Los Caballos**, con el mismo ciclo: exploración, minijuego de oficio, oleadas con amenazas propias y trivia. Reusar `muneco.js`, `red.js` y `guardado.js`, y el patrón de `cosecha.html` y `oleadas.html` (snapshot del anfitrión y `clientFrame` en los invitados).
 5. **Niveles 3 y 4**, después.
 6. **Comunidad, sala del moderador y archivo fotográfico** (ver sección 2), probablemente sobre Supabase (Auth + Storage).
 7. **Proyecto aparte (no mezclar):** juego para un programa de Comunicación Social y Periodismo, donde los niveles son asignaturas y el jugador elige a qué clase entrar.
