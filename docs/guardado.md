@@ -1,89 +1,59 @@
 # Guardado y red
 
-## Cómo se guarda hoy
+## Cuentas y partidas
 
-- Cada equipo (celular o PC) puede tener varios **perfiles**, uno por estudiante. Se manejan en el libro, en **Mi progreso**.
-- El progreso de cada perfil se guarda en el navegador (`localStorage`, claves `laboyos.perfiles`, `laboyos.perfil` y `laboyos.progreso.<id>`).
-- El **código de respaldo** (en Mi progreso) lleva perfil y progreso a otro equipo: se copia en uno y se pega en el otro.
-- Si `config.js` tiene datos de Supabase, cada guardado también sube a la nube. Sin internet queda pendiente y se sube al volver la conexión.
+Cada estudiante tiene un **usuario con contraseña**. Un usuario tiene varias **partidas**, y cada una guarda su propio progreso.
 
-Qué guarda cada parte del juego (objeto de progreso):
+Al abrir el juego (`index.html`) siempre se pide usuario y contraseña. Después:
+
+| Opción | Qué hace |
+|---|---|
+| Continuar | Abre la última partida con su progreso |
+| Nueva partida | Pide un nombre. Si se deja vacío, se llama como la fecha y la hora (`27 nov 2026 08:50`) |
+| Mis partidas | Abre otra partida, o la **borra** (pide confirmación) |
+| Cerrar sesión | Sale. Está en **Mi progreso** y en la pantalla de partidas |
+| Borrar mi cuenta | Borra el usuario y todas sus partidas. Pide escribir el usuario |
+
+- La **sesión vive solo en la pestaña** (`sessionStorage`). Volver de un minijuego no pide nada. Abrir el juego otro día, o en otra pestaña, vuelve a pedir usuario y contraseña.
+- La contraseña **nunca se guarda** en el navegador. Supabase la guarda cifrada.
+- Cada quien solo ve y borra **sus** partidas (reglas de seguridad en `docs/supabase.sql`).
+- El avance también queda copiado en el navegador. Sin internet se sigue jugando y se sube al volver la conexión.
+- Los minijuegos (`finca`, `cosecha`, `oleadas`, `trivia`) no abren sin sesión: vuelven a la portada.
+- Con `#prueba` al final del enlace, o sin Supabase en `config.js`, funciona en modo local sin cuentas (para pruebas).
+
+Qué guarda cada parte del juego (objeto de progreso de una partida):
 
 | Campo | Lo escribe | Significado |
 |---|---|---|
 | `etapa` | trivia.html | Atuendo del muñeco (0 al empezar, 1 tras El Café…) |
+| `avatar` | finca.html | `muneco` o `muneca` |
+| `pistas1`, `finca1` | finca.html | Pistas reunidas y finca completa |
 | `cosecha` | cosecha.html | Mejores estrellas en la cosecha (0–3) |
 | `oleadas` | oleadas.html | Mejores estrellas en la defensa del cafetal (0–3) |
 | `trivia1`, `saberes1` | trivia.html | Mejor número de aciertos y de saberes |
 | `nivel1` | trivia.html | `true` cuando se aciertan 3 o más preguntas |
 | `actualizado` | guardado.js | Marca de tiempo; gana la copia más reciente |
 
-## Pantalla de entrada: sesiones y PIN
+## Activar Supabase (gratis)
 
-Al abrir `index.html` aparece **¿Quién juega?** (`inicio.js`), una vez por visita. Volver desde un minijuego no la repite.
-
-| Botón | Qué hace |
-|---|---|
-| Continuar como … | Sigue con el perfil de este equipo. Si tiene PIN, lo pide |
-| Nueva partida | Pide nombre y PIN opcional de 4 números. Empieza en cero |
-| Cambiar de persona | Lista de perfiles de este equipo |
-| Entrar con mi código | Trae un perfil de otro celular con su código de respaldo |
-
-- **Cerrar sesión** está en el menú del libro. Vuelve a mostrar la pantalla.
-- El PIN se puede poner, cambiar o quitar en **Mi progreso**.
-- El PIN es un freno contra entradas por error en un equipo compartido, no seguridad fuerte: son 4 números y se guarda en el navegador. El código de respaldo lleva el PIN.
-- Solo `index.html` muestra la pantalla. Quien abra `finca.html` directo entra con el último perfil del equipo.
-
-## Activar la nube (gratis, Supabase)
-
-1. Crea una cuenta y un proyecto en https://supabase.com (plan gratuito).
-2. En el proyecto, abre **SQL Editor** y corre esto:
-
-```sql
-create table if not exists public.progreso (
-  id text primary key,
-  nombre text,
-  avatar text,
-  datos jsonb not null default '{}'::jsonb,
-  actualizado timestamptz not null default now()
-);
--- Sin políticas: nadie puede leer ni listar la tabla directamente.
-alter table public.progreso enable row level security;
-
--- Solo se puede leer un perfil si se conoce su código (LAB-XXXXXX).
-create or replace function public.leer_progreso(p_id text)
-returns table(nombre text, avatar text, datos jsonb)
-language sql security definer set search_path = public as $$
-  select nombre, avatar, datos from progreso where id = p_id;
-$$;
-
--- Guarda solo si la copia que llega es igual o más reciente.
-create or replace function public.guardar_progreso(p_id text, p_nombre text, p_avatar text, p_datos jsonb)
-returns void
-language sql security definer set search_path = public as $$
-  insert into progreso (id, nombre, avatar, datos, actualizado)
-  values (p_id, p_nombre, p_avatar, p_datos, now())
-  on conflict (id) do update
-    set nombre = excluded.nombre, avatar = excluded.avatar, datos = excluded.datos, actualizado = now()
-    where coalesce((excluded.datos->>'actualizado')::bigint, 0) >= coalesce((progreso.datos->>'actualizado')::bigint, 0);
-$$;
-
-grant execute on function public.leer_progreso(text) to anon;
-grant execute on function public.guardar_progreso(text, text, text, jsonb) to anon;
-```
-
-3. En **Project Settings → API** copia la **Project URL** y la clave pública **anon**.
-4. Pégalas en `config.js`:
+1. Crea un proyecto en https://supabase.com (plan gratuito).
+2. **SQL Editor** → New query → pega todo `docs/supabase.sql` → Run. Debe decir *Success*.
+3. **Authentication → Sign In / Providers → Email**: **apaga "Confirm email"**. Los estudiantes se registran con un apodo, sin correo real, y el juego usa un correo interno inventado (`apodo@laboyos.app`).
+4. **Project Settings → API Keys**: copia la **Project URL** y la clave **anon** (la que empieza por `eyJ`). Nunca la `service_role` ni la `secret`.
+5. Pégalas en `config.js`:
 
 ```js
 supabase: { url: 'https://xxxx.supabase.co', key: 'eyJ...' },
 ```
 
-La clave `anon` es pública por diseño; lo que protege los datos son las funciones de arriba. Límite conocido: quien tenga el código `LAB-XXXXXX` de un perfil puede leerlo y escribirlo. Para un curso real conviene pasar a cuentas con Supabase Auth.
+Si al crear un usuario sale "el dominio interno de correo no es válido", cambia el dominio en `config.js` con `dominio: 'tu-dominio.com'`.
 
-Con la nube activa, el **código corto** `LAB-XXXXXX` (se ve en Mi progreso) basta para entrar desde otro celular: **Entrar con mi código**. El código largo de respaldo sigue funcionando.
-
-> Probado con un Supabase simulado (cliente y funciones). Falta la prueba contra el proyecto real, desde un celular.
+Límites conocidos:
+- **No hay "olvidé mi contraseña"**: sin correo real, solo el docente puede restablecerla en **Authentication → Users**.
+- Necesita internet para entrar.
+- Pide a los estudiantes usar un apodo, sin apellidos ni datos personales.
+- Si dejaste las funciones antiguas del guardado por código (`leer_progreso`, `guardar_progreso`) y la tabla `progreso`, ya no se usan. Puedes borrarlas con `drop function leer_progreso(text); drop function guardar_progreso(text,text,text,jsonb); drop table progreso;`.
+- Probado con un Supabase simulado (35 comprobaciones). Falta la prueba contra el proyecto real, desde un celular.
 
 ## Jugar en red
 

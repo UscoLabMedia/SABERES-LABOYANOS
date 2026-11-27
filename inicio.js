@@ -1,77 +1,99 @@
-/* inicio.js — pantalla "¿Quién juega?" antes del libro.
-   Se muestra una vez por visita (sessionStorage), así volver de un minijuego no la repite.
-   Usa Guardado: crearPerfil, usarPerfil, importar, tienePin, verificarPin, progresoDe. */
+/* inicio.js — pantalla de entrada: usuario y contraseña, y luego Continuar / Nueva partida.
+   Se muestra mientras no haya sesión y partida abierta (la sesión vive solo en la pestaña).
+   Usa Guardado.cuenta (ver guardado.js). */
 (() => {
 'use strict';
-const KEY = 'laboyos.entrada';
-const ses = { get(){ try { return sessionStorage.getItem(KEY); } catch (e) { return '1'; } },
-              set(){ try { sessionStorage.setItem(KEY, '1'); } catch (e) {} },
-              del(){ try { sessionStorage.removeItem(KEY); } catch (e) {} } };
-window.cerrarSesion = () => { ses.del(); location.reload(); };
-if (ses.get()) return;
+const C = Guardado.cuenta;
+window.cerrarSesion = () => { C.salir(); location.reload(); };
+window.cambiarPartida = () => { C.cerrarPartida(); location.reload(); };
+if (C.activa()) return;
 
 const $ = s => document.querySelector(s), box = $('#inicio'), paso = $('#inPaso');
-const esc = s => String(s).replace(/[<>&"]/g, '');
-const vacio = p => p.nombre === 'Jugador 1' && !Guardado.progresoDe(p.id).actualizado;   // perfil automático sin uso
-const usables = () => Guardado.perfiles().filter(p => !vacio(p));
-const entrar = id => { Guardado.usarPerfil(id); ses.set(); location.reload(); };
-const pedirPin = id => Guardado.tienePin(id) ? pantallaPin(id) : entrar(id);
-const resumen = p => { const g = Guardado.progresoDe(p.id); return g.nivel1 ? 'Nivel 1 superado' : (g.pistas1 && g.pistas1.length ? `${g.pistas1.length} pistas` : 'Sin avance'); };
+const esc = s => String(s == null ? '' : s).replace(/[<>&"]/g, '');
+const fecha = iso => { try { return new Date(iso).toLocaleDateString('es-CO', { day:'numeric', month:'short', year:'numeric' }); } catch (e) { return ''; } };
+const resumen = d => { d = d || {}; return d.nivel1 ? 'Nivel 1 superado' : (d.pistas1 && d.pistas1.length ? `${d.pistas1.length} de 3 pistas` : 'Sin avance'); };
+const titulo = t => { $('#inTitle').textContent = t; };
+const ocupado = (btn, txt) => { btn.disabled = true; btn.dataset.t = btn.textContent; btn.textContent = txt; };
+const libre = btn => { btn.disabled = false; btn.textContent = btn.dataset.t || btn.textContent; };
+const campo = (id, rotulo, tipo, extra = '') => `<label for="${id}">${rotulo}</label><input type="${tipo}" id="${id}" ${extra}>`;
 
-function pantallaMenu(){
-  const lista = usables(), act = Guardado.perfil(), cont = lista.find(p => p.id === act.id) || lista[0];
+function pantallaLogin(msg){
+  titulo('Entrar');
+  paso.innerHTML = `<form class="in-form" novalidate>${campo('inUser', 'Usuario', 'text', 'autocomplete="username" autocapitalize="none" maxlength="20"')}
+    ${campo('inPass', 'Contraseña', 'password', 'autocomplete="current-password"')}
+    <p class="in-err" id="inErr" role="alert">${esc(msg || '')}</p>
+    <button class="btn solid" id="inGo">Entrar</button>
+    <p class="in-alt">¿No tienes usuario? <button type="button" class="in-link" id="inReg">Crear usuario</button></p></form>`;
+  $('#inUser').focus(); $('#inReg').onclick = () => pantallaRegistro();
+  paso.querySelector('form').onsubmit = async e => { e.preventDefault(); const b = $('#inGo'), err = $('#inErr'); err.textContent = ''; ocupado(b, 'Entrando…');
+    try { await C.entrar($('#inUser').value, $('#inPass').value); await pantallaPartidas(); } catch (x) { err.textContent = x.message; libre(b); } };
+}
+function pantallaRegistro(){
+  titulo('Crear usuario');
+  paso.innerHTML = `<form class="in-form" novalidate>${campo('inUser', 'Usuario (un apodo, sin apellidos)', 'text', 'autocomplete="username" autocapitalize="none" maxlength="20" placeholder="ana_07"')}
+    <span class="in-ayuda">3 a 20 letras, números o guion bajo.</span>
+    ${campo('inPass', 'Contraseña (mínimo 6)', 'password', 'autocomplete="new-password"')}
+    ${campo('inPass2', 'Repite la contraseña', 'password', 'autocomplete="new-password"')}
+    <p class="in-err" id="inErr" role="alert"></p>
+    <div class="in-acts"><button type="button" class="btn" id="inVol">Volver</button><button class="btn solid" id="inGo">Crear usuario</button></div></form>`;
+  $('#inUser').focus(); $('#inVol').onclick = () => pantallaLogin();
+  paso.querySelector('form').onsubmit = async e => { e.preventDefault(); const b = $('#inGo'), err = $('#inErr'); err.textContent = '';
+    if ($('#inPass').value !== $('#inPass2').value) return err.textContent = 'Las contraseñas no son iguales.';
+    ocupado(b, 'Creando…'); try { await C.registrar($('#inUser').value, $('#inPass').value); await pantallaPartidas(); } catch (x) { err.textContent = x.message; libre(b); } };
+}
+async function pantallaPartidas(msg){
+  titulo(`Hola, ${esc(C.usuario())}`); paso.innerHTML = '<p>Buscando tus partidas…</p>';
+  let lista; try { lista = await C.partidas(); } catch (x) { return paso.innerHTML = `<p class="in-err">${esc(x.message)}</p><div class="in-acts"><button class="btn" id="inSal">Cerrar sesión</button><button class="btn solid" id="inRe">Reintentar</button></div>`,
+    $('#inSal').onclick = window.cerrarSesion, $('#inRe').onclick = () => pantallaPartidas(); }
+  const ult = lista[0];
   paso.innerHTML = `<div class="in-menu">
-    ${cont ? `<button class="btn solid" data-a="cont">Continuar como ${esc(cont.nombre)}<small>${esc(resumen(cont))}${Guardado.tienePin(cont.id) ? ' · con PIN' : ''}</small></button>` : ''}
-    <button class="btn${cont ? '' : ' solid'}" data-a="nueva">Nueva partida</button>
-    ${lista.length > 1 ? '<button class="btn" data-a="lista">Cambiar de persona</button>' : ''}
-    <button class="btn" data-a="codigo">Entrar con mi código</button></div>`;
-  paso.onclick = e => { const a = e.target.closest('[data-a]'); if (!a) return;
-    ({ cont: () => pedirPin(cont.id), nueva: pantallaNueva, lista: pantallaLista, codigo: pantallaCodigo })[a.dataset.a](); };
+    ${ult ? `<button class="btn solid" data-a="cont">Continuar: ${esc(ult.nombre)}<small>${esc(resumen(ult.datos))} · ${esc(fecha(ult.actualizada))}</small></button>` : '<p>Aún no tienes partidas. Crea la primera.</p>'}
+    <button class="btn${ult ? '' : ' solid'}" data-a="nueva">Nueva partida</button></div>
+    ${lista.length ? `<h3 class="in-sub">Mis partidas</h3><ul class="in-lista">${lista.map(p => `<li><button class="btn" data-abrir="${esc(p.id)}">${esc(p.nombre)}<small>${esc(resumen(p.datos))} · ${esc(fecha(p.actualizada))}</small></button><button class="btn in-borrar" data-borrar="${esc(p.id)}" aria-label="Borrar la partida ${esc(p.nombre)}">Borrar</button></li>`).join('')}</ul>` : ''}
+    <p class="in-err" id="inErr" role="alert">${esc(msg || '')}</p>
+    <div class="in-pie"><button class="in-link" data-a="salir">Cerrar sesión</button><button class="in-link" data-a="cuenta">Borrar mi cuenta</button></div>`;
+  const abrir = p => { C.abrir(p); location.reload(); };
+  paso.onclick = e => { const t = e.target.closest('button'); if (!t) return;
+    if (t.dataset.a === 'cont') return abrir(ult);
+    if (t.dataset.a === 'nueva') return pantallaNueva();
+    if (t.dataset.a === 'salir') return window.cerrarSesion();
+    if (t.dataset.a === 'cuenta') return pantallaBorrarCuenta();
+    if (t.dataset.abrir) return abrir(lista.find(p => p.id === t.dataset.abrir));
+    if (t.dataset.borrar) return pantallaBorrarPartida(lista.find(p => p.id === t.dataset.borrar)); };
   (paso.querySelector('.solid') || paso.querySelector('.btn')).focus();
 }
 function pantallaNueva(){
-  paso.innerHTML = `<form class="in-form" autocomplete="off" novalidate>
-    <label for="inNombre">Tu nombre</label><input type="text" id="inNombre" maxlength="24" placeholder="Nombre del estudiante" required>
-    <label for="inPin">PIN de 4 números (opcional)</label><input type="password" id="inPin" inputmode="numeric" maxlength="4" pattern="\\d{4}" placeholder="Para que nadie entre a tu avance">
+  titulo('Nueva partida');
+  paso.innerHTML = `<form class="in-form" novalidate>${campo('inNom', 'Nombre de la partida (opcional)', 'text', `maxlength="40" placeholder="${esc(Guardado.nombreAuto())}" autocomplete="off"`)}
+    <span class="in-ayuda">Si lo dejas vacío, se llamará como la fecha y la hora de ahora.</span>
     <p class="in-err" id="inErr" role="alert"></p>
-    <div class="in-acts"><button type="button" class="btn" data-a="volver">Volver</button><button class="btn solid">Empezar</button></div></form>`;
-  $('#inNombre').focus();
-  paso.querySelector('[data-a="volver"]').onclick = pantallaMenu;
-  paso.querySelector('form').onsubmit = e => { e.preventDefault();
-    const nombre = $('#inNombre').value.trim(), pin = $('#inPin').value.trim(), err = $('#inErr');
-    if (!nombre) return err.textContent = 'Escribe tu nombre.';
-    if (pin && !/^\d{4}$/.test(pin)) return err.textContent = 'El PIN son 4 números, o déjalo vacío.';
-    const vac = Guardado.perfiles().find(vacio);               // reusa el perfil automático vacío
-    let p; if (vac){ Guardado.usarPerfil(vac.id); Guardado.actualizarPerfil({ nombre }); p = Guardado.perfil(); if (pin) Guardado.ponerPin(p.id, pin); }
-    else p = Guardado.crearPerfil(nombre, pin);
-    entrar(p.id); };
+    <div class="in-acts"><button type="button" class="btn" id="inVol">Volver</button><button class="btn solid" id="inGo">Empezar</button></div></form>`;
+  $('#inNom').focus(); $('#inVol').onclick = () => pantallaPartidas();
+  paso.querySelector('form').onsubmit = async e => { e.preventDefault(); const b = $('#inGo'); ocupado(b, 'Creando…');
+    try { await C.nueva($('#inNom').value); location.reload(); } catch (x) { $('#inErr').textContent = x.message; libre(b); } };
 }
-function pantallaLista(){
-  paso.innerHTML = `<ul class="in-lista">${usables().map(p => `<li><button class="btn" data-id="${p.id}">${esc(p.nombre)}<small>${esc(resumen(p))}${Guardado.tienePin(p.id) ? ' · con PIN' : ''}</small></button></li>`).join('')}</ul>
-    <div class="in-acts"><button class="btn" data-a="volver">Volver</button></div>`;
-  paso.onclick = e => { if (e.target.closest('[data-a="volver"]')) return pantallaMenu(); const b = e.target.closest('[data-id]'); if (b) pedirPin(b.dataset.id); };
+function pantallaBorrarPartida(p){
+  titulo('Borrar partida');
+  paso.innerHTML = `<p>¿Borrar «${esc(p.nombre)}»? Se pierde su progreso y no se puede recuperar.</p><p class="in-err" id="inErr" role="alert"></p>
+    <div class="in-acts"><button class="btn" id="inNo">Cancelar</button><button class="btn solid" id="inSi">Sí, borrar</button></div>`;
+  $('#inNo').focus(); $('#inNo').onclick = () => pantallaPartidas();
+  $('#inSi').onclick = async () => { const b = $('#inSi'); ocupado(b, 'Borrando…'); try { await C.borrarPartida(p.id); await pantallaPartidas(`Se borró «${p.nombre}».`); } catch (x) { $('#inErr').textContent = x.message; libre(b); } };
 }
-function pantallaPin(id){
-  const p = Guardado.perfiles().find(q => q.id === id);
-  paso.innerHTML = `<form class="in-form" autocomplete="off" novalidate><label for="inPin2">PIN de ${esc(p.nombre)}</label>
-    <input type="password" id="inPin2" inputmode="numeric" maxlength="4" pattern="\\d{4}" required><p class="in-err" id="inErr" role="alert"></p>
-    <div class="in-acts"><button type="button" class="btn" data-a="volver">Volver</button><button class="btn solid">Entrar</button></div></form>`;
-  $('#inPin2').focus(); paso.querySelector('[data-a="volver"]').onclick = pantallaMenu;
-  paso.querySelector('form').onsubmit = e => { e.preventDefault();
-    if (Guardado.verificarPin(id, $('#inPin2').value)) entrar(id); else { $('#inErr').textContent = 'PIN incorrecto.'; $('#inPin2').value = ''; } };
-}
-function pantallaCodigo(){
-  paso.innerHTML = `<form class="in-form"><label for="inCod">Tu código (LAB-XXXXXX o el de respaldo)</label>
-    <textarea id="inCod" rows="3" placeholder="LAB-K7M2PQ" style="font:.8rem/1.3 monospace;width:100%;box-sizing:border-box;border:1.5px solid var(--ink);background:#fbf5e6;padding:.5rem"></textarea>
+function pantallaBorrarCuenta(){
+  titulo('Borrar mi cuenta');
+  paso.innerHTML = `<form class="in-form" novalidate><p>Se borra tu usuario <b>${esc(C.usuario())}</b> y <b>todas</b> sus partidas. No se puede recuperar.</p>
+    ${campo('inConf', 'Para confirmar, escribe tu usuario', 'text', 'autocomplete="off" autocapitalize="none"')}
     <p class="in-err" id="inErr" role="alert"></p>
-    <div class="in-acts"><button type="button" class="btn" data-a="volver">Volver</button><button class="btn solid">Cargar</button></div></form>`;
-  $('#inCod').focus(); paso.querySelector('[data-a="volver"]').onclick = pantallaMenu;
-  paso.querySelector('form').onsubmit = async e => { e.preventDefault(); const err = $('#inErr'); err.textContent = 'Buscando…';
-    try { const p = await Guardado.entrarConCodigo($('#inCod').value); entrar(p.id); } catch (x) { err.textContent = x.message; } };
+    <div class="in-acts"><button type="button" class="btn" id="inNo">Cancelar</button><button class="btn solid" id="inSi">Borrar mi cuenta</button></div></form>`;
+  $('#inConf').focus(); $('#inNo').onclick = () => pantallaPartidas();
+  paso.querySelector('form').onsubmit = async e => { e.preventDefault(); if ($('#inConf').value.trim().toLowerCase() !== C.usuario()) return $('#inErr').textContent = 'Escribe tu usuario tal como es.';
+    const b = $('#inSi'); ocupado(b, 'Borrando…'); try { await C.borrarCuenta(); pantallaLogin('Tu cuenta se borró.'); } catch (x) { $('#inErr').textContent = x.message; libre(b); } };
 }
 
-// bloquea Enter/Espacio/Escape del libro mientras la pantalla está abierta
+// mientras la pantalla está abierta, el libro de atrás no recibe teclas
 addEventListener('keydown', e => { if (!box.hidden && !box.contains(e.target)) e.stopImmediatePropagation(); }, true);
 addEventListener('keydown', e => { if (!box.hidden && e.key === 'Escape') e.stopImmediatePropagation(); }, true);
-box.hidden = false; pantallaMenu();
+addEventListener('laboyos:sesion-vencida', () => location.reload());
+box.hidden = false;
+(C.conSesion() ? pantallaPartidas() : pantallaLogin());
 })();

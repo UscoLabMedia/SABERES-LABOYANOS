@@ -104,6 +104,11 @@ body{margin:0;background:var(--desk);color:var(--on-desk);font-family:var(--f-ui
 .btn small{display:block;font-family:var(--f-ui);font-weight:500;font-size:.78rem;opacity:.85}
 .in-form{display:grid;gap:.4rem;margin-top:.6rem}.in-form label{font-weight:700}
 .in-form input[type=password]{font:inherit;font-size:1rem;padding:.5rem .7rem;border:1.5px solid var(--ink);background:#fbf5e6;color:var(--ink);width:100%;box-sizing:border-box}
+.in-form input[type=text],.in-form input[type=password]{font:inherit;font-size:1rem;padding:.5rem .7rem;border:1.5px solid var(--ink);background:#fbf5e6;color:var(--ink);width:100%;box-sizing:border-box}
+.in-ayuda{font-size:.85rem;color:var(--ink-soft)}.in-sub{font-family:var(--f-display);font-size:1.05rem;margin:1rem 0 .3rem}
+.in-alt{margin:.8rem 0 0;font-size:.95rem}.in-link{background:none;border:0;padding:0;font:inherit;font-weight:700;color:var(--cherry);text-decoration:underline;cursor:pointer}
+.in-lista{display:grid;gap:.5rem;margin:.2rem 0 0;padding:0;list-style:none;max-height:38vh;overflow:auto}.in-lista li{display:flex;gap:.4rem}.in-lista li .btn:first-child{flex:1}.in-borrar{flex:0 0 auto;font-size:.9rem;padding:.4rem .7rem}
+.in-pie{display:flex;justify-content:space-between;gap:1rem;margin-top:.9rem;font-size:.9rem}
 .in-acts{display:flex;gap:.6rem;justify-content:flex-end;margin-top:.6rem}.in-err{color:var(--cherry);font-weight:700;min-height:1.2em;margin:.2rem 0 0}
 .row{display:grid;grid-template-columns:minmax(0,11rem) minmax(0,1fr);gap:.4rem 1rem;align-items:center}
 .row > label,.row > .lbl{font-weight:700;font-size:.98rem}
@@ -187,8 +192,7 @@ kbd{font-family:var(--f-ui);font-weight:700;font-size:.8rem;border:1px solid var
     <button class="slip primary" data-act="play">Jugar <span class="hint">Nivel 1 · El Café</span></button>
     <button class="slip" data-act="map">Explorar el mapa <span class="hint">toca un lugar</span></button>
     <button class="slip" data-act="community" aria-disabled="true">Comunidad <span class="hint">al superar El Café</span></button>
-    <button class="slip" data-act="perfil">Mi progreso <span class="hint" id="whoHint">perfil y respaldo</span></button>
-    <button class="slip" data-act="logout">Cerrar sesión <span class="hint" id="logoutHint">cambiar de persona</span></button>
+    <button class="slip" data-act="perfil">Mi progreso <span class="hint" id="whoHint">usuario y partidas</span></button>
     <button class="slip" data-act="settings">Ajustes <span class="hint">sonido, gráficos, controles</span></button>
     <button class="slip" data-act="credits">Créditos</button>
   </nav>
@@ -247,8 +251,6 @@ kbd{font-family:var(--f-ui);font-weight:700;font-size:.8rem;border:1px solid var
     </div>
 
     <div class="tabpanel" id="t-play" role="tabpanel" aria-labelledby="tab-play" hidden>
-      <div class="row"><label for="s-name">Nombre del perfil</label>
-        <input type="text" id="s-name" maxlength="24" placeholder="Ej.: Valentina, 7.º B" autocomplete="off"></div>
       <p class="help" style="margin:0">Para jugar con otras personas, cada una abre el juego en su celular o computador. En la cosecha y la defensa del cafetal, una crea la sala y las demás se unen con el código.</p>
       <div class="keys" id="keys"></div>
     </div>
@@ -294,17 +296,11 @@ kbd{font-family:var(--f-ui);font-weight:700;font-size:.8rem;border:1px solid var
     <h2 id="pfTitle"></h2>
     <p id="pfSummary"></p>
     <div class="tabpanel" style="padding-top:.4rem">
-      <div class="row"><span class="lbl">Perfiles en este equipo</span><ul class="chips" id="pfList"></ul></div>
-      <div class="row"><label for="pfNew">Nuevo perfil</label><div style="display:flex;gap:.5rem;flex-wrap:wrap"><input type="text" id="pfNew" maxlength="24" placeholder="Nombre del estudiante" autocomplete="off" style="flex:1 1 10rem"><button class="btn" id="pfCreate">Crear</button></div></div>
-      <div class="row"><label for="pfPin">PIN (opcional)</label><div style="display:flex;gap:.5rem;flex-wrap:wrap"><input type="password" id="pfPin" inputmode="numeric" maxlength="4" placeholder="4 números, vacío = sin PIN" autocomplete="off" style="flex:1 1 10rem;font:inherit;padding:.5rem .7rem;border:1.5px solid var(--ink);background:#fbf5e6;color:var(--ink);box-sizing:border-box"><button class="btn" id="pfPinSave">Guardar PIN</button></div>
-        <span class="help" id="pfPinHelp"></span></div>
-      <div class="row" id="pfShortRow" hidden><span class="lbl">Tu código corto</span><div><b id="pfShort" style="font:700 1.4rem/1.2 monospace;letter-spacing:.08em"></b><br><span class="help">Anótalo: con él entras desde cualquier celular, en "Entrar con mi código".</span></div></div>
-      <div class="row"><label for="pfCode">Código de respaldo</label><div style="display:grid;gap:.4rem"><textarea id="pfCode" rows="3" readonly style="font:.8rem/1.3 monospace;width:100%;border:1.5px solid var(--ink);background:#fbf5e6;color:var(--ink);padding:.4rem"></textarea><button class="btn" id="pfCopy" style="justify-self:start">Copiar código</button></div>
-        <span class="help">Guárdalo para seguir en otro celular o computador.</span></div>
-      <div class="row"><label for="pfImport">Traer progreso</label><div style="display:grid;gap:.4rem"><textarea id="pfImport" rows="2" placeholder="Pega aquí un código de respaldo" style="font:.8rem/1.3 monospace;width:100%;border:1.5px solid var(--ink);background:#fbf5e6;color:var(--ink);padding:.4rem"></textarea><button class="btn" id="pfDoImport" style="justify-self:start">Usar este código</button></div></div>
+      <div class="row"><span class="lbl">Usuario</span><span id="pfUser"></span></div>
+      <div class="row"><span class="lbl">Partida</span><span id="pfPartida"></span></div>
       <div class="row"><span class="lbl">En la nube</span><span id="pfCloud"></span></div>
     </div>
-    <div class="sheet-actions"><span></span><button class="btn solid" data-close>Listo</button></div>
+    <div class="sheet-actions"><button class="btn" id="pfCambiar">Cambiar de partida</button><button class="btn solid" id="pfSalir">Cerrar sesión</button></div>
   </section>
 </div>
 
@@ -321,6 +317,7 @@ kbd{font-family:var(--f-ui);font-weight:700;font-size:.8rem;border:1px solid var
   </section>
 </div>
 
+<script>window.LABOYOS_PORTADA=true;</script>
 <script src="config.js"></script>
 <script src="guardado.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -671,7 +668,6 @@ $('#menu').addEventListener('click', e=>{ const b=e.target.closest('.slip'); if 
   else if (act==='map'){ toast('Toca o pasa el cursor sobre un lugar del libro.'); }
   else if (act==='community') toast(PROG.nivel1?'La sala de la comunidad está en construcción.':'La comunidad se abre al superar El Café: entra por la Torre de los saberes.');
   else if (act==='perfil'){ syncProfile(); openSheet('perfil'); }
-  else if (act==='logout') cerrarSesion();
   else if (act==='settings') openSheet('settings');
   else if (act==='credits') openSheet('credits'); });
 $('#gearBtn').addEventListener('click',()=>openSheet('settings'));
@@ -686,7 +682,6 @@ bindCheck('s-mute','mute',()=>Sound.apply()); bindCheck('s-shadows','shadows',ap
 bindCheck('s-motion','motion',()=>{ if (S.motion) pops.forEach(p=>{ if(p.started){p.val=p.target;applyPop(p);} }); });
 const bindSeg=(id,key,fn)=>{ $('#'+id).addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; S[key]=b.dataset.v; save(); syncUI(); Sound.tick(); fn&&fn(); }); };
 bindSeg('s-quality','quality',applyQuality); bindSeg('s-text','text');
-$('#s-name').addEventListener('change',e=>{ const p=Guardado.actualizarPerfil({nombre:e.target.value}); S.name=p.nombre; e.target.value=p.nombre; syncProfile(); });
 $('#resetBtn').addEventListener('click',()=>{ Object.assign(S,DEFAULTS); save(); syncUI(); applyQuality(); Sound.apply(); toast('Se restauraron los valores de fábrica.'); });
 
 const KEYMAPS=[
@@ -696,7 +691,7 @@ const KEYMAPS=[
 function syncUI(){
   $('#s-music').value=S.music; $('#o-music').textContent=S.music+'%';
   $('#s-sfx').value=S.sfx; $('#o-sfx').textContent=S.sfx+'%';
-  $('#s-mute').checked=S.mute; $('#s-shadows').checked=S.shadows; $('#s-motion').checked=S.motion; $('#s-subs').checked=S.subs; $('#s-name').value=Guardado.perfil().nombre;
+  $('#s-mute').checked=S.mute; $('#s-shadows').checked=S.shadows; $('#s-motion').checked=S.motion; $('#s-subs').checked=S.subs;
   [['s-quality','quality'],['s-text','text']].forEach(([id,k])=>$$('#'+id+' button').forEach(b=>b.setAttribute('aria-pressed', b.dataset.v===String(S[k]))));
   document.documentElement.classList.toggle('big-text', S.text==='grande');
   $('#waves').style.display=S.mute?'none':''; $('#soundBtn').setAttribute('aria-label', S.mute?'Activar sonido':'Silenciar sonido');
@@ -716,18 +711,12 @@ function syncProgress(){ PROG=Guardado.progreso(); const done=LEVELS.filter(l=>P
   const c=$('[data-act="community"]'); c.setAttribute('aria-disabled', String(!PROG.nivel1)); c.querySelector('.hint').textContent=PROG.nivel1?'en construcción':'al superar El Café'; }
 const CLOUD={local:'Desactivada: el progreso queda solo en este navegador.',sincronizado:'Sincronizado.',pendiente:'Sin internet: se sincroniza al volver la conexión.',error:'No se pudo sincronizar. Se intentará de nuevo.'};
 function syncProfile(){ const p=Guardado.perfil(); PROG=Guardado.progreso();
-  $('#pfTitle').textContent=p.nombre; $('#whoHint').textContent=p.nombre; $('#logoutHint').textContent='salir de '+p.nombre;
+  $('#pfTitle').textContent=p.nombre; $('#whoHint').textContent=p.nombre; $('#pfUser').textContent=p.nombre; $('#pfPartida').textContent=p.partida;
   const st=[PROG.nivel1?'Nivel 1 superado':'Nivel 1 en curso', PROG.cosecha!=null?`cosecha ${PROG.cosecha}★`:null, PROG.oleadas!=null?`defensa ${PROG.oleadas}★`:null, PROG.trivia1!=null?`trivia ${PROG.trivia1}/5`:null].filter(Boolean);
   $('#pfSummary').textContent=st.join(' · ')+'.';
-  $('#pfList').innerHTML=Guardado.perfiles().map(q=>`<li><button class="btn" data-pf="${q.id}" ${q.id===p.id?'aria-pressed="true" style="background:var(--ink);color:var(--paper)"':''}>${q.nombre.replace(/[<>&]/g,'')}</button></li>`).join('');
-  $('#pfShortRow').hidden=!Guardado.nube.activa; $('#pfShort').textContent=p.id;
-  $('#pfCode').value=Guardado.codigo(); $('#pfPinHelp').textContent=Guardado.tienePin(p.id)?'Este perfil tiene PIN. Déjalo vacío y guarda para quitarlo.':'Sin PIN: cualquiera en este equipo puede entrar a este perfil.';
   $('#pfCloud').textContent=Guardado.nube.activa?CLOUD[Guardado.nube.estado]||CLOUD.sincronizado:CLOUD.local; }
-$('#pfList').addEventListener('click',e=>{ const b=e.target.closest('[data-pf]'); if (!b) return; if (Guardado.usarPerfil(b.dataset.pf)) location.reload(); });
-$('#pfCreate').addEventListener('click',()=>{ const p=Guardado.crearPerfil($('#pfNew').value); Guardado.usarPerfil(p.id); location.reload(); });
-$('#pfPinSave').addEventListener('click',()=>{ const v=$('#pfPin').value.trim(); if (v && !/^\d{4}$/.test(v)) return toast('El PIN son 4 números.'); Guardado.ponerPin(Guardado.perfil().id,v); $('#pfPin').value=''; toast(v?'PIN guardado.':'PIN quitado.'); syncProfile(); });
-$('#pfCopy').addEventListener('click',()=>{ const t=$('#pfCode'); navigator.clipboard.writeText(t.value).then(()=>toast('Código copiado.')).catch(()=>{ t.select(); toast('Selecciona y copia el código.'); }); });
-$('#pfDoImport').addEventListener('click',()=>{ try { const p=Guardado.importar($('#pfImport').value); toast(`Progreso de ${p.nombre} cargado.`); setTimeout(()=>location.reload(),600); } catch(err){ toast(err.message); } });
+$('#pfCambiar').addEventListener('click',()=>cambiarPartida());
+$('#pfSalir').addEventListener('click',()=>cerrarSesion());
 addEventListener('laboyos:nube',()=>{ if (!$('#perfil').hidden) syncProfile(); });
 addEventListener('laboyos:progreso',syncProgress);
 
