@@ -292,7 +292,11 @@ function hacerChivas(list){
   for (let i=0;i<tot;i++){ const j=list[i]||null, ai=!j, a=ai?AIS[i-hum]:null, slot=j?j.slot:10+i, d=j?(j.slot===mySlot()?DIS:Object.assign({},DEF,disenios[j.slot]||{})):{cab:CAB[(i*2+1)%6],cuerpo:CUERPO[(i*2+2)%6],franja:FRANJA[i%4],texto:TEXTOS[i%4],carga:i%3};
     const holder=new THREE.Group(); holder.add(chivaCar(d)); const ini=inicio(i,tot); holder.position.set(ini.x,0,ini.z); holder.rotation.y=ini.ang-Math.PI/2; scene.add(holder);
     const el=document.createElement('div'); el.className='pl'; el.style.background=ai?'#6b5440':PCOL[slot%4]; $('#labels').appendChild(el);
-    players.push({i,slot,ai,h:!ai,k:a?a.k:1,off:a?a.off:0,nombre:j?(j.nombre||('J'+(j.slot+1))):a.n,holder,el,x:ini.x,z:ini.z,ang:ini.ang,v:0,lap:0,wp:1,turbo:0,turboCd:0,fin:false,tFin:0,inp:{x:0,z:0,take:false,use:false,drop:false,useEdge:false}}); } }
+    players.push({i,slot,ai,h:!ai,disenio:d,k:a?a.k:1,off:a?a.off:0,nombre:j?(j.nombre||('J'+(j.slot+1))):a.n,holder,el,x:ini.x,z:ini.z,ang:ini.ang,v:0,lap:0,wp:1,turbo:0,turboCd:0,fin:false,tFin:0,inp:{x:0,z:0,take:false,use:false,drop:false,useEdge:false}}); } }
+
+// al llegar los diseños de los demás jugadores (después de armar la sala) se cambian los colores de sus chivas
+function aplicaDisenios(ds){ Object.assign(disenios,ds||{}); delete disenios[mySlot()];
+  players.forEach(p=>{ if (p.h && p.slot!==mySlot() && disenios[p.slot]){ p.disenio=Object.assign({},DEF,disenios[p.slot]); p.holder.clear(); p.holder.add(chivaCar(p.disenio)); } }); }
 
 /* ---------------- Entrada (motor común en estaciones.js; aquí sin estaciones) ---------------- */
 const game={on:false,paused:false,t:-R.cuenta,fin:false,puesto:0,ranking:[],primero:null};
@@ -302,6 +306,9 @@ const { readInput, remote } = E;
 let banTimer; const evq=[]; const hosting=()=>lob && lob.rol==='host' && game.on;
 function snd(n,a){ Sound[n](a); if (hosting()) evq.push({s:n,a}); }
 function banner(msg,kind=''){ if (hosting()) evq.push({b:msg,k:kind,to:null}); showBanner(msg,kind); }
+// avisos y sonidos de un solo jugador (no los ven ni oyen los demás)
+function avisar(slot,msg,kind=''){ if (hosting()) evq.push({b:msg,k:kind,to:slot}); if (slot===mySlot()) showBanner(msg,kind); }
+function sonarA(slot,n,a){ if (hosting()) evq.push({s:n,a,to:slot}); if (slot===mySlot()) Sound[n](a); }
 function showBanner(msg,kind=''){ const b=$('#banner'); b.textContent=msg; b.className='banner show '+kind; clearTimeout(banTimer); banTimer=setTimeout(()=>b.classList.remove('show'),2400); }
 
 /* ---------------- Simulación ---------------- */
@@ -311,28 +318,28 @@ function ranking(){ return players.slice().sort((a,b)=>progreso(b)-progreso(a));
 function mueve(c,I,dt){
   const l=Math.hypot(I.x,I.z), mueveAhora=l>.15; const d=distPista(c), fuera=d>R.ancho/2;
   if (mueveAhora){ c.ang=norm(c.ang+Math.max(-R.giro*dt,Math.min(R.giro*dt,norm(Math.atan2(I.x,I.z)-c.ang)))); }
-  if (I.take && c.turboCd<=0){ c.turbo=R.turboDura; c.turboCd=R.turboEspera; if (!c.ai) snd('pop',4); }
+  if (I.take && c.turboCd<=0){ c.turbo=R.turboDura; c.turboCd=R.turboEspera; if (!c.ai) sonarA(c.slot,'pop',4); }
   c.turbo=Math.max(0,c.turbo-dt); c.turboCd=Math.max(0,c.turboCd-dt);
   const tope=R.vmax*(fuera?R.fuera:1)*(c.turbo>0?R.turbo:1)*c.k*(c.ai?1:1);
   if (mueveAhora||c.ai) c.v=Math.min(tope,c.v+R.acel*dt*(c.turbo>0?2:1)); else c.v=Math.max(0,c.v-R.freno*dt); if (c.v>tope) c.v=Math.max(tope,c.v-R.freno*dt);
   c.x+=Math.sin(c.ang)*c.v*dt; c.z+=Math.cos(c.ang)*c.v*dt;
   c.x=Math.max(-GW+2,Math.min(GW-2,c.x)); c.z=Math.max(-GD+2,Math.min(GD-2,c.z));
   // demasiado lejos de la pista: vuelve al último punto
-  if (d>R.lejos){ const w=WP[(c.wp+N-1)%N]; c.x=w.x; c.z=w.z; c.v=0; const t=WP[c.wp]; c.ang=Math.atan2(t.x-w.x,t.z-w.z); if (!c.ai) banner('Volviste a la pista'); }
+  if (d>R.lejos){ const w=WP[(c.wp+N-1)%N]; c.x=w.x; c.z=w.z; c.v=0; const t=WP[c.wp]; c.ang=Math.atan2(t.x-w.x,t.z-w.z); if (!c.ai) avisar(c.slot,'Volviste a la pista'); }
 }
 function control(c){ // chivas de la máquina: siguen los puntos con un pequeño desvío
   const t=WP[c.wp], n=WP[(c.wp+1)%N], dx=n.x-t.x, dz=n.z-t.z, l=Math.hypot(dx,dz)||1, ox=-dz/l*c.off, oz=dx/l*c.off;
   const tx=t.x+ox-c.x, tz=t.z+oz-c.z, h=Math.hypot(tx,tz)||1; const I={x:tx/h,z:tz/h,take:false};
   if (c.turboCd<=0 && Math.random()<.004) I.take=true; return I; }
 function colisiones(){ for (let i=0;i<players.length;i++) for (let j=i+1;j<players.length;j++){ const a=players[i], b=players[j], dx=b.x-a.x, dz=b.z-a.z, d=Math.hypot(dx,dz); if (d<1.5 && d>1e-4){ const p=(1.5-d)/2; a.x-=dx/d*p; a.z-=dz/d*p; b.x+=dx/d*p; b.z+=dz/d*p; } } }
-function avanza(c){ if (c.fin) return; const t=WP[c.wp]; if (Math.hypot(t.x-c.x,t.z-c.z)<R.ancho*.9){ c.wp++; if (c.wp>=N){ c.wp=0; c.lap++; if (c.lap>=R.vueltas){ c.fin=true; c.tFin=game.t; if (!game.primero) game.primero=game.t; if (!c.ai){ snd('chime'); banner('¡Llegaste a la meta!'); } } else if (!c.ai) banner(c.lap===R.vueltas-1?'¡Última vuelta!':`Vuelta ${c.lap+1} de ${R.vueltas}`); } } }
+function avanza(c){ if (c.fin) return; const t=WP[c.wp]; if (Math.hypot(t.x-c.x,t.z-c.z)<R.ancho*.9){ c.wp++; if (c.wp>=N){ c.wp=0; c.lap++; if (c.lap>=R.vueltas){ c.fin=true; c.tFin=game.t; if (!game.primero) game.primero=game.t; if (!c.ai){ sonarA(c.slot,'chime'); avisar(c.slot,'¡Llegaste a la meta!'); } } else if (!c.ai) avisar(c.slot,c.lap===R.vueltas-1?'¡Última vuelta!':`Vuelta ${c.lap+1} de ${R.vueltas}`); } } }
 function step(dt){
   game.t+=dt;
   if (game.t<0){ const n=Math.ceil(-game.t); const cu=$('#cuenta'); if (cu.textContent!==String(n)){ cu.textContent=n; cu.hidden=false; snd('tick'); } players.forEach(p=>{ p.holder.position.set(p.x,0,p.z); }); return; }
-  { const cu=$('#cuenta'); if (!cu.hidden){ cu.textContent='¡Ya!'; setTimeout(()=>{ cu.hidden=true; },700); snd('chime'); } }
-  players.forEach(c=>{ if (c.fin){ c.inp={x:0,z:0}; } const I=c.ai?control(c):c.inp; if (!c.fin||true) mueve(c,c.fin?{x:Math.sin(c.ang),z:Math.cos(c.ang),take:false}:I,dt); });
+  { const cu=$('#cuenta'); if (!cu.hidden && !game.ya){ game.ya=true; cu.textContent='¡Ya!'; setTimeout(()=>{ cu.hidden=true; },700); snd('chime'); } }
+  players.forEach(c=>{ if (c.fin){ c.v=Math.max(0,c.v-R.freno*dt); c.x+=Math.sin(c.ang)*c.v*dt; c.z+=Math.cos(c.ang)*c.v*dt; return; }   // la que ya llegó frena y se queda
+    mueve(c,c.ai?control(c):c.inp,dt); });
   colisiones(); players.forEach(c=>{ avanza(c); c.holder.position.set(c.x,0,c.z); c.holder.rotation.y=c.ang-Math.PI/2; });
-  players.forEach(c=>{ if (c.fin && c.v>0) c.v=Math.max(0,c.v-R.freno*.5*dt); });
   if (!game.fin){ const hum=players.filter(p=>p.h); if (hum.every(p=>p.fin) || (game.primero && game.t-game.primero>R.cierre)) finish(); }
 }
 
@@ -340,7 +347,7 @@ function step(dt){
 const r1=n=>Math.round(n*100)/100;
 function snapshot(){ return { t:r1(game.t), p:players.map(c=>[r1(c.x),r1(c.z),r1(c.ang),r1(c.v),c.lap,c.wp,c.turbo>0?1:0,c.fin?1:0,r1(c.tFin)]), ev:evq.splice(0) }; }
 function applySnapshot(d){ game.t=d.t; d.p.forEach((a,i)=>{ const c=players[i]; if (!c) return; [c.tx,c.tz,c.tang,c.v,c.lap,c.wp,c.turbo,c.fin,c.tFin]=[a[0],a[1],a[2],a[3],a[4],a[5],a[6]?1:0,!!a[7],a[8]]; if (c.tx===undefined) return; });
-  (d.ev||[]).forEach(e=>{ if (e.s) Sound[e.s](e.a); if (e.b!==undefined) showBanner(e.b,e.k); }); }
+  (d.ev||[]).forEach(e=>{ if (e.to!=null && e.to!==mySlot()) return; if (e.s) Sound[e.s](e.a); if (e.b!==undefined) showBanner(e.b,e.k); }); }
 function clientFrame(dt){ players.forEach(c=>{ if (c.tx===undefined) return; c.x+=(c.tx-c.x)*Math.min(1,dt*12); c.z+=(c.tz-c.z)*Math.min(1,dt*12); c.ang=c.ang+norm(c.tang-c.ang)*Math.min(1,dt*12); c.holder.position.set(c.x,0,c.z); c.holder.rotation.y=c.ang-Math.PI/2; }); }
 
 /* ---------------- Etiquetas y HUD ---------------- */
@@ -386,7 +393,7 @@ function syncStart(){
   if (touch) lines.unshift('En pantalla táctil: mueve la palanca hacia donde quieres ir y usa el botón Turbo.');
   lines.push(n===1?'Compites contra tres chivas de la máquina.':'Las chivas que falten las maneja la máquina.'); $('#keysHelp').innerHTML=lines.join('<br>');
   hacerChivas(lob && rol!=='solo' ? lob.jugadores : [yo()]); }
-function reiniciar(list){ Object.assign(game,{t:-R.cuenta,fin:false,puesto:0,ranking:[],primero:null}); hacerChivas(list||[yo()]); $('#cuenta').hidden=true; }
+function reiniciar(list){ Object.assign(game,{t:-R.cuenta,fin:false,puesto:0,ranking:[],primero:null,ya:false}); hacerChivas(list||[yo()]); $('#cuenta').hidden=true; }
 function begin(list){
   reiniciar(list); $('#start').hidden=true; $('#end').hidden=true; game.on=true; game.paused=false; $('#touch').hidden=false; $('#touch').classList.toggle('pc',!touch);
   Sound.init(); Sound.apply(); Sound.fast=true; Sound.startMusic(); canvas.focus(); }
@@ -414,18 +421,18 @@ function finish(r){
 (async()=>{
   await Promise.race([document.fonts.load('700 28px "Alegreya SC"').catch(()=>{}), new Promise(r=>setTimeout(r,2000))]);
   lob = Red.sala($('#sala'), { nombre:yo().nombre, avatar:yo().avatar,
-    onCambio:()=>{ if (!game.on) syncStart(); },
-    onEmpezar:(list)=>{ begin(list); },
+    onCambio:()=>{ if (!game.on) syncStart(); if (lob && lob.rol==='cliente') lob.enviar({t:'dis',d:DIS}); },
+    onEmpezar:(list)=>{ begin(list); if (lob && lob.rol==='cliente') lob.enviar({t:'dis',d:DIS}); },
     onMensaje:(d,slot)=>{
       if (lob.rol==='host'){ if (d.t==='in'){ const r=remote[slot]||(remote[slot]={ptk:d.tk,pue:d.ue,pdr:d.dr}); Object.assign(r,{x:d.x,z:d.z,u:d.u,tk:d.tk,ue:d.ue,dr:d.dr,si:d.si}); } else if (d.t==='dis'){ disenios[slot]=d.d; } return; }
-      if (d.t==='cfg'){ Object.assign(disenios,d.ds||{}); delete disenios[mySlot()]; }
+      if (d.t==='cfg'){ aplicaDisenios(d.ds); }
       else if (d.t==='estado') applySnapshot(d.s);
       else if (d.t==='fin') finish(d.r); },
     onSalida:(slot)=>{ delete remote[slot]; const p=players.find(q=>q.slot===slot); if (p && game.on){ p.nombre+=' (salió)'; p.ai=true; showBanner('Un jugador salió de la sala'); } },
     onCierre:()=>{ if (game.on){ game.on=false; showBanner('Se cerró la sala del anfitrión'); } $('#end').hidden=true; $('#start').hidden=false; },
   });
   resize(); cambiado(); syncStart(); requestAnimationFrame(frame); $('#goBtn').focus();
-  if (location.hash==='#prueba'){ window.__r={game,cars:players,R,WP,step,distPista,reiniciar:()=>{ reiniciar([yo()]); game.on=true; },get diseno(){ return DIS; }}; if (!location.search.includes('diseno')) begin([yo()]); }
+  if (location.hash==='#prueba'){ window.__r={game,cars:players,R,WP,step,distPista,avisar,aplicaDisenios,hacer:hacerChivas,colorCuerpo:slot=>{ const p=players.find(q=>q.slot===slot); return p&&p.disenio.cuerpo; },reiniciar:()=>{ reiniciar([yo()]); game.on=true; },get diseno(){ return DIS; }}; if (!location.search.includes('diseno')) begin([yo()]); }
 })();
 })();
 </script>
