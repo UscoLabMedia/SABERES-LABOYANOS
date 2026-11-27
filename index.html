@@ -107,7 +107,8 @@ body{margin:0;background:var(--desk);color:var(--on-desk);font-family:var(--f-ui
 .in-form input[type=text],.in-form input[type=password]{font:inherit;font-size:1rem;padding:.5rem .7rem;border:1.5px solid var(--ink);background:#fbf5e6;color:var(--ink);width:100%;box-sizing:border-box}
 .in-ayuda{font-size:.85rem;color:var(--ink-soft)}.in-sub{font-family:var(--f-display);font-size:1.05rem;margin:1rem 0 .3rem}
 .in-alt{margin:.8rem 0 0;font-size:.95rem}.in-link{background:none;border:0;padding:0;font:inherit;font-weight:700;color:var(--cherry);text-decoration:underline;cursor:pointer}
-.in-lista{display:grid;gap:.5rem;margin:.2rem 0 0;padding:0;list-style:none;max-height:38vh;overflow:auto}.in-lista li{display:flex;gap:.4rem}.in-lista li .btn:first-child{flex:1}.in-borrar{flex:0 0 auto;font-size:.9rem;padding:.4rem .7rem}
+.in-lista{display:grid;gap:.5rem;margin:.2rem 0 0;padding:0;list-style:none;max-height:38vh;overflow:auto}.in-lista li{display:flex;gap:.4rem;align-items:stretch}.in-lista li .btn:first-child{flex:1 1 auto;min-width:0;width:auto}
+.in-lista .in-borrar{flex:0 0 auto;width:auto;align-self:center;font-size:.8rem;padding:.35rem .6rem}
 .in-pie{display:flex;justify-content:space-between;gap:1rem;margin-top:.9rem;font-size:.9rem}
 .in-acts{display:flex;gap:.6rem;justify-content:flex-end;margin-top:.6rem}.in-err{color:var(--cherry);font-weight:700;min-height:1.2em;margin:.2rem 0 0}
 .row{display:grid;grid-template-columns:minmax(0,11rem) minmax(0,1fr);gap:.4rem 1rem;align-items:center}
