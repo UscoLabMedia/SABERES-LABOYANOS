@@ -40,3 +40,9 @@ Las páginas no se pudieron abrir directamente desde el entorno de trabajo: **re
 
 Exploración (datos) → Fabricación de artesanías (como la cosecha, sin plaza de toros) → Carrera de chivas (diseñar/pintar y luego correr; reemplaza a las oleadas) → Trivia.
 Orden de niveles: 1 Café · 2 Alfarería · 3 Caballos · 4 Música y Danza (aún no aplicado en el código).
+
+## Estado de uso en el juego (27 nov 2026)
+
+- Pistas del taller (`data/nivel2.json`): las 3 del borrador, con estas redacciones; diálogos con personajes inventados (Don Eliécer, Doña Marlene, Yeison).
+- Trivia (`data/trivia2.json`): 15 preguntas, cada una con enlace a su fuente. La prueba `tests/contenido2.js` falla si aparecen plaza de toros, años de la primera chiva, cifras de familias, temperaturas de horno o el año de Ashuarte.
+- **Pendiente:** que un docente de Pitalito revise las pistas y las preguntas y abra los enlaces oficiales (el entorno de trabajo no pudo abrirlos directamente).

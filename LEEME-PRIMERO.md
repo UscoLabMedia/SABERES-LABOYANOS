@@ -59,23 +59,29 @@ Videojuego web educativo y cultural sobre la identidad de **Pitalito (Valle de L
 
 ## 3. Estado actual
 
-Todo el Nivel 1 está jugable, de principio a fin:
+Los niveles 1 (café) y 2 (alfarería) están jugables, de principio a fin:
 
-`index.html` (libro) → `finca.html` (exploración) → `cosecha.html` (minijuego) → `oleadas.html` (defensa) → `trivia.html` → regreso al libro con el nivel superado.
+Nivel 1: `index.html` (libro) → `finca.html` (exploración) → `cosecha.html` (minijuego) → `oleadas.html` (defensa) → `trivia.html` → regreso al libro con el nivel superado.
+Nivel 2: libro → `finca.html?nivel=2` (el taller, 3 pistas) → `alfareria.html` (fabricación de artesanías) → `carrera.html` (diseña tu chiva y corre) → `trivia.html?nivel=2` → regreso al libro. El taller se despliega en el libro al superar El Café.
 
 | Archivo | Qué hace |
 |---|---|
 | `index.html` | Pantalla de inicio: libro que se abre, mapa de Pitalito con pop-ups. Menú, ajustes, **Mi progreso** (usuario, partida, cambiar de partida y cerrar sesión) y progreso del recorrido. En el ZIP ya trae `<!doctype html>` y `<meta charset>` al inicio, listo para GitHub Pages. |
-| `finca.html` | Exploración del Nivel 1. Elección muñeco o muñeca. 3 NPC dan 3 pistas, cuaderno de saberes, aguacero al final. |
+| `finca.html` | Exploración del Nivel 1 (y del Nivel 2 con `?nivel=2`, el taller). Elección muñeco o muñeca. 3 NPC dan 3 pistas, cuaderno de saberes, aguacero al final. |
 | `cosecha.html` | Minijuego (teclado, mando, táctil y **ratón**: clic en el suelo para caminar, clic en una estación para tomar o soltar, mantener el clic para usar): cafetal → despulpadora (manivela, se atasca) → tanques (fermentar 18 s, lavar) → secadero (voltear, marquesina contra la lluvia) → chiva. Pedidos, calidad de taza (>80 = especial), 3 min o modo tranquilo. Reglas en el objeto `R`. |
 | `oleadas.html` | Defensa del cafetal (con **ratón**: clic o mantener para golpear hacia el puntero): 12 cafetos, 5 oleadas de broca, roya (salta al vecino) y ojo de gallo (con lluvia). Ataque con palo. Reglas en `FOE`, `WAVES` y `ATK`. |
-| `trivia.html` | 5 preguntas al azar de `data/trivia1.json`, 20 s cada una. Comodines 50/50, +10 s y Cuaderno. Saberes por acierto, rapidez y racha. |
+| `trivia.html` | 5 preguntas al azar de `data/trivia1.json` (`?nivel=N` usa `data/triviaN.json`), 20 s cada una. Comodines 50/50, +10 s y Cuaderno. Saberes por acierto, rapidez y racha. |
 | `papel.js` | Utilidades compartidas: ajustes (`S`), sonido sintetizado (`Sound`), recortes troquelados (`cutout`), dibujos (`D`), texturas, cajas y techos. |
 | `muneco.js` | `Muneco.jugador(etapa, fem)` (etapa = niveles superados en orden), `Muneco.npc(tipo)`, `Muneco.animar()` y `Muneco.retrato()`. |
 | `guardado.js` | Cuentas y partidas con Supabase Auth. Para los minijuegos la API no cambia: `Guardado.progreso()`, `.guardar()`, `.perfil()`, `.actualizarPerfil({avatar})`. Cuentas en `Guardado.cuenta`. Ver `docs/guardado.md`. |
 | `inicio.js` | Pantalla de entrada: usuario y contraseña, crear usuario, continuar o nueva partida, borrar partidas y borrar cuenta. |
 | `red.js` | Salas en red con PeerJS: `Red.sala(contenedor, opciones)` arma la pantalla de sala (Solo, Crear sala, Unirme). Modelo: el anfitrión simula; los invitados envían controles y reciben el estado a 15 Hz. |
 | `config.js` | Datos de Supabase y del servidor PeerJS. |
+| `alfareria.html` | Minijuego del Nivel 2 (1 a 4 jugadores en red): mina → amasado → torno o mesa de chivas → secadero (toldo contra la lluvia) → horno con leña → pintura → puesto de la feria. Si no amasas el barro, la pieza se rajará en el horno; si el horno se pasa, se quema. Reglas en el objeto `R`. Gancho `window.__a` con `#prueba`. |
+| `carrera.html` | Carrera de chivas del Nivel 2: pantalla de diseño (trompa, cuerpo, franja, letrero, carga; se guarda en `PROG.chiva`) y carrera de 3 vueltas por «La Ruta de la Chiva», con turbo; solo = 3 chivas de la máquina. Gancho `window.__r`. |
+| `estaciones.js` | Motor común de los minijuegos de estaciones: entrada de un solo botón de Acción (tocar = tomar; mantener = usar) y Soltar en teclado, ratón, mando y celular, control de invitados por red, letreros sin encimarse y botón de Acción. Lo usan `cosecha.html`, `alfareria.html` y `carrera.html`. |
+| `tests/` | Pruebas con Playwright (`node tests/<nombre>.js`; ayudas en `tests/lib.js`): `orden`, `trivia_nivel`, `explora`, `cosecha_regresion`, `alfareria`, `carrera`, `mapa_nivel2`, `contenido2`, `tactil_sonido`. Necesitan Chrome del sistema y three.js local (`THREE_JS=ruta`). |
+| `data/nivel2.json`, `data/trivia2.json` | Diálogos, pistas, cierre y 15 preguntas del Nivel 2, cada una con su fuente. Datos verificados en `docs/nivel2-fuentes.md`. |
 | `data/nivel1.json` | Diálogos y pistas de la finca (editable por docentes). |
 | `data/trivia1.json` | Banco de preguntas (editable por docentes). |
 | `docs/guardado.md` | Cómo funcionan las cuentas y partidas, cómo activar Supabase y la red. |
@@ -120,7 +126,7 @@ Todo el Nivel 1 está jugable, de principio a fin:
    - Traje de la sanjuanera.
    - Nombres del mapa del libro.
 3. **Llevar el personaje 3D al libro (`index.html`):** los muñecos del mapa siguen siendo recortes planos. Mostrar el atuendo ganado.
-4. **Nivel 2: La Alfarería** (diseño en `docs/superpowers/specs/2026-11-27-nivel2-alfareria-design.md`, plan en `docs/superpowers/plans/`, datos en `docs/nivel2-fuentes.md`). Luego **Nivel 3: Los Caballos**, con el mismo ciclo: exploración, minijuego de oficio, oleadas con amenazas propias y trivia. Reusar `muneco.js`, `red.js` y `guardado.js`, y el patrón de `cosecha.html` y `oleadas.html` (snapshot del anfitrión y `clientFrame` en los invitados).
+4. ~~Nivel 2: La Alfarería~~ **hecho en la rama** (falta validar contenidos con un docente y probar la red entre celulares reales; diseño en `docs/superpowers/specs/2026-11-27-nivel2-alfareria-design.md`, plan en `docs/superpowers/plans/`, datos en `docs/nivel2-fuentes.md`). ). Luego **Nivel 3: Los Caballos**, con el mismo ciclo: exploración, minijuego de oficio, oleadas con amenazas propias y trivia. Reusar `muneco.js`, `red.js` y `guardado.js`, y el patrón de `cosecha.html` y `oleadas.html` (snapshot del anfitrión y `clientFrame` en los invitados).
 5. **Niveles 3 y 4**, después.
 6. **Comunidad, sala del moderador y archivo fotográfico** (ver sección 2), probablemente sobre Supabase (Auth + Storage).
 7. **Proyecto aparte (no mezclar):** juego para un programa de Comunicación Social y Periodismo, donde los niveles son asignaturas y el jugador elige a qué clase entrar.
