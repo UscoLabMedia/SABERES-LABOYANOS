@@ -255,7 +255,7 @@ const tch={x:0,z:0,hit:false,pow:false}; let pad={};
 function localInput(){ const I={x:0,z:0,hit:false};
   if (any(K.u,down)) I.z-=1; if (any(K.d,down)) I.z+=1; if (any(K.l,down)) I.x-=1; if (any(K.r,down)) I.x+=1; I.hit=any(K.hit,pressed);
   const gp=(navigator.getGamepads?[...navigator.getGamepads()]:[]).filter(Boolean)[0];
-  if (gp){ const ax=gp.axes[0]||0, az=gp.axes[1]||0; if (Math.hypot(ax,az)>.25){ I.x+=ax; I.z+=az; } const a=gp.buttons[0]?.pressed||gp.buttons[2]?.pressed; if (a&&!pad.a) I.hit=true; pad={a}; }
+  if (gp){ const ax=gp.axes[0]||0, az=gp.axes[1]||0; if (Math.hypot(ax,az)>.25){ I.x+=ax; I.z+=az; } const a=gp.buttons[0]?.pressed||gp.buttons[2]?.pressed; if (a&&!pad.a) I.hit=true; pad.a=a; }   // pad.a sin borrar pad.p (poder)
   if (touch){ I.x+=tch.x; I.z+=tch.z; I.hit=I.hit||tch.hit; }
   const gp2=(navigator.getGamepads?[...navigator.getGamepads()]:[]).filter(Boolean)[0]; const gpow=!!(gp2&&(gp2.buttons[1]?.pressed||gp2.buttons[3]?.pressed));
   I.pow=any(K.pow,pressed)||tch.pow||(gpow&&!pad.p); pad.p=gpow;
