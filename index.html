@@ -477,7 +477,12 @@ const pageTop=paperMat('#efe3c6');
 
 // Mitad derecha fija
 const backR=new THREE.Mesh(placa(BW+.12,BD+.25,COVER), leather); backR.position.set(BW/2+.06,0,0);
-const pagesR=new THREE.Mesh(new THREE.BoxGeometry(BW,PAGES,BD), [pageEdge,pageEdge,pageTop,pageTop,pageEdge,pageEdge]); pagesR.position.set(BW/2,COVER+PAGES/2,0);
+const DIP=.12, dip=d=>DIP*Math.pow(Math.max(0,1-d/1.9),2);   // las hojas bajan hacia el lomo
+function bloque(abajo){ const s=new THREE.Shape(), N=20; // perfil en (distancia al lomo, alto); abajo=true: la cara curva es la de abajo (mitad que gira)
+  const y=d=>abajo?dip(d):PAGES-dip(d), y0=abajo?PAGES:0;
+  s.moveTo(0,y0); s.lineTo(BW,y0); s.lineTo(BW,y(BW)); for (let i=N;i>=0;i--){ const d=i/N*2; s.lineTo(d,y(d)); } s.lineTo(0,y0);
+  const g=new THREE.ExtrudeGeometry(s,{depth:BD,bevelEnabled:false}); g.translate(0,0,-BD/2); return g; }
+const pagesR=new THREE.Mesh(bloque(false), pageEdge); pagesR.position.set(0,COVER,0);
 [backR,pagesR].forEach(m=>{m.castShadow=m.receiveShadow=true; book.add(m);});
 const spine=new THREE.Mesh(new THREE.CylinderGeometry(.24,.24,BD+.25,16,1,false,Math.PI,Math.PI), leather); spine.rotation.x=Math.PI/2; spine.position.set(0,.24,0); book.add(spine);
 const oro=new THREE.MeshStandardMaterial({color:'#e6bd5f',metalness:.5,roughness:.35,emissive:'#7a5a1a',emissiveIntensity:.25});
@@ -487,9 +492,13 @@ const oro=new THREE.MeshStandardMaterial({color:'#e6bd5f',metalness:.5,roughness
 
 // Mitad que gira (tapa + hojas izquierdas)
 const flip=new THREE.Group(); flip.position.set(0,TOP,0); book.add(flip);
-const pagesL=new THREE.Mesh(new THREE.BoxGeometry(BW,PAGES,BD), [pageEdge,pageEdge,pageTop,pageTop,pageEdge,pageEdge]); pagesL.position.set(BW/2,PAGES/2,0);
+const pagesL=new THREE.Mesh(bloque(true), pageEdge);
 const coverF=new THREE.Mesh(placa(BW+.12,BD+.25,COVER), leather); coverF.position.set(BW/2+.06,PAGES,0);
 [pagesL,coverF].forEach(m=>{m.castShadow=m.receiveShadow=true; flip.add(m);});
+// costura: hilo que cruza el lomo
+{ const hilo=new THREE.MeshStandardMaterial({color:'#e8dcc0',roughness:.9});
+  for (let i=0;i<8;i++){ const h=new THREE.Mesh(new THREE.BoxGeometry(.5,.016,.045),hilo); h.position.set(0,TOP-DIP+.012,-3.5+i); h.rotation.y=.03*((i%3)-1); book.add(h); } }
+const pageY=x=>TOP-dip(Math.abs(x))+.004;
 let coverTitle, mapL, mapR;
 
 /* ---------------- Pop-ups ---------------- */
@@ -497,16 +506,16 @@ const pops=[];  // {obj, kind, delay, target, val, vel, started}
 const hits=[];
 function addPop(obj, kind, delay, target){ pops.push({obj,kind,delay,target,val:0,vel:0,started:false}); applyPop(pops[pops.length-1]); return obj; }
 function applyPop(p){ p.obj.visible=p.started; if (p.kind==='rot') p.obj.rotation.x=-Math.PI/2*(1-p.val); else p.obj.scale.y=Math.max(.02,p.val); }
-const at=(obj,x,z,ry=0)=>{ obj.position.set(x,TOP+.004,z); obj.rotation.y=ry; return obj; };
+const at=(obj,x,z,ry=0)=>{ obj.position.set(x,pageY(x),z); obj.rotation.y=ry; return obj; };
 
 function placeGroup(key){ const p=PLACES[key], g=new THREE.Group(); g.position.set(p.x,0,p.z); scene.add(g);
   const hb=new THREE.Mesh(new THREE.BoxGeometry(2.4,2.4,2.2), new THREE.MeshBasicMaterial({visible:false})); hb.position.set(0,TOP+1.1,0); hb.userData.key=key; g.add(hb); hits.push(hb);
   return g; }
 function cardAt(group, canvasEl, h, x, z, delay, {tint, target=1, ry=0}={}){
-  const holder=new THREE.Group(); holder.position.set(x,TOP+.004,z); holder.rotation.y=ry; const m=card(canvasEl,h,{tint}); holder.add(m); group.add(holder);
+  const holder=new THREE.Group(); holder.position.set(x,pageY(x),z); holder.rotation.y=ry; const m=card(canvasEl,h,{tint}); holder.add(m); group.add(holder);
   const hinge=new THREE.Group(); holder.remove(m); hinge.add(m); holder.add(hinge);
   addPop(hinge,'rot',delay,target); return holder; }
-function buildAt(group, obj, x, z, delay, target=1){ const holder=new THREE.Group(); holder.position.set(x,TOP+.004,z); holder.add(obj); group.add(holder); addPop(holder,'scale',delay,target); return holder; }
+function buildAt(group, obj, x, z, delay, target=1){ const holder=new THREE.Group(); holder.position.set(x,pageY(x),z); holder.add(obj); group.add(holder); addPop(holder,'scale',delay,target); return holder; }
 
 function buildWorld(){
   const tiles=tileTex();
@@ -742,9 +751,11 @@ async function boot(){
   const mapC=drawMap();
   const tR=texFrom(mapC); tR.repeat.set(.5,1); tR.offset.set(.5,0);
   const tL=texFrom(mapC); tL.repeat.set(-.5,-1); tL.offset.set(.5,1);
-  const pg=new THREE.PlaneGeometry(BW,BD);
-  mapR=new THREE.Mesh(pg,new THREE.MeshStandardMaterial({map:tR,roughness:.95})); mapR.rotation.x=-Math.PI/2; mapR.position.set(BW/2,TOP+.003,0); mapR.receiveShadow=true; book.add(mapR);
-  mapL=new THREE.Mesh(pg,new THREE.MeshStandardMaterial({map:tL,roughness:.95})); mapL.rotation.x=Math.PI/2; mapL.position.set(BW/2,-.003,0); mapL.receiveShadow=true; flip.add(mapL);
+  const pg=new THREE.PlaneGeometry(BW,BD,48,1); { const p=pg.attributes.position, col=new Float32Array(p.count*3);
+    for (let i=0;i<p.count;i++){ const d=p.getX(i)+BW/2; p.setZ(i,-dip(d)); const k=.5+.5*Math.min(1,d/1.6); col[i*3]=col[i*3+1]=col[i*3+2]=k; }
+    pg.setAttribute('color',new THREE.BufferAttribute(col,3)); pg.computeVertexNormals(); }
+  mapR=new THREE.Mesh(pg,new THREE.MeshStandardMaterial({map:tR,roughness:.95,vertexColors:true})); mapR.rotation.x=-Math.PI/2; mapR.position.set(BW/2,TOP+.003,0); mapR.receiveShadow=true; book.add(mapR);
+  mapL=new THREE.Mesh(pg,new THREE.MeshStandardMaterial({map:tL,roughness:.95,vertexColors:true})); mapL.rotation.x=Math.PI/2; mapL.position.set(BW/2,-.003,0); mapL.receiveShadow=true; flip.add(mapL);
   const cm=new THREE.MeshStandardMaterial({color:'#5a2418',roughness:.7,metalness:.05});
   cm.map=cargarTex('assets/portada-color.jpg',{color:true,ok:()=>{ cm.color.set('#ffffff'); cm.needsUpdate=true; },fallo:()=>{ cm.map=texFrom(drawCover()); cm.normalMap=cm.roughnessMap=cm.emissiveMap=null; cm.roughness=.7; cm.emissive.set('#000000'); cm.color.set('#ffffff'); cm.needsUpdate=true; }});
   if (!baja){ cm.normalMap=cargarTex('assets/portada-normal.jpg'); cm.normalScale.set(.8,.8); cm.roughnessMap=cargarTex('assets/portada-rug.jpg'); cm.roughness=1; cm.emissive.set('#ffffff'); cm.emissiveMap=cargarTex('assets/portada-emis.jpg',{color:true}); cm.emissiveIntensity=.32; }
