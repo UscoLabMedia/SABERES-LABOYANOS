@@ -18,6 +18,22 @@ Qué guarda cada parte del juego (objeto de progreso):
 | `nivel1` | trivia.html | `true` cuando se aciertan 3 o más preguntas |
 | `actualizado` | guardado.js | Marca de tiempo; gana la copia más reciente |
 
+## Pantalla de entrada: sesiones y PIN
+
+Al abrir `index.html` aparece **¿Quién juega?** (`inicio.js`), una vez por visita. Volver desde un minijuego no la repite.
+
+| Botón | Qué hace |
+|---|---|
+| Continuar como … | Sigue con el perfil de este equipo. Si tiene PIN, lo pide |
+| Nueva partida | Pide nombre y PIN opcional de 4 números. Empieza en cero |
+| Cambiar de persona | Lista de perfiles de este equipo |
+| Entrar con mi código | Trae un perfil de otro celular con su código de respaldo |
+
+- **Cerrar sesión** está en el menú del libro. Vuelve a mostrar la pantalla.
+- El PIN se puede poner, cambiar o quitar en **Mi progreso**.
+- El PIN es un freno contra entradas por error en un equipo compartido, no seguridad fuerte: son 4 números y se guarda en el navegador. El código de respaldo lleva el PIN.
+- Solo `index.html` muestra la pantalla. Quien abra `finca.html` directo entra con el último perfil del equipo.
+
 ## Activar la nube (gratis, Supabase)
 
 1. Crea una cuenta y un proyecto en https://supabase.com (plan gratuito).

@@ -97,6 +97,14 @@ body{margin:0;background:var(--desk);color:var(--on-desk);font-family:var(--f-ui
 .tabs button{font-family:var(--f-display);font-weight:700;font-size:1rem;background:transparent;border:0;padding:.55rem .9rem;color:var(--ink-soft);cursor:pointer;white-space:nowrap;border-bottom:3px solid transparent;margin-bottom:-2px}
 .tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--cherry)}
 .tabpanel{display:grid;gap:1.1rem;padding-top:1.1rem}
+.inicio{position:fixed;inset:0;background:rgba(10,6,3,.82);display:grid;place-items:center;padding:16px;z-index:60}
+.inicio[hidden]{display:none}
+.in-menu,.in-lista{display:grid;gap:.6rem;margin:.8rem 0 0;padding:0;list-style:none}
+.in-menu .btn,.in-lista .btn{width:100%;text-align:left}
+.btn small{display:block;font-family:var(--f-ui);font-weight:500;font-size:.78rem;opacity:.85}
+.in-form{display:grid;gap:.4rem;margin-top:.6rem}.in-form label{font-weight:700}
+.in-form input[type=password]{font:inherit;font-size:1rem;padding:.5rem .7rem;border:1.5px solid var(--ink);background:#fbf5e6;color:var(--ink);width:100%;box-sizing:border-box}
+.in-acts{display:flex;gap:.6rem;justify-content:flex-end;margin-top:.6rem}.in-err{color:var(--cherry);font-weight:700;min-height:1.2em;margin:.2rem 0 0}
 .row{display:grid;grid-template-columns:minmax(0,11rem) minmax(0,1fr);gap:.4rem 1rem;align-items:center}
 .row > label,.row > .lbl{font-weight:700;font-size:.98rem}
 .row .help{grid-column:2;font-size:.85rem;color:var(--ink-soft);margin-top:-.2rem}
@@ -180,6 +188,7 @@ kbd{font-family:var(--f-ui);font-weight:700;font-size:.8rem;border:1px solid var
     <button class="slip" data-act="map">Explorar el mapa <span class="hint">toca un lugar</span></button>
     <button class="slip" data-act="community" aria-disabled="true">Comunidad <span class="hint">al superar El Café</span></button>
     <button class="slip" data-act="perfil">Mi progreso <span class="hint" id="whoHint">perfil y respaldo</span></button>
+    <button class="slip" data-act="logout">Cerrar sesión <span class="hint" id="logoutHint">cambiar de persona</span></button>
     <button class="slip" data-act="settings">Ajustes <span class="hint">sonido, gráficos, controles</span></button>
     <button class="slip" data-act="credits">Créditos</button>
   </nav>
@@ -268,6 +277,15 @@ kbd{font-family:var(--f-ui);font-weight:700;font-size:.8rem;border:1px solid var
   </section>
 </div>
 
+<!-- ¿Quién juega? (antes del libro) -->
+<div class="inicio" id="inicio" hidden>
+  <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="inTitle">
+    <p class="kicker">Saberes de Laboyos</p>
+    <h2 id="inTitle">¿Quién juega?</h2>
+    <div id="inPaso"></div>
+  </section>
+</div>
+
 <!-- Mi progreso -->
 <div class="scrim" id="perfil" hidden>
   <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="pfTitle">
@@ -278,6 +296,8 @@ kbd{font-family:var(--f-ui);font-weight:700;font-size:.8rem;border:1px solid var
     <div class="tabpanel" style="padding-top:.4rem">
       <div class="row"><span class="lbl">Perfiles en este equipo</span><ul class="chips" id="pfList"></ul></div>
       <div class="row"><label for="pfNew">Nuevo perfil</label><div style="display:flex;gap:.5rem;flex-wrap:wrap"><input type="text" id="pfNew" maxlength="24" placeholder="Nombre del estudiante" autocomplete="off" style="flex:1 1 10rem"><button class="btn" id="pfCreate">Crear</button></div></div>
+      <div class="row"><label for="pfPin">PIN (opcional)</label><div style="display:flex;gap:.5rem;flex-wrap:wrap"><input type="password" id="pfPin" inputmode="numeric" maxlength="4" placeholder="4 números, vacío = sin PIN" autocomplete="off" style="flex:1 1 10rem;font:inherit;padding:.5rem .7rem;border:1.5px solid var(--ink);background:#fbf5e6;color:var(--ink);box-sizing:border-box"><button class="btn" id="pfPinSave">Guardar PIN</button></div>
+        <span class="help" id="pfPinHelp"></span></div>
       <div class="row"><label for="pfCode">Código de respaldo</label><div style="display:grid;gap:.4rem"><textarea id="pfCode" rows="3" readonly style="font:.8rem/1.3 monospace;width:100%;border:1.5px solid var(--ink);background:#fbf5e6;color:var(--ink);padding:.4rem"></textarea><button class="btn" id="pfCopy" style="justify-self:start">Copiar código</button></div>
         <span class="help">Guárdalo para seguir en otro celular o computador.</span></div>
       <div class="row"><label for="pfImport">Traer progreso</label><div style="display:grid;gap:.4rem"><textarea id="pfImport" rows="2" placeholder="Pega aquí un código de respaldo" style="font:.8rem/1.3 monospace;width:100%;border:1.5px solid var(--ink);background:#fbf5e6;color:var(--ink);padding:.4rem"></textarea><button class="btn" id="pfDoImport" style="justify-self:start">Usar este código</button></div></div>
@@ -304,6 +324,7 @@ kbd{font-family:var(--f-ui);font-weight:700;font-size:.8rem;border:1px solid var
 <script src="guardado.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="papel.js"></script>
+<script src="inicio.js"></script>
 <script>
 (() => {
 'use strict';
@@ -649,6 +670,7 @@ $('#menu').addEventListener('click', e=>{ const b=e.target.closest('.slip'); if 
   else if (act==='map'){ toast('Toca o pasa el cursor sobre un lugar del libro.'); }
   else if (act==='community') toast(PROG.nivel1?'La sala de la comunidad está en construcción.':'La comunidad se abre al superar El Café: entra por la Torre de los saberes.');
   else if (act==='perfil'){ syncProfile(); openSheet('perfil'); }
+  else if (act==='logout') cerrarSesion();
   else if (act==='settings') openSheet('settings');
   else if (act==='credits') openSheet('credits'); });
 $('#gearBtn').addEventListener('click',()=>openSheet('settings'));
@@ -693,14 +715,15 @@ function syncProgress(){ PROG=Guardado.progreso(); const done=LEVELS.filter(l=>P
   const c=$('[data-act="community"]'); c.setAttribute('aria-disabled', String(!PROG.nivel1)); c.querySelector('.hint').textContent=PROG.nivel1?'en construcción':'al superar El Café'; }
 const CLOUD={local:'Desactivada: el progreso queda solo en este navegador.',sincronizado:'Sincronizado.',pendiente:'Sin internet: se sincroniza al volver la conexión.',error:'No se pudo sincronizar. Se intentará de nuevo.'};
 function syncProfile(){ const p=Guardado.perfil(); PROG=Guardado.progreso();
-  $('#pfTitle').textContent=p.nombre; $('#whoHint').textContent=p.nombre;
+  $('#pfTitle').textContent=p.nombre; $('#whoHint').textContent=p.nombre; $('#logoutHint').textContent='salir de '+p.nombre;
   const st=[PROG.nivel1?'Nivel 1 superado':'Nivel 1 en curso', PROG.cosecha!=null?`cosecha ${PROG.cosecha}★`:null, PROG.oleadas!=null?`defensa ${PROG.oleadas}★`:null, PROG.trivia1!=null?`trivia ${PROG.trivia1}/5`:null].filter(Boolean);
   $('#pfSummary').textContent=st.join(' · ')+'.';
   $('#pfList').innerHTML=Guardado.perfiles().map(q=>`<li><button class="btn" data-pf="${q.id}" ${q.id===p.id?'aria-pressed="true" style="background:var(--ink);color:var(--paper)"':''}>${q.nombre.replace(/[<>&]/g,'')}</button></li>`).join('');
-  $('#pfCode').value=Guardado.codigo();
+  $('#pfCode').value=Guardado.codigo(); $('#pfPinHelp').textContent=Guardado.tienePin(p.id)?'Este perfil tiene PIN. Déjalo vacío y guarda para quitarlo.':'Sin PIN: cualquiera en este equipo puede entrar a este perfil.';
   $('#pfCloud').textContent=Guardado.nube.activa?CLOUD[Guardado.nube.estado]||CLOUD.sincronizado:CLOUD.local; }
 $('#pfList').addEventListener('click',e=>{ const b=e.target.closest('[data-pf]'); if (!b) return; if (Guardado.usarPerfil(b.dataset.pf)) location.reload(); });
 $('#pfCreate').addEventListener('click',()=>{ const p=Guardado.crearPerfil($('#pfNew').value); Guardado.usarPerfil(p.id); location.reload(); });
+$('#pfPinSave').addEventListener('click',()=>{ const v=$('#pfPin').value.trim(); if (v && !/^\d{4}$/.test(v)) return toast('El PIN son 4 números.'); Guardado.ponerPin(Guardado.perfil().id,v); $('#pfPin').value=''; toast(v?'PIN guardado.':'PIN quitado.'); syncProfile(); });
 $('#pfCopy').addEventListener('click',()=>{ const t=$('#pfCode'); navigator.clipboard.writeText(t.value).then(()=>toast('Código copiado.')).catch(()=>{ t.select(); toast('Selecciona y copia el código.'); }); });
 $('#pfDoImport').addEventListener('click',()=>{ try { const p=Guardado.importar($('#pfImport').value); toast(`Progreso de ${p.nombre} cargado.`); setTimeout(()=>location.reload(),600); } catch(err){ toast(err.message); } });
 addEventListener('laboyos:nube',()=>{ if (!$('#perfil').hidden) syncProfile(); });

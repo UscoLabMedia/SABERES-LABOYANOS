@@ -2,7 +2,7 @@
    - Cada equipo puede tener varios perfiles (uno por estudiante).
    - El progreso se guarda en el navegador y, si config.js tiene Supabase, también en la nube.
    - Un código de respaldo permite llevar el progreso a otro equipo.
-   API: Guardado.perfil(), .perfiles(), .progreso(), .guardar(prog), .crearPerfil(nombre),
+   API: Guardado.tienePin(id), .ponerPin(id,pin), .verificarPin(id,pin), .progresoDe(id), Guardado.perfil(), .perfiles(), .progreso(), .guardar(prog), .crearPerfil(nombre),
         .usarPerfil(id), .actualizarPerfil({nombre, avatar}), .codigo(), .importar(codigo),
         .nube.estado ('local' | 'sincronizado' | 'pendiente' | 'error'), .sincronizar() */
 (() => {
@@ -32,7 +32,17 @@ const perfil = () => perfiles.find(p => p.id === activo);
 const progreso = () => Object.assign({ etapa:0 }, LS.get(K.prog(activo), {}));
 function guardar(prog){ prog.actualizado = Date.now(); LS.set(K.prog(activo), prog); LS.set(K.pend(activo), true); nube.subir(); return prog; }
 function sincAjustes(){ const aj = LS.get(K.ajustes, {}); const p = perfil(); aj.name = p.nombre; aj.avatar = p.avatar; LS.set(K.ajustes, aj); }
-function crearPerfil(nombre){ const p = { id:nuevoId(), nombre:(nombre||'').trim().slice(0,24) || `Jugador ${perfiles.length+1}`, avatar:'muneco' };
+// PIN opcional de 4 números. Es un freno contra entradas por error en un equipo compartido, no seguridad fuerte.
+const hashPin = (id, pin) => { let h = 5381; for (const c of id + ':' + pin) h = ((h << 5) + h + c.charCodeAt(0)) | 0; return (h >>> 0).toString(36); };
+const pinValido = pin => /^\d{4}$/.test(String(pin));
+const tienePin = id => !!(perfiles.find(p => p.id === id) || {}).pin;
+function ponerPin(id, pin){ const p = perfiles.find(q => q.id === id); if (!p) return false;
+  if (!pin) delete p.pin; else if (pinValido(pin)) p.pin = hashPin(id, pin); else return false;
+  LS.set(K.perfiles, perfiles); return true; }
+const verificarPin = (id, pin) => { const p = perfiles.find(q => q.id === id); return !!p && (!p.pin || p.pin === hashPin(id, String(pin))); };
+const progresoDe = id => Object.assign({ etapa:0 }, LS.get(K.prog(id), {}));
+function crearPerfil(nombre, pin){ const p = { id:nuevoId(), nombre:(nombre||'').trim().slice(0,24) || `Jugador ${perfiles.length+1}`, avatar:'muneco' };
+  if (pin && pinValido(pin)) p.pin = hashPin(p.id, pin);
   perfiles.push(p); LS.set(K.perfiles, perfiles); return p; }
 function usarPerfil(id){ if (!perfiles.find(p => p.id === id)) return false; activo = id; LS.set(K.activo, id); sincAjustes(); return true; }
 function actualizarPerfil(cambios){ const p = perfil(); if (cambios.nombre !== undefined) p.nombre = String(cambios.nombre).trim().slice(0,24) || p.nombre;
@@ -45,6 +55,7 @@ function importar(cod){
   let data; try { data = JSON.parse(decodeURIComponent(escape(atob(String(cod).trim())))); } catch (e) { throw new Error('El código no es válido. Revisa que esté completo.'); }
   if (!data || data.v !== 1 || !data.perfil || !data.perfil.id) throw new Error('El código no es de este juego.');
   const p = { id:data.perfil.id, nombre:data.perfil.nombre || 'Jugador', avatar:data.perfil.avatar || 'muneco' };
+  if (data.perfil.pin) p.pin = data.perfil.pin;
   const i = perfiles.findIndex(q => q.id === p.id); if (i >= 0) perfiles[i] = p; else perfiles.push(p);
   LS.set(K.perfiles, perfiles); activo = p.id; LS.set(K.activo, activo);
   const local = LS.get(K.prog(p.id), null), remoto = data.progreso || {};
@@ -81,5 +92,5 @@ addEventListener('online', () => { if (LS.get(K.pend(activo), false)) nube.subir
 sincAjustes();
 if (nube.activa) nube.bajar();
 
-window.Guardado = { perfil, perfiles:()=>perfiles.slice(), progreso, guardar, crearPerfil, usarPerfil, actualizarPerfil, codigo, importar, nube, sincronizar:()=>nube.bajar() };
+window.Guardado = { perfil, perfiles:()=>perfiles.slice(), progreso, progresoDe, tienePin, ponerPin, verificarPin, guardar, crearPerfil, usarPerfil, actualizarPerfil, codigo, importar, nube, sincronizar:()=>nube.bajar() };
 })();
