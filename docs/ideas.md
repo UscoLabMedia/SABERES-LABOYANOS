@@ -64,3 +64,14 @@ Solo anotado. Sin diseño ni código todavía. Fuente: observaciones de quienes 
 - **Poder (`POD`):** se carga al derrotar **5 plagas** (por jugador). Lo **activa el jugador** con la tecla **R**, **Shift**, el botón **Poder** (también en celular) o el mando. Dura **15 s**: golpe **giratorio de 360°**, daño 2 y alcance 1,8. El personaje se **ilumina** con un aura y un aro dorados, y parpadean en los últimos 3 s. Mientras dura no se carga otro. Funciona en red: la carga y el tiempo viajan en la instantánea del anfitrión.
 - **Techos transparentes (hecho en `finca.html`):** el techo del beneficiadero y el de la casa se vuelven casi transparentes (opacidad 0,18) cuando el personaje está debajo, o detrás y el techo lo taparía desde la cámara. Se desvanecen con suavidad y vuelven a ser opacos al salir. Función `techos()`; gancho de prueba `window.__f` con `#prueba`. La marquesina de la cosecha ya era translúcida.
 - Parámetros para ajustar a gusto: `POD.bajas` (5), `POD.dura` (15), `POD.dano` (2), `POD.alcance` (1,8).
+
+## Pendientes anotados el 27 de nov de 2026 (avisos de probadores y del usuario)
+
+No están hechos; cada uno necesita confirmar el alcance antes de programarse.
+
+1. **Nombre bajo el jugador = el usuario.** El nombre que se escribe al entrar (usuario) debe ser el que aparece bajo el personaje en todos los juegos. Revisar dónde sale otro nombre (en la finca los diálogos usan `S.name` o «visitante»; los minijuegos usan `Guardado.perfil().nombre`).
+2. **Finca en PC: montañas que tiemblan.** Las montañas del fondo se superponen, se ven sus márgenes blancos y parpadean (probable z-fighting entre tarjetas a la misma profundidad). Separarlas en profundidad o quitar el borde donde se solapan.
+3. **Elegir personaje al crear la partida**, no en la finca. Pensar opciones distintas a «muñeco o muñeca» (por ejemplo varios personajes o apariencias sin etiqueta de género). Se guarda en la partida.
+4. **Celular: moverse con joystick** también donde hoy se toca el suelo (la finca y la exploración del taller), igual que en los minijuegos.
+5. **Fabricación (alfareria.html) rediseñada por pedidos con receta.** Llega un cliente y pide una figura; **cada figura tiene procesos distintos**; en pantalla aparece la **receta** (pasos en orden) que se sigue y luego se **entrega al cliente**. Reemplazaría la cadena única actual (barro → amasado → torno/mesa → secadero → horno → pintura). Hace falta diseño nuevo y propuesta en PNG antes de construir. Los datos de cada figura deben salir de fuentes verificadas (`docs/nivel2-fuentes.md`).
+6. **Aviso de voltear** para mejorar la jugabilidad en celular: un aviso claro (visual, sonido y/o vibración) cuando el grano del secadero necesita voltearse en la cosecha.
