@@ -1,0 +1,606 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>La fabricación · Nivel 2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+SC:wght@700;800&family=Alegreya:ital,wght@0,400;0,600;1,400&family=Alegreya+Sans:wght@400;500;700&display=swap">
+<style>
+/* Layout: arena vista desde arriba a pantalla completa; reloj y puntos arriba a la izquierda, pedidos arriba al centro, avisos abajo. Un solo tema cálido. */
+:root{
+  --desk:#1b120c; --paper:#efe3c6; --paper-2:#e0cfa6; --ink:#2a1c11; --ink-soft:#6b5640;
+  --cherry:#c8101e; --leaf:#3e6a3a; --gold:#d9ae55; --on-desk:#f2e7d0; --rain:#9fc2e0;
+  --f-display:"Alegreya SC","Palatino Linotype",Georgia,serif;
+  --f-body:"Alegreya",Georgia,"Times New Roman",serif;
+  --f-ui:"Alegreya Sans","Segoe UI",system-ui,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+[hidden]{display:none!important}
+body{background:var(--desk);color:var(--on-desk);font-family:var(--f-ui);overflow:hidden;-webkit-tap-highlight-color:transparent;user-select:none}
+:root.big-text{font-size:18px}
+#scene{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+.hud{position:fixed;inset:0;pointer-events:none;
+  padding-block:max(12px, env(safe-area-inset-top,0px)) max(12px, env(safe-area-inset-bottom,0px));
+  padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));
+  display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-rows:auto 1fr auto;gap:10px}
+.hud > *{pointer-events:auto}
+.clock{grid-column:1;grid-row:1;background:var(--paper);color:var(--ink);padding:.4rem .9rem .5rem;box-shadow:0 4px 0 #b9a47a,0 10px 20px rgba(0,0,0,.4);align-self:start;min-width:8.5rem}
+.clock .time{font-family:var(--f-display);font-weight:800;font-size:2rem;line-height:1;font-variant-numeric:tabular-nums}
+.clock .time.low{color:var(--cherry)}
+.clock .pts{font-weight:700;font-size:.95rem;color:var(--ink-soft);font-variant-numeric:tabular-nums}
+.orders{grid-column:2;grid-row:1;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;list-style:none;margin:0;padding:0;align-self:start}
+.order{background:var(--paper);color:var(--ink);width:9.5rem;padding:.45rem .6rem .5rem;box-shadow:0 4px 0 #b9a47a,0 10px 18px rgba(0,0,0,.35);clip-path:polygon(0 0,100% 0,100% 88%,94% 100%,6% 100%,0 88%);transition:transform .25s}
+.order.especial{background:#f6e2a8}
+.order b{display:block;font-family:var(--f-display);font-size:1rem;line-height:1.1}
+.order span{font-size:.8rem;color:var(--ink-soft)}
+.order .bar{height:6px;background:rgba(42,28,17,.15);margin-top:.35rem}
+.order .bar i{display:block;height:100%;background:var(--leaf)}
+.order.hurry .bar i{background:var(--cherry)}
+.order.done{transform:translateY(-120%)}
+.tools{grid-column:3;grid-row:1;display:flex;gap:8px;align-self:start}
+.icon-btn{width:44px;height:44px;border-radius:50%;border:1px solid rgba(242,231,208,.25);background:rgba(27,18,12,.65);color:var(--on-desk);display:grid;place-items:center;cursor:pointer;text-decoration:none}
+.icon-btn svg{width:20px;height:20px}
+.banner{grid-column:1 / -1;grid-row:3;justify-self:center;align-self:end;background:var(--ink);color:var(--paper);font-family:var(--f-display);font-weight:700;font-size:1.15rem;padding:.55rem 1.1rem;box-shadow:0 10px 24px rgba(0,0,0,.45);opacity:0;transform:translateY(10px);transition:opacity .25s,transform .25s;text-align:center;max-width:100%}
+.banner.show{opacity:1;transform:none}
+.banner.rain{background:#1f3446;color:#e6f2fb}
+
+.labels{position:fixed;inset:0;pointer-events:none}
+.st{position:absolute;transform:translate(-50%,-100%);text-align:center;font-weight:700;font-size:.78rem;color:var(--ink);background:rgba(239,227,198,.94);padding:.2rem .45rem .3rem;min-width:5.5rem;box-shadow:0 4px 10px rgba(0,0,0,.3)}
+.st b{display:block;font-family:var(--f-display);font-size:.85rem;line-height:1.1}
+.st .bar{height:5px;background:rgba(42,28,17,.15);margin-top:.2rem}
+.st .bar i{display:block;height:100%;background:var(--leaf)}
+.st.warn{background:#f6d6a0}
+.st.bad{background:#f2b9b0}
+.st.ok{background:#d6ecc0}
+.pl{position:absolute;transform:translate(-50%,6px);font-weight:700;font-size:.75rem;padding:.1rem .4rem;color:#fff;white-space:nowrap}
+.float{position:absolute;transform:translate(-50%,-100%);font-family:var(--f-display);font-weight:800;font-size:1.4rem;color:var(--gold);text-shadow:0 2px 0 rgba(0,0,0,.5);transition:transform 1s ease-out,opacity 1s ease-out}
+
+.scrim{position:fixed;inset:0;background:rgba(10,6,3,.6);display:grid;place-items:center;z-index:20;
+  padding-block:max(16px, env(safe-area-inset-top,0px)) max(16px, env(safe-area-inset-bottom,0px));
+  padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px))}
+.sheet{position:relative;width:min(44rem,100%);max-height:100%;overflow:auto;background:var(--paper);color:var(--ink);padding:1.3rem 1.5rem 1.5rem;box-shadow:0 30px 60px rgba(0,0,0,.55);
+  background-image:radial-gradient(ellipse at 20% 0%,rgba(255,255,255,.35),transparent 55%),radial-gradient(ellipse at 100% 100%,rgba(140,100,50,.18),transparent 60%)}
+.sheet .kicker{font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--cherry);font-weight:700;margin:0 0 .2rem}
+.sheet h2{font-family:var(--f-display);font-size:1.9rem;margin:0}
+.sheet p{font-family:var(--f-body);font-size:1.08rem;line-height:1.45;margin:.5rem 0}
+.steps{list-style:none;margin:.8rem 0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(12rem,1fr));gap:.5rem}
+.steps li{background:rgba(42,28,17,.06);padding:.5rem .7rem;font-size:.92rem;line-height:1.35}
+.steps b{display:block;font-family:var(--f-display);font-size:1rem}
+.opts{display:grid;gap:.7rem;margin-top:.8rem}
+.opt{display:flex;align-items:center;gap:.8rem;flex-wrap:wrap}
+.opt > span{font-weight:700;min-width:7rem}
+.seg{display:inline-flex;border:1.5px solid var(--ink);flex-wrap:wrap}
+.seg button{font-family:var(--f-ui);font-weight:700;font-size:.92rem;background:transparent;border:0;padding:.45rem .8rem;cursor:pointer;color:var(--ink)}
+.seg button + button{border-left:1.5px solid var(--ink)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.keys{font-size:.88rem;color:var(--ink-soft);margin-top:.6rem;line-height:1.5}
+kbd{font-family:var(--f-ui);font-weight:700;font-size:.78rem;border:1px solid var(--ink-soft);border-bottom-width:2px;padding:0 .3rem;background:#fbf5e6;color:var(--ink)}
+.actions{display:flex;flex-wrap:wrap;gap:.6rem;justify-content:flex-end;margin-top:1.1rem}
+.btn{font-family:var(--f-display);font-weight:700;font-size:1rem;padding:.6rem 1.2rem;border:1.5px solid var(--ink);background:transparent;color:var(--ink);cursor:pointer;text-decoration:none;display:inline-block}
+.btn.solid{background:var(--cherry);border-color:var(--cherry);color:#fff3e6}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.stars{font-size:3rem;letter-spacing:.2em;color:var(--gold);text-shadow:0 2px 0 #8a6a20;margin:.3rem 0}
+.stars .off{color:#cbbd9c;text-shadow:none}
+.results{display:grid;grid-template-columns:repeat(auto-fit,minmax(8rem,1fr));gap:.5rem;margin:.6rem 0}
+.results div{background:rgba(42,28,17,.06);padding:.5rem .7rem}
+.results b{display:block;font-family:var(--f-display);font-size:1.6rem;font-variant-numeric:tabular-nums}
+.results span{font-size:.85rem;color:var(--ink-soft)}
+.storm{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 35%,rgba(10,22,34,.6));opacity:0;transition:opacity 1.2s}
+.storm.on{opacity:1}
+/* controles táctiles */
+.touch{position:fixed;inset:auto 0 0 0;display:flex;justify-content:space-between;align-items:flex-end;pointer-events:none;z-index:6;
+  padding-block:0 max(18px, env(safe-area-inset-bottom,0px));padding-left:max(18px, env(safe-area-inset-left,0px));padding-right:max(18px, env(safe-area-inset-right,0px))}
+.touch.pc .joy{display:none}.touch.pc{justify-content:flex-end}.touch.pc .tbtns button.act{width:92px;height:92px}
+.tbtns kbd{font:700 .65rem var(--f-ui);background:rgba(0,0,0,.18);padding:0 .3rem;border-radius:3px}
+.joy{width:120px;height:120px;border-radius:50%;background:rgba(239,227,198,.18);border:2px solid rgba(239,227,198,.4);position:relative;pointer-events:auto;touch-action:none}
+.joy i{position:absolute;left:50%;top:50%;width:50px;height:50px;margin:-25px 0 0 -25px;border-radius:50%;background:var(--paper)}
+.tbtns{display:flex;gap:12px;pointer-events:auto}
+.tbtns button{width:78px;height:78px;border-radius:50%;border:0;font-family:var(--f-display);font-weight:800;font-size:1rem;background:var(--paper);color:var(--ink);box-shadow:0 5px 0 #b9a47a;touch-action:none}
+.tbtns button#tDrop{width:60px;height:60px;font-size:.85rem;background:#d9cfb6;align-self:flex-end}
+.tbtns button.act{width:104px;height:104px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;line-height:1.05;padding:6px;background:conic-gradient(#2f8a5a calc(var(--p,0)*1turn),var(--cherry) 0);color:#fff3e6;box-shadow:0 5px 0 #6b1418}
+.tbtns button.act b{font-size:1rem}.tbtns button.act small{font-family:var(--f-ui);font-weight:700;font-size:.72rem;opacity:.95}
+.tbtns button.act.hold{outline:3px dashed #fff3e6;outline-offset:-9px}
+.tbtns button.use{background:var(--cherry);color:#fff3e6;box-shadow:0 5px 0 #6b1418}
+.fallback{position:fixed;inset:0;display:grid;place-items:center;padding:24px;text-align:center;font-family:var(--f-body);font-size:1.1rem;z-index:40;background:var(--desk)}
+@media (max-width:700px){
+  .hud{grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto 1fr auto}
+  .orders{grid-column:1 / -1;grid-row:2;justify-content:flex-start}
+  .orders{flex-wrap:nowrap;overflow:hidden;gap:6px}
+  .order{width:auto;flex:1 1 0;min-width:0;max-width:8rem;padding:.3rem .45rem .35rem}
+  .order b{font-size:.8rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .order span{display:none}
+  .order .bar{margin-top:.2rem}
+  .st{font-size:.68rem;min-width:0;max-width:9rem;padding:.15rem .35rem .2rem}
+  .st b{font-size:.74rem}
+  .tools{grid-column:2;justify-self:end}
+  .clock .time{font-size:1.5rem}
+  .banner{margin-bottom:120px;font-size:1rem}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<canvas id="scene" aria-label="Taller de artesanías: mina de arcilla, amasado, torno, secadero, hornos, pintura y puesto de la feria"></canvas>
+<div class="storm" id="storm"></div>
+<div class="labels" id="labels"></div>
+
+<div class="hud">
+  <div class="clock" aria-live="off"><div class="time" id="time">3:00</div><div class="pts" id="pts">0 puntos</div></div>
+  <ul class="orders" id="orders" aria-label="Pedidos de la feria"></ul>
+  <div class="tools">
+    <button class="icon-btn" id="pauseBtn" aria-label="Pausar" title="Pausar">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/></svg>
+    </button>
+    <button class="icon-btn" id="soundBtn" aria-label="Silenciar sonido" title="Sonido">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path id="waves" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>
+    </button>
+  </div>
+  <div class="banner" id="banner" role="status" aria-live="polite"></div>
+</div>
+
+<div class="touch" id="touch" hidden>
+  <div class="joy" id="joy"><i></i></div>
+  <div class="tbtns"><button id="tDrop" aria-label="Soltar lo que llevas (se pierde)">Soltar</button><button class="act" id="tAct"><b>Acción</b><small></small></button></div>
+</div>
+
+<div class="scrim" id="start">
+  <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="stTitle">
+    <p class="kicker">Nivel 2 · La Alfarería · Fabricación</p>
+    <h2 id="stTitle">El taller de artesanías</h2>
+    <p>Llegaron pedidos a la feria: vasijas y chivas de barro. La pieza pasa por varias manos, desde la mina hasta el puesto. Organícense como quieran.</p>
+    <ul class="steps">
+      <li><b>1 · Mina</b>Toma barro de la mina de arcilla. Una mano, una pieza a la vez.</li>
+      <li><b>2 · Amasado</b>Amasa el barro (mantén pulsado). Si te lo saltas, la pieza puede rajarse en el horno.</li>
+      <li><b>3 · Torno o mesa de chivas</b>Modela la vasija en el torno o la chiva en la mesa (mantén pulsado).</li>
+      <li><b>4 · Secadero</b>Deja secar las piezas. Si llueve, cubre con el toldo usando la palanca.</li>
+      <li><b>5 · Horno</b>Carga la pieza seca y enciéndelo con leña. Sácala a tiempo: si se pasa, se quema.</li>
+      <li><b>6 · Pintura y feria</b>Pinta la pieza cocida y entrégala en el puesto de la feria.</li>
+    </ul>
+    <div class="opts">
+      <div id="sala"></div>
+      <div class="opt" id="modeRow"><span id="lm">Modo</span><div class="seg" role="group" aria-labelledby="lm" id="optMode"><button data-v="reloj">Con reloj (3 min)</button><button data-v="tranquilo">Tranquilo</button></div></div>
+    </div>
+    <p class="keys" id="keysHelp"></p>
+    <div class="actions"><a class="btn" href="finca.html?nivel=2" id="exitBtn">Volver al taller</a><button class="btn solid" id="goBtn">Empezar</button></div>
+  </section>
+</div>
+
+<div class="scrim" id="pause" hidden>
+  <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="pTitle" style="width:min(26rem,100%)">
+    <h2 id="pTitle">Pausa</h2>
+    <div class="actions"><a class="btn" href="finca.html?nivel=2">Salir al taller</a><button class="btn" id="endNow">Terminar ahora</button><button class="btn solid" id="resume">Seguir</button></div>
+  </section>
+</div>
+
+<div class="scrim" id="end" hidden>
+  <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="eTitle">
+    <p class="kicker">Nivel 2 · La Alfarería</p>
+    <h2 id="eTitle">¡Se acabó la feria!</h2>
+    <div class="stars" id="stars" aria-label=""></div>
+    <div class="results" id="results"></div>
+    <p id="endText"></p>
+    <p id="waitHost" hidden>El anfitrión elige qué sigue.</p>
+    <div class="actions"><a class="btn" href="finca.html?nivel=2">Volver al taller</a><button class="btn" id="again">Jugar otra vez</button><a class="btn solid" href="carrera.html" id="nextBtn">Siguiente: la carrera de chivas</a></div>
+  </section>
+</div>
+
+<script src="config.js"></script>
+<script src="guardado.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="papel.js"></script>
+<script src="estaciones.js"></script>
+<script src="muneco.js"></script>
+<script src="red.js"></script>
+<script>
+(() => {
+'use strict';
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+function fail(m){ document.body.insertAdjacentHTML('beforeend',`<div class="fallback">${m}</div>`); }
+if (typeof THREE==='undefined' || !window.Papel || !window.Muneco){ fail('No se pudo cargar el motor 3D. Revisa la conexión y recarga la página.'); return; }
+const { S, save, Sound, cutout, D, texFrom, paperMat, boxMesh, hipRoof, tileTex, mk } = Papel;
+document.documentElement.classList.toggle('big-text', S.text==='grande');
+const touch=matchMedia('(pointer: coarse)').matches;
+let PROG=Guardado.progreso();
+if (!PROG.taller2 && (location.hash!=='#prueba' || location.search.includes('exigir'))){ location.replace('finca.html?nivel=2'); return; }   // primero la exploración del taller
+const saveProg=()=>{ Guardado.guardar(PROG); };
+
+/* ---------------- Reglas (fáciles de ajustar) ---------------- */
+const R = {
+  duracion:180, calidadBase:90, especial:80,
+  amasar:1.6, modelar:1.8, secado:16, quema:14, ventana:10, pintar:1.6, pasadaPorSeg:.8, lluviaPorSeg:1.2, rajadura:28,
+  pedidoCada:22, pedidoDura:100, maxPedidos:3, pts:{vasija:10, chiva:22, suelta:4, perdido:-5, especial:6},
+  lluvias:[[52,72],[122,142]], estrellas:[30,60,100],
+};
+const FORMAS={vasija:'Vasija', chiva:'Chiva'};
+
+/* ---------------- Escena ---------------- */
+const canvas=$('#scene'); let renderer;
+try { renderer=new THREE.WebGLRenderer({canvas,antialias:true}); } catch(e){ fail('Este navegador no puede mostrar gráficos 3D (WebGL).'); return; }
+renderer.outputEncoding=THREE.sRGBEncoding; renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.05;
+renderer.shadowMap.enabled=true; renderer.shadowMap.type=S.quality==='alta'?THREE.PCFSoftShadowMap:THREE.BasicShadowMap;
+const scene=new THREE.Scene(); const SKY=new THREE.Color('#2a1d14'), STORM=new THREE.Color('#121a22'); scene.background=SKY.clone();
+const camera=new THREE.PerspectiveCamera(38,1,.1,200);
+const hemi=new THREE.HemisphereLight('#fff1d6','#4a3320',.65); scene.add(hemi);
+const sun=new THREE.DirectionalLight('#ffdcaa',1.25); sun.position.set(-8,16,8); sun.castShadow=true; sun.shadow.mapSize.set(2048,2048); sun.shadow.radius=4; sun.shadow.bias=-.0006;
+Object.assign(sun.shadow.camera,{left:-14,right:14,top:12,bottom:-12,near:1,far:50}); scene.add(sun);
+const front=new THREE.DirectionalLight('#ffe8cc',.3); front.position.set(0,6,14); scene.add(front);
+const AW=11.5, AD=7.5;
+{ const desk=new THREE.Mesh(new THREE.PlaneGeometry(120,120), new THREE.MeshStandardMaterial({color:'#3a2416',roughness:.85})); desk.rotation.x=-Math.PI/2; desk.position.y=-.3; scene.add(desk);
+  const c=mk(1024,680), g=c.getContext('2d'); g.fillStyle='#b9c48a'; g.fillRect(0,0,1024,680);
+  for(let i=0;i<60;i++){ const x=Math.random()*1024,y=Math.random()*680,r=30+Math.random()*90,gr=g.createRadialGradient(x,y,0,x,y,r); gr.addColorStop(0,'rgba(120,150,80,.3)'); gr.addColorStop(1,'rgba(0,0,0,0)'); g.fillStyle=gr; g.fillRect(x-r,y-r,2*r,2*r); }
+  const px=(x,z)=>[(x+AW)/(2*AW)*1024,(z+AD)/(2*AD)*680];
+  g.fillStyle='#a96a3c'; { const [a,b]=px(-11.2,-4.2),[c2,d]=px(-8.2,.4); g.fillRect(a,b,c2-a,d-b); }   // mina de arcilla
+  g.fillStyle='#dcc29a'; { const [a,b]=px(-8,-7),[c2,d]=px(11,2.2); g.fillRect(a,b,c2-a,d-b); }          // patio del taller
+  g.fillStyle='#c9a77c'; { const [a,b]=px(-1,3.8),[c2,d]=px(2,7.1); g.fillRect(a,b,c2-a,d-b); }
+  g.globalAlpha=.9; g.fillStyle=g.createPattern(Papel.FIBER,'repeat'); g.fillRect(0,0,1024,680); g.globalAlpha=1;
+  const ground=new THREE.Mesh(new THREE.BoxGeometry(AW*2,.3,AD*2), [paperMat('#e9dcc0'),paperMat('#e9dcc0'),new THREE.MeshStandardMaterial({map:texFrom(c),roughness:.95}),paperMat('#e9dcc0'),paperMat('#e9dcc0'),paperMat('#e9dcc0')]);
+  ground.position.y=-.15; ground.receiveShadow=true; scene.add(ground); }
+const tiles=tileTex();
+
+/* ---------------- Estaciones ---------------- */
+// cada pieza viaja: barro → masa (amasado) → cruda (torno/mesa de chivas) → seca → cocida (horno) → pintada → entrega
+const ST=[], colliders=[];
+function station(kind,x,z,r,name,mesh){ const s={kind,x,z,r,name,state:'vacio',t:0,q:0,prog:0,forma:'',aire:false,mesh}; ST.push(s); colliders.push({x,z,r}); if (mesh){ mesh.position.set(x,0,z); scene.add(mesh); }
+  if (name){ s.el=document.createElement('div'); s.el.className='st'; $('#labels').appendChild(s.el); } return s; }
+const mat=(c,m)=>paperMat(c,m);
+const TERRA='#b5652f', CLAY='#a96a3c', WOOD='#8a5a32';
+const tableMesh=(w,d,h=.7,col=WOOD)=>{ const g=new THREE.Group(); const top=boxMesh(w,.12,d,mat(col)); top.position.y=h; g.add(top); [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sz])=>{ const l=boxMesh(.1,h,.1,mat('#6b4224')); l.position.set(sx*(w/2-.1),0,sz*(d/2-.1)); g.add(l); }); return g; };
+const lump=(col,r=.28)=>{ const m=new THREE.Mesh(new THREE.IcosahedronGeometry(r,1),new THREE.MeshStandardMaterial({color:col,roughness:.9,flatShading:true})); m.castShadow=true; return m; };
+const potMesh=(col,r=.2,h=.36)=>{ const m=new THREE.Mesh(new THREE.CylinderGeometry(r*.8,r,h,10),new THREE.MeshStandardMaterial({color:col,roughness:.85,flatShading:true})); m.castShadow=true; return m; };
+const chivaMesh=(col)=>{ const g=new THREE.Group(); const b=boxMesh(.55,.28,.26,mat(col)); b.position.y=.2; g.add(b); const h=boxMesh(.18,.2,.24,mat('#2f6b8a')); h.position.set(.36,.16,0); g.add(h);
+  const rk=boxMesh(.5,.06,.24,mat('#f2c94c')); rk.position.y=.38; g.add(rk); [[-.2,.14],[.2,.14],[-.2,-.14],[.2,-.14]].forEach(([x,z])=>{ const w=new THREE.Mesh(new THREE.CylinderGeometry(.07,.07,.05,8),mat('#2a1c11')); w.rotation.x=Math.PI/2; w.position.set(x,.08,z); g.add(w); }); g.traverse(o=>{ if (o.isMesh) o.castShadow=true; }); return g; };
+const pieceMesh=(forma,col)=> forma==='chiva'?chivaMesh(col):potMesh(col);
+// mina de arcilla
+{ const g=new THREE.Group(); [[0,0,.5],[.5,.2,.38],[-.5,.1,.42],[.1,-.5,.34]].forEach(([x,z,r])=>{ const m=lump(CLAY,r); m.position.set(x,r*.6,z); g.add(m); }); station('barro',-9.7,-2,1,'Mina de arcilla',g); }
+// pila de leña
+{ const g=new THREE.Group(); for (let i=0;i<7;i++){ const l=new THREE.Mesh(new THREE.CylinderGeometry(.09,.09,1,6),mat('#6b4224')); l.rotation.z=Math.PI/2; l.position.set(0,.12+Math.floor(i/3)*.18,(i%3-1)*.2+(i>=3?.1:0)); g.add(l); } station('lena',-9.7,3.4,.8,'Leña',g); }
+// mesas de amasado
+[-4.9,-1.4].forEach((z,i)=>{ const g=tableMesh(1.5,1,.7); const m=lump('#c98a58',.26); m.position.y=1; m.visible=false; g.add(m); const s=station('amasado',-6.4,z,1,`Amasado ${i+1}`,g); s.lump=m; });
+// torno y mesa de chivas
+{ const g=tableMesh(1.5,1.2,.7); const wheel=new THREE.Mesh(new THREE.CylinderGeometry(.42,.42,.08,16),mat('#5a3a22')); wheel.position.y=.82; g.add(wheel); const p=potMesh(TERRA,.2,.4); p.position.y=1.06; p.visible=false; g.add(p); const s=station('torno',-3,-5,1.1,'Torno',g); s.wheel=wheel; s.item=p; }
+{ const g=tableMesh(1.5,1.2,.7); const p=chivaMesh(TERRA); p.position.y=.76; p.visible=false; g.add(p); const s=station('mesaChiva',-3,-1.6,1.1,'Mesa de chivas',g); s.item=p; }
+// secadero: 3 estantes bajo toldo
+const estantes=[];
+[-5.2,-2.6,0].forEach((z,i)=>{ const g=tableMesh(1.9,1.3,.5,'#9a6a3a'); const slot=new THREE.Group(); slot.position.y=.62; slot.visible=false; g.add(slot); const s=station('secadero',1.8,z,1.1,`Secadero ${i+1}`,g); s.slot=slot; estantes.push(s); });
+const toldoG=new THREE.PlaneGeometry(3.4,7.2); toldoG.rotateX(-Math.PI/2);
+const toldo=new THREE.Mesh(toldoG,new THREE.MeshStandardMaterial({color:'#e8e2d2',transparent:true,opacity:.0,side:THREE.DoubleSide,roughness:.8,depthWrite:false})); toldo.position.set(1.8,1.7,-2.6); scene.add(toldo); let cubierto=false;   // false = al sol
+[[0,-5.8],[3.6,-5.8],[0,.6],[3.6,.6]].forEach(([x,z])=>{ const p=boxMesh(.12,1.7,.12,mat('#6b4224')); p.position.set(x,0,z); scene.add(p); });
+// palanca del toldo
+{ const g=new THREE.Group(); const post=boxMesh(.2,.9,.2,mat('#6b4224')); g.add(post); const arm=new THREE.Group(); arm.position.y=.85; const stick=boxMesh(.08,.6,.08,mat('#c8101e')); arm.add(stick); arm.rotation.z=.6; g.add(arm);
+  const s=station('palanca',4.6,2.3,.4,'Toldo',g); s.arm=arm; }
+// hornos de leña
+[-4.8,-1.6].forEach((z,i)=>{ const g=new THREE.Group(); const base=boxMesh(1.7,.5,1.5,mat('#9a6a3c')); g.add(base);
+  const dome=new THREE.Mesh(new THREE.SphereGeometry(.9,14,8,0,Math.PI*2,0,Math.PI/2),new THREE.MeshStandardMaterial({color:'#b0582f',roughness:.9,flatShading:true})); dome.position.y=.5; dome.scale.set(1,.9,.9); dome.castShadow=true; g.add(dome);
+  const door=new THREE.Mesh(new THREE.CircleGeometry(.3,12),new THREE.MeshStandardMaterial({color:'#2a140b'})); door.position.set(0,.85,.82); g.add(door);
+  const fire=new THREE.Mesh(new THREE.CircleGeometry(.22,12),new THREE.MeshBasicMaterial({color:'#ff9a2a'})); fire.position.set(0,.85,.83); fire.visible=false; g.add(fire);
+  const s=station('horno',6.2,z,1.1,`Horno ${i+1}`,g); s.fire=fire; });
+// mesas de pintura
+[-4.8,-1.6].forEach((z,i)=>{ const g=tableMesh(1.5,1.1,.7); ['#c0262c','#f2c94c','#2f6b8a','#2f8a5a'].forEach((c,k)=>{ const b=new THREE.Mesh(new THREE.CylinderGeometry(.08,.07,.07,8),mat(c)); b.position.set(-.5+k*.33,.8,.3); g.add(b); });
+  const p=chivaMesh('#f4efe3'); p.position.y=.76; p.visible=false; g.add(p); const s=station('pintura',9.5,z,1,`Pintura ${i+1}`,g); s.item=p; s.holder=g; });
+// puesto de entrega (feria)
+{ const g=new THREE.Group(); const top=boxMesh(3.2,.2,1.1,mat('#8a5a32')); top.position.y=.75; g.add(top); const front=boxMesh(3.2,.75,.12,mat('#c0262c')); front.position.set(0,0,.5); g.add(front);
+  [-1.5,1.5].forEach(x=>{ const p=boxMesh(.1,1.8,.1,mat('#6b4224')); p.position.set(x,0,-.4); g.add(p); }); const aw=boxMesh(3.5,.08,1.5,mat('#f2c94c')); aw.position.set(0,1.8,.05); g.add(aw);
+  const load=new THREE.Group(); load.position.set(0,.85,0); g.add(load); const s=station('entrega',-.5,5.6,1.6,'Puesto de la feria',g); s.load=load; colliders.pop(); colliders.push({x0:-2.2,x1:1.2,z0:4.9,z1:6.3}); }
+
+/* ---------------- Objetos que se cargan ---------------- */
+function itemMesh(it){ const g=new THREE.Group();
+  if (it.type==='barro'){ const m=lump(CLAY,.2); m.position.y=.12; g.add(m); }
+  else if (it.type==='masa'){ const m=lump('#c98a58',.2); m.position.y=.12; g.add(m); }
+  else if (it.type==='lena'){ for (let i=0;i<3;i++){ const l=new THREE.Mesh(new THREE.CylinderGeometry(.05,.05,.4,6),mat('#6b4224')); l.rotation.z=Math.PI/2; l.position.set(0,.06+i*.09,(i-1)*.08); g.add(l); } }
+  else { const col={cruda:'#7a4a2a',seca:'#c98a58',cocida:'#b5652f',pintada:'#f4efe3'}[it.type]; const m=pieceMesh(it.forma,col); m.scale.setScalar(it.forma==='chiva'?.7:.8); g.add(m);
+    if (it.type==='pintada'&&it.forma==='vasija'){ const b=new THREE.Mesh(new THREE.CylinderGeometry(.17,.17,.06,10),mat('#c0262c')); b.position.y=.03; m.add(b); } }
+  return g; }
+const NAMES={barro:'Barro', masa:'Barro amasado', lena:'Leña', cruda:'Pieza cruda', seca:'Pieza seca', cocida:'Pieza cocida', pintada:'Pieza pintada'};
+const qual=it=> Math.round(it.q||0);
+const nom=it=> NAMES[it.type]+(it.forma?` (${FORMAS[it.forma].toLowerCase()})`:'');
+
+/* ---------------- Jugadores ---------------- */
+const PCOL=['#c8101e','#2f6b8a','#d9ae55','#2f8a5a'];
+const players=[];
+function makePlayers(list){
+  players.forEach(p=>{ scene.remove(p.holder); p.el.remove(); }); players.length=0;
+  list.forEach((j,i)=>{
+    const holder=new THREE.Group(); const model=Muneco.jugador(j.slot===mySlot()?(PROG.etapa||0):(j.etapa||0), j.avatar==='muneca'); holder.add(model);
+    const ring=new THREE.Mesh(new THREE.RingGeometry(.38,.5,24), new THREE.MeshBasicMaterial({color:PCOL[j.slot%4],transparent:true,opacity:.85})); ring.rotation.x=-Math.PI/2; ring.position.y=.02; holder.add(ring);
+    const hand=new THREE.Group(); hand.position.set(0,.62,.32); holder.add(hand);
+    const x=-2+i*1.3, z=1.2; holder.position.set(x,0,z); holder.scale.setScalar(1.3); scene.add(holder);
+    const el=document.createElement('div'); el.className='pl'; el.style.background=PCOL[j.slot%4]; $('#labels').appendChild(el);
+    players.push({i,slot:j.slot,nombre:j.nombre||('J'+(j.slot+1)),holder,model,hand,x,z,tx:x,tz:z,face:Math.PI,carry:null,carryKey:'',el,moving:false,inp:{x:0,z:0,take:false,use:false,drop:false,useEdge:false}});
+  }); }
+function setCarry(p,it){ p.carry=it; p.carryKey=it?JSON.stringify(it):''; p.hand.clear(); if (it) p.hand.add(itemMesh(it)); p.model.userData.carry=!!it; }
+
+/* ---------------- Entrada (motor común en estaciones.js) ---------------- */
+let E=null;   // se crea tras definir `game` (ver más abajo)
+/* ---------------- Estado del juego ---------------- */
+const game={on:false,paused:false,mode:'reloj',t:0,score:0,orders:[],nextOrder:0,stats:{piezas:0,especial:0,perdidos:0},raining:false,rainWarned:{}};
+E=Estaciones.entrada({canvas,camera,game,togglePause:()=>togglePause(),ST,players,mySlot:()=>mySlot(),accion:(p,x)=>accion(p,x),reachOf:x=>reachOf(x),touch,lob:()=>lob});
+const { readInput, remote, down, pressed, mouse } = E;
+let banTimer, who=null; const evq=[];
+const hosting=()=>lob && lob.rol==='host' && game.on;
+function snd(n,a){ Sound[n](a); if (hosting()) evq.push({s:n,a}); }
+function banner(msg,kind=''){ const to=who; if (hosting()) evq.push({b:msg,k:kind,to}); if (to!==null && to!==mySlot()) return; showBanner(msg,kind); }
+function showBanner(msg,kind=''){ const b=$('#banner'); b.textContent=msg; b.className='banner show '+kind; clearTimeout(banTimer); banTimer=setTimeout(()=>b.classList.remove('show'),2600); }
+function floatText(txt,x,y,z){ if (hosting()) evq.push({f:txt,x,y,z}); showFloat(txt,x,y,z); }
+function showFloat(txt,x,y,z){ const el=document.createElement('div'); el.className='float'; el.textContent=txt; $('#labels').appendChild(el);
+  const v=new THREE.Vector3(x,y,z).project(camera); el.style.left=((v.x+1)/2*innerWidth)+'px'; el.style.top=((1-v.y)/2*innerHeight)+'px';
+  requestAnimationFrame(()=>{ el.style.transform='translate(-50%,-260%)'; el.style.opacity='0'; }); setTimeout(()=>el.remove(),1100); }
+/* ---------------- Pedidos ---------------- */
+function addOrder(){ const forma=Math.random()<.5?'chiva':'vasija'; game.orders.push({id:Math.random(),type:forma,left:R.pedidoDura,total:R.pedidoDura}); renderOrders(); }
+function renderOrders(){ $('#orders').innerHTML=game.orders.map(o=>`<li class="order ${o.type==='chiva'?'especial':''}${game.mode==='reloj'&&o.left<20?' hurry':''}" data-id="${o.id}"><b>${o.type==='chiva'?'Una chiva':'Una vasija'}</b><span>${o.type==='chiva'?'Chiva de barro pintada':'Vasija de barro pintada'}</span>${game.mode==='reloj'?`<div class="bar"><i style="width:${o.left/o.total*100}%"></i></div>`:''}</li>`).join('')
+  || '<li class="order"><b>Sin pedidos</b><span>Ya viene otro comprador</span></li>'; }
+
+function nearest(p){ let best=null, bd=1e9; ST.forEach(s=>{ const d=Math.hypot(s.x-p.x,s.z-p.z)-s.r; const reach=s.kind==='entrega'?1.4:.95; if (d<reach && d<bd){ bd=d; best=s; } }); return best; }
+const reachOf=s=>s.kind==='entrega'?1.3:.95;
+function pick(p){ const s=p.inp.si!=null?ST[p.inp.si]:null; if (s && Math.hypot(s.x-p.x,s.z-p.z)-s.r<reachOf(s)) return s; return nearest(p); }
+// Soltar lo que llevas en las manos: se pierde (no se puede recuperar)
+function tirar(p){ if (!p.carry){ banner('No llevas nada que soltar'); return; } const n=nom(p.carry); setCarry(p,null); snd('tick'); banner(`Soltaste: ${n} (se perdió)`); }
+const esBarro=c=>c&&(c.type==='masa'||c.type==='barro');
+function accion(p,s=nearest(p)){ const c=p.carry; if (!s) return {t:'Acción'};
+  switch(s.kind){
+    case 'barro': return {t:c?'Manos llenas':'Tomar barro'};
+    case 'lena': return {t:c?'Manos llenas':'Tomar leña'};
+    case 'amasado': if (s.state==='amasando') return {t:'Amasar',hold:true,prog:s.prog}; if (s.state==='listo') return {t:c?'Manos llenas':'Sacar masa'}; return {t:c&&c.type==='barro'?'Echar barro':'Amasado'};
+    case 'torno': case 'mesaChiva': if (s.state==='modelando') return {t:'Modelar',hold:true,prog:s.prog}; if (s.state==='listo') return {t:c?'Manos llenas':'Sacar pieza'};
+      return {t:esBarro(c)?'Poner barro':(s.kind==='torno'?'Torno':'Mesa de chivas')};
+    case 'secadero': if (s.state==='vacio') return {t:c&&c.type==='cruda'?'Poner a secar':'Secadero'}; if (s.state==='seco') return {t:c?'Manos llenas':'Recoger seca'}; return {t:'Secando…'};
+    case 'horno': if (s.state==='vacio') return {t:c&&c.type==='seca'?'Cargar pieza':'Horno'}; if (s.state==='cargado') return {t:c&&c.type==='lena'?'Encender':'Falta leña'};
+      if (s.state==='lista'||s.state==='pasada') return {t:c?'Manos llenas':'Sacar pieza'}; return {t:'Quemando…'};
+    case 'pintura': if (s.state==='pintando') return {t:'Pintar',hold:true,prog:s.prog}; if (s.state==='listo') return {t:c?'Manos llenas':'Recoger'}; return {t:c&&c.type==='cocida'?'Poner pieza':'Pintura'};
+    case 'palanca': return {t:cubierto?'Destapar':'Cubrir'};
+    case 'entrega': return {t:'Entregar'};
+  } return {t:'Acción'}; }
+function take(p){
+  const s=pick(p), c=p.carry; if (!s) return;
+  switch(s.kind){
+    case 'barro': if (c){ banner('Tienes las manos ocupadas'); return; } setCarry(p,{type:'barro',q:R.calidadBase,aire:true}); snd('pop',2); return;
+    case 'lena': if (c){ banner('Tienes las manos ocupadas'); return; } setCarry(p,{type:'lena'}); snd('pop',2); return;
+    case 'amasado':
+      if (s.state==='vacio' && c?.type==='barro'){ s.state='amasando'; s.prog=0; s.q=c.q; setCarry(p,null); snd('pop',1); return; }
+      if (s.state==='listo' && !c){ setCarry(p,{type:'masa',q:s.q,aire:false}); s.state='vacio'; snd('pop',3); return; }
+      banner(s.state==='amasando'?'Mantén pulsado para amasar':s.state==='listo'?'Tienes las manos ocupadas':'Aquí va el barro de la mina'); return;
+    case 'torno': case 'mesaChiva':
+      if (s.state==='vacio' && esBarro(c)){ s.state='modelando'; s.prog=0; s.q=c.q; s.aire=!!c.aire; s.forma=s.kind==='torno'?'vasija':'chiva'; setCarry(p,null); snd('pop',1); if (s.aire) banner('Ese barro no se amasó: puede rajarse en el horno'); return; }
+      if (s.state==='listo' && !c){ setCarry(p,{type:'cruda',forma:s.forma,q:s.q,aire:s.aire}); s.state='vacio'; snd('pop',3); return; }
+      banner(s.state==='modelando'?'Mantén pulsado para modelar':s.state==='listo'?'Tienes las manos ocupadas':'Trae barro (mejor amasado)'); return;
+    case 'secadero':
+      if (s.state==='vacio' && c?.type==='cruda'){ s.state='secando'; s.prog=0; s.q=c.q; s.forma=c.forma; s.aire=!!c.aire; setCarry(p,null); snd('pop',1); return; }
+      if (s.state==='seco' && !c){ setCarry(p,{type:'seca',forma:s.forma,q:s.q,aire:s.aire}); s.state='vacio'; snd('pop',3); return; }
+      banner(s.state==='secando'?'Se está secando':'Aquí va la pieza cruda'); return;
+    case 'horno':
+      if (s.state==='vacio' && c?.type==='seca'){ s.state='cargado'; s.t=0; s.q=c.q; s.forma=c.forma; s.aire=!!c.aire; s.rajada=false; setCarry(p,null); snd('pop',1); banner('Falta la leña para encender el horno'); return; }
+      if (s.state==='cargado' && c?.type==='lena'){ s.state='quemando'; s.t=0; setCarry(p,null); snd('pop',5); return; }
+      if ((s.state==='lista'||s.state==='pasada') && !c){ setCarry(p,{type:'cocida',forma:s.forma,q:s.q}); s.state='vacio'; s.rajada=false; snd('pop',3); return; }
+      banner(s.state==='cargado'?'Trae leña':s.state==='quemando'?'Todavía se quema':'Aquí va la pieza seca'); return;
+    case 'pintura':
+      if (s.state==='vacio' && c?.type==='cocida'){ s.state='pintando'; s.prog=0; s.q=c.q; s.forma=c.forma; setCarry(p,null); snd('pop',1); return; }
+      if (s.state==='listo' && !c){ setCarry(p,{type:'pintada',forma:s.forma,q:s.q}); s.state='vacio'; snd('pop',3); return; }
+      banner(s.state==='pintando'?'Mantén pulsado para pintar':s.state==='listo'?'Tienes las manos ocupadas':'Aquí va la pieza cocida'); return;
+    case 'palanca': toggleToldo(); return;
+    case 'entrega':
+      if (c?.type!=='pintada'){ banner('El puesto solo recibe piezas pintadas'); return; }
+      deliver(p,c); return;
+  } }
+function toggleToldo(){ cubierto=!cubierto; snd('tick'); banner(cubierto?'Toldo cubierto: las piezas se secan más despacio':'Toldo abierto: secado al sol'); }
+function addPieza(forma){ const n=ST.find(s=>s.kind==='entrega').load; const m=pieceMesh(forma,forma==='chiva'?'#f4efe3':'#c0262c'); m.scale.setScalar(.8); const i=n.children.length; m.position.set(-1.3+(i%8)*.36,0,(i>=8?.2:-.15)); n.add(m); }
+function deliver(p,c){
+  const q=Math.round(c.q), esp=q>=R.especial; let o=game.orders.find(x=>x.type===c.forma);
+  let pts; if (o){ pts=R.pts[c.forma]+(game.mode==='reloj'?Math.ceil(o.left/15):0)+(esp?R.pts.especial:0); game.orders.splice(game.orders.indexOf(o),1); }
+  else pts=R.pts.suelta;
+  game.score+=pts; game.stats.piezas++; if (esp) game.stats.especial++;
+  setCarry(p,null); snd('chime'); floatText('+'+pts,-.5,2.6,5.6); banner(esp?`¡Pieza especial! Calidad ${q}`:`Pieza entregada · calidad ${q}`);
+  addPieza(c.forma); renderOrders(); }
+
+function use(p,dt){
+  const s=pick(p); if (!s) return;
+  if (s.kind==='amasado' && s.state==='amasando'){ s.prog+=dt/R.amasar; if (Math.random()<dt*3) snd('footstep'); if (s.prog>=1){ s.state='listo'; s.prog=0; snd('pop',4); } }
+  else if ((s.kind==='torno'||s.kind==='mesaChiva') && s.state==='modelando'){ s.prog+=dt/R.modelar; if (s.wheel) s.wheel.rotation.y+=dt*8; if (s.prog>=1){ s.state='listo'; s.prog=0; snd('pop',4); } }
+  else if (s.kind==='pintura' && s.state==='pintando'){ s.prog+=dt/R.pintar; if (s.prog>=1){ s.state='listo'; s.prog=0; snd('pop',4); } }
+  else if (s.kind==='palanca' && p.inp.useEdge) toggleToldo();
+}
+
+/* ---------------- Vistas de las estaciones (las usan el anfitrión y los invitados) ---------------- */
+function vistas(dt){
+  ST.forEach(s=>{
+    if (s.kind==='amasado') s.lump.visible=s.state!=='vacio';
+    if (s.kind==='torno'||s.kind==='mesaChiva'){ s.item.visible=s.state!=='vacio'; if (s.state==='modelando'&&s.wheel) s.wheel.rotation.y+=dt*3; }
+    if (s.kind==='secadero'){ s.slot.visible=s.state!=='vacio'; if (s.state!=='vacio'){ if (s.slot.userData.f!==s.forma){ s.slot.clear(); s.slot.add(pieceMesh(s.forma||'vasija','#b5652f')); s.slot.userData.f=s.forma; }
+      const m=s.slot.children[0]; if (m){ const k=s.state==='seco'?1:Math.min(1,s.prog); const col=new THREE.Color('#6a3a1e').lerp(new THREE.Color('#d6a273'),k); m.traverse(o=>{ if (o.isMesh&&o.material.color&&!o.userData.fijo) o.material.color.copy(col); }); } } }
+    if (s.kind==='horno') s.fire.visible=s.state==='quemando'||s.state==='lista'||s.state==='pasada';
+    if (s.kind==='pintura') s.item.visible=s.state!=='vacio';
+    if (s.kind==='palanca') s.arm.rotation.z += ((cubierto?-.6:.6)-s.arm.rotation.z)*.2;
+  });
+  toldo.material.opacity += ((cubierto?.55:0)-toldo.material.opacity)*.15;
+}
+
+/* ---------------- Simulación ---------------- */
+const PR=.32;
+function collide(p){
+  for (const c of colliders){
+    if (c.r!==undefined){ const dx=p.x-c.x, dz=p.z-c.z, d=Math.hypot(dx,dz), m=c.r+PR; if (d<m && d>1e-4){ p.x=c.x+dx/d*m; p.z=c.z+dz/d*m; } }
+    else if (p.x>c.x0-PR && p.x<c.x1+PR && p.z>c.z0-PR && p.z<c.z1+PR){ const o=[[p.x-(c.x0-PR),'x',c.x0-PR],[(c.x1+PR)-p.x,'x',c.x1+PR],[p.z-(c.z0-PR),'z',c.z0-PR],[(c.z1+PR)-p.z,'z',c.z1+PR]].sort((a,b)=>a[0]-b[0]); p[o[0][1]]=o[0][2]; } }
+  players.forEach(q=>{ if (q===p) return; const dx=p.x-q.x, dz=p.z-q.z, d=Math.hypot(dx,dz); if (d<.6 && d>1e-4){ p.x=q.x+dx/d*.6; p.z=q.z+dz/d*.6; } });
+  p.x=Math.max(-AW+.4,Math.min(AW-.4,p.x)); p.z=Math.max(-AD+.4,Math.min(AD-.4,p.z)); }
+function step(dt){
+  game.t+=dt; const T=game.t;
+  // lluvia
+  const sched = game.mode==='reloj' ? R.lluvias : [[60,75],[150,165],[240,255]];
+  const rain = sched.some(([a,b])=>T>=a&&T<b);
+  sched.forEach(([a])=>{ if (T>=a-6 && T<a && !game.rainWarned[a]){ game.rainWarned[a]=true; banner('¡Viene aguacero! Cubran las piezas con el toldo','rain'); } });
+  if (rain!==game.raining){ game.raining=rain; $('#storm').classList.toggle('on',rain); rainMesh.visible=rain; if (!rain) banner('Escampó: destapen el toldo'); }
+  // pedidos
+  if (game.mode==='reloj'){ game.orders.forEach(o=>o.left-=dt); const lost=game.orders.filter(o=>o.left<=0);
+    if (lost.length){ lost.forEach(o=>{ game.orders.splice(game.orders.indexOf(o),1); game.score+=R.pts.perdido; game.stats.perdidos++; }); banner('Se fue un comprador: pedido perdido'); } }
+  game.nextOrder-=dt; if (game.nextOrder<=0 && game.orders.length<R.maxPedidos){ addOrder(); game.nextOrder=R.pedidoCada; }
+  // jugadores
+  players.forEach(p=>{ const I=p.inp; const l=Math.hypot(I.x,I.z), moving=l>.15; p.moving=moving; who=p.slot;
+    if (moving){ const sp=4.6*Math.min(1,l)*(p.carry?.92:1); p.x+=I.x/Math.max(1,l)*sp*dt; p.z+=I.z/Math.max(1,l)*sp*dt; collide(p); p.face=Math.atan2(I.x,I.z); }
+    p.holder.position.set(p.x,0,p.z); let d=p.face-p.holder.rotation.y; d=Math.atan2(Math.sin(d),Math.cos(d)); p.holder.rotation.y+=d*Math.min(1,dt*14);
+    Muneco.animar(p.model,dt,moving,S.motion);
+    if (I.take) take(p); if (I.drop) tirar(p); if (I.use) use(p,dt); who=null; });
+  // estaciones
+  ST.forEach(s=>{
+    if (s.kind==='secadero' && s.state==='secando'){
+      if (game.raining && !cubierto){ s.q=Math.max(0,s.q-R.lluviaPorSeg*dt); }
+      else s.prog+=dt/R.secado*(cubierto?.5:1);
+      if (s.prog>=1){ s.state='seco'; snd('pop',5); } }
+    if (s.kind==='horno'){
+      if (s.state==='quemando'){ s.t+=dt; if (s.t>=R.quema){ s.state='lista'; s.t=0; snd('pop',5);
+        if (s.aire && !s.rajada){ s.rajada=true; s.q=Math.max(0,s.q-R.rajadura); banner('¡Se rajó una pieza! Faltó amasar el barro'); } } }
+      else if (s.state==='lista'){ s.t+=dt; if (s.t>=R.ventana){ s.state='pasada'; banner(`¡Se está quemando la pieza del ${s.name.toLowerCase()}!`); } }
+      else if (s.state==='pasada'){ s.q=Math.max(0,s.q-R.pasadaPorSeg*dt); } }
+  });
+  vistas(dt);
+  // fin
+  if (game.mode==='reloj' && T>=R.duracion) finish();
+}
+
+/* ---------------- Red: estado del anfitrión y vista de los invitados ---------------- */
+const r1=n=>Math.round(n*100)/100;
+function snapshot(){ return { t:r1(game.t), sc:game.score, mo:game.mode, r:game.raining?1:0, m:cubierto?1:0, st:game.stats,
+  o:game.orders.map(o=>[o.type,r1(o.left),o.total]),
+  p:players.map(p=>[r1(p.x),r1(p.z),r1(p.face),p.moving?1:0,p.carryKey]),
+  s:ST.map(s=>[s.state,r1(s.t||0),r1(s.prog||0),r1(s.q||0),s.forma||'',s.aire?1:0,s.rajada?1:0]), ev:evq.splice(0) }; }
+let ordKey='';
+function applySnapshot(d){
+  game.t=d.t; game.score=d.sc; game.mode=d.mo; game.stats=d.st;
+  if (!!d.r!==game.raining){ game.raining=!!d.r; $('#storm').classList.toggle('on',game.raining); rainMesh.visible=game.raining; }
+  cubierto=!!d.m;
+  game.orders=d.o.map(([type,left,total])=>({type,left,total})); const k=d.o.map(o=>o[0]).join(); if (k!==ordKey){ ordKey=k; renderOrders(); }
+  d.p.forEach((a,i)=>{ const p=players[i]; if (!p) return; p.tx=a[0]; p.tz=a[1]; p.face=a[2]; p.moving=!!a[3]; if (a[4]!==p.carryKey) setCarry(p,a[4]?JSON.parse(a[4]):null); });
+  d.s.forEach((a,i)=>{ const s=ST[i]; [s.state,s.t,s.prog,s.q,s.forma,s.aire,s.rajada]=[a[0],a[1],a[2],a[3],a[4],!!a[5],!!a[6]]; });
+  const load=ST.find(s=>s.kind==='entrega').load; while (load.children.length<game.stats.piezas) addPieza(load.children.length%2?'chiva':'vasija');
+  (d.ev||[]).forEach(e=>{ if (e.s) Sound[e.s](e.a); if (e.b!==undefined && (e.to===null||e.to===undefined||e.to===mySlot())) showBanner(e.b,e.k); if (e.f) showFloat(e.f,e.x,e.y,e.z); });
+}
+function clientFrame(dt){
+  players.forEach(p=>{ p.x+=(p.tx-p.x)*Math.min(1,dt*12); p.z+=(p.tz-p.z)*Math.min(1,dt*12); p.holder.position.set(p.x,0,p.z);
+    let d=p.face-p.holder.rotation.y; d=Math.atan2(Math.sin(d),Math.cos(d)); p.holder.rotation.y+=d*Math.min(1,dt*14); Muneco.animar(p.model,dt,p.moving,S.motion); });
+  vistas(dt);
+}
+
+/* ---------------- Etiquetas ---------------- */
+const v3=new THREE.Vector3();
+function project(x,y,z){ v3.set(x,y,z).project(camera); return [(v3.x+1)/2*innerWidth,(1-v3.y)/2*innerHeight]; }
+const LABEL_Y={barro:1.3,lena:1.2,amasado:1.6,torno:1.7,mesaChiva:1.6,secadero:1.3,palanca:1.5,horno:2.0,pintura:1.6,entrega:2.6};
+function labels(){
+  const chica=innerWidth<700, yo_=players.find(q=>q.slot===mySlot()), cerca=yo_?nearest(yo_):null;
+  ST.forEach(s=>{ if (!s.el) return; let txt='', bar=null, cls='';
+    if (s.kind==='barro') txt='Toma barro'; if (s.kind==='lena') txt='Toma leña';
+    if (s.kind==='amasado'){ txt={vacio:'Trae barro',amasando:'Mantén pulsado para amasar',listo:'¡Masa lista!'}[s.state]; if (s.state==='amasando') bar=s.prog; if (s.state==='listo') cls='ok'; }
+    if (s.kind==='torno'||s.kind==='mesaChiva'){ txt={vacio:'Trae barro amasado',modelando:'Mantén pulsado para modelar',listo:'¡Pieza lista!'}[s.state]; if (s.state==='modelando') bar=s.prog; if (s.state==='listo') cls='ok'; }
+    if (s.kind==='secadero'){ txt={vacio:'Vacío',secando:'Secando',seco:'¡Seca! Recógela'}[s.state]; if (s.state==='secando'){ bar=s.prog; if (game.raining&&!cubierto){ txt='¡Se moja!'; cls='bad'; } } if (s.state==='seco') cls='ok'; if (s.state!=='vacio') txt+=` · ${Math.round(s.q)}`; }
+    if (s.kind==='horno'){ txt={vacio:'Vacío',cargado:'Falta leña',quemando:'Quemando',lista:'¡Lista! Sácala',pasada:'¡Se quema! Sácala ya'}[s.state]; if (s.state==='quemando') bar=s.t/R.quema; if (s.state==='lista'){ bar=1-s.t/R.ventana; cls='ok'; } if (s.state==='pasada') cls='bad'; if (s.state==='cargado') cls='warn'; if (s.rajada){ txt+=' · rajada'; cls='bad'; } if (s.state!=='vacio') txt+=` · ${Math.round(s.q)}`; }
+    if (s.kind==='pintura'){ txt={vacio:'Trae una pieza cocida',pintando:'Mantén pulsado para pintar',listo:'¡Pintada! Recógela'}[s.state]; if (s.state==='pintando') bar=s.prog; if (s.state==='listo') cls='ok'; }
+    if (s.kind==='palanca'){ txt=cubierto?'Cubierto':'Al sol'; if (game.raining && !cubierto) cls='bad'; }
+    if (s.kind==='entrega') txt='Entrega aquí las piezas';
+    if (chica && s!==cerca) txt='';
+    s.el.className='st '+cls; s.el.innerHTML=`<b>${s.name}</b>${txt}${bar!==null?`<div class="bar"><i style="width:${Math.max(0,Math.min(1,bar))*100}%"></i></div>`:''}`;
+    const [x,y]=project(s.x,LABEL_Y[s.kind]||1.5,s.z); s.lx=x; s.ly=y; });
+  players.forEach(p=>{ const [x,y]=project(p.x,0,p.z+.35); p.el.style.left=x+'px'; p.el.style.top=y+'px';
+    p.el.textContent=p.nombre+(p.slot===mySlot()&&players.length>1?' (tú)':'')+(p.carry?` · ${nom(p.carry)}${p.carry.q!=null?` · ${qual(p.carry)} pts`:''}`:''); });
+  Estaciones.colocarLetreros(ST,undefined,players.map(p=>p.el));
+  Estaciones.botonAccion(players.find(q=>q.slot===mySlot()),accion,touch);
+  const m=Math.max(0,game.mode==='reloj'?R.duracion-game.t:game.t), mm=Math.floor(m/60), ss=Math.floor(m%60);
+  $('#time').textContent=`${mm}:${String(ss).padStart(2,'0')}`; $('#time').classList.toggle('low',game.mode==='reloj'&&m<30);
+  $('#pts').textContent=`${game.score} puntos`;
+}
+
+/* ---------------- Lluvia ---------------- */
+const rainMesh=(()=>{ const N=S.quality==='baja'?500:1300, pos=new Float32Array(N*6); for(let i=0;i<N;i++){ const x=(Math.random()-.5)*26,y=Math.random()*12,z=(Math.random()-.5)*18; pos.set([x,y,z,x-.05,y-.5,z],i*6); }
+  const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.BufferAttribute(pos,3)); const m=new THREE.LineSegments(g,new THREE.LineBasicMaterial({color:'#bcd3e0',transparent:true,opacity:.5})); m.visible=false; scene.add(m); return m; })();
+
+/* ---------------- Cámara y bucle ---------------- */
+let camK=1, camX=0;
+function followCam(snap,dt){ const hw=Math.tan(19*Math.PI/180)*camera.aspect*Math.hypot(15.5,11.5)*camK, lim=AW>hw?AW-hw+1.2:0, p=players.find(q=>q.slot===mySlot()), tx=p?Math.max(-lim,Math.min(lim,p.x)):0;
+  camX=snap?tx:camX+(tx-camX)*Math.min(1,(dt||0)*5); camera.position.set(camX,15.5*camK,11.5*camK); camera.lookAt(camX,0,.6); }
+function resize(){ renderer.setSize(innerWidth,innerHeight,false); camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix();
+  const dpr=Math.min(devicePixelRatio||1,2); renderer.setPixelRatio(S.quality==='alta'?dpr:S.quality==='media'?Math.min(dpr,1.5):1);
+  sun.castShadow=!!S.shadows && S.quality!=='baja';
+  camK=Math.max(1,Math.min(1.75/camera.aspect,1.8)); followCam(true); }
+addEventListener('resize',resize);
+let last=performance.now(), stormMix=0, lastSend=0;
+function frame(now){
+  const dt=Math.min((now-last)/1000,1/20); last=now;
+  const rol=lob?lob.rol:'solo';
+  if (game.on && rol==='cliente'){ readInput(); clientFrame(dt); }
+  else if (game.on && !(game.paused && rol==='solo')){ readInput(); step(dt);
+    if (rol==='host' && now-lastSend>66){ lastSend=now; lob.difundir({t:'estado',s:snapshot()}); } }
+  else players.forEach(p=>Muneco.animar(p.model,dt,false,S.motion));
+  stormMix+=((game.raining?1:0)-stormMix)*Math.min(1,dt*2); scene.background.copy(SKY).lerp(STORM,stormMix); sun.intensity=1.25-stormMix*.55;
+  if (rainMesh.visible){ const a=rainMesh.geometry.attributes.position; for(let i=0;i<a.count;i+=2){ let y=a.getY(i)-dt*16; if (y<0) y+=12; a.setY(i,y); a.setY(i+1,y-.5); } a.needsUpdate=true; }
+  if (game.on && game.mode==='reloj') $$('.order').forEach((el,i)=>{ const o=game.orders[i]; if (!o) return; const b=el.querySelector('.bar i'); if (b) b.style.width=(o.left/o.total*100)+'%'; el.classList.toggle('hurry',o.left<20); });
+  followCam(false,dt); labels(); renderer.render(scene,camera); requestAnimationFrame(frame);
+}
+
+/* ---------------- Menús y sala ---------------- */
+let MODE='reloj', lob=null;
+const yo=()=>({slot:0,nombre:Guardado.perfil().nombre,avatar:Guardado.perfil().avatar||S.avatar||'muneco',etapa:PROG.etapa||0});
+function mySlot(){ return lob ? lob.slot : 0; }
+function syncStart(){
+  const rol=lob?lob.rol:'solo', n=lob?lob.jugadores.length:1;
+  $$('#optMode button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===MODE)); $('#modeRow').hidden = rol==='cliente';
+  const go=$('#goBtn'); go.hidden = rol==='cliente';
+  go.disabled = rol==='host' && !lob.code; go.textContent = rol==='host' ? `Empezar con ${n} jugador${n>1?'es':''}` : 'Empezar';
+  const lines=['Moverse: <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> o flechas · acción: <kbd>E</kbd>, <kbd>Espacio</kbd> o <kbd>Enter</kbd> (para amasar, modelar o pintar, mantenla pulsada) · soltar lo que llevas (se pierde): <kbd>G</kbd>, <kbd>X</kbd> o clic derecho<br>Con ratón: clic en el suelo para caminar, clic en una estación para tomar o soltar, mantén el clic para usarla · también con mando'];
+  if (touch) lines.unshift('En pantalla táctil: palanca a la izquierda, a la derecha el botón de acción (cambia según donde estés; para amasar, modelar o pintar mantenlo pulsado) y Soltar.');
+  lines.push(n===1 ? 'Jugando solo, ningún paso necesita a otra persona.' : 'En equipo pueden repartirse las estaciones: unos amasan, otros modelan, hornean o pintan.');
+  $('#keysHelp').innerHTML=lines.join('<br>');
+  makePlayers(lob && rol!=='solo' ? lob.jugadores : [yo()]); }
+$('#optMode').addEventListener('click',e=>{ const b=e.target.closest('button'); if (!b) return; MODE=b.dataset.v; syncStart(); snd('tick'); });
+function reset(list){
+  Object.assign(game,{t:0,score:0,orders:[],nextOrder:0,stats:{piezas:0,especial:0,perdidos:0},raining:false,rainWarned:{},mode:MODE});
+  ST.forEach(s=>{ s.state='vacio'; s.t=0; s.prog=0; s.q=0; s.forma=''; s.aire=false; s.rajada=false; if (s.kind==='entrega') s.load.clear(); });
+  cubierto=false; $('#storm').classList.remove('on'); rainMesh.visible=false; makePlayers(list); }
+function begin(list){
+  reset(list); if (!lob || lob.rol!=='cliente'){ addOrder(); addOrder(); game.nextOrder=R.pedidoCada; }
+  $('#start').hidden=true; $('#end').hidden=true; game.on=true; game.paused=false; $('#touch').hidden=false; $('#touch').classList.toggle('pc',!touch); if (!touch) $('#tDrop').innerHTML='Soltar<br><kbd>G</kbd>';
+  Sound.init(); Sound.apply(); Sound.fast=true; Sound.startMusic(); showBanner(game.mode==='reloj'?'¡A trabajar el barro! Tienen 3 minutos':'Modo tranquilo: sin reloj'); canvas.focus(); }
+$('#goBtn').addEventListener('click',()=>{
+  if (lob && lob.rol==='host'){ const list=lob.empezar(); lob.difundir({t:'cfg',mode:MODE}); begin(list); }
+  else begin([yo()]); });
+$('#again').addEventListener('click',()=>{ if (lob && lob.rol==='host'){ lob.ir('alfareria.html'); return; } $('#end').hidden=true; $('#start').hidden=false; syncStart(); });
+$('#nextBtn').addEventListener('click',e=>{ if (lob && lob.rol==='host'){ e.preventDefault(); lob.ir('carrera.html'); } });
+function togglePause(){ game.paused=!game.paused; $('#pause').hidden=!game.paused; if (game.paused) $('#resume').focus(); }
+$('#pauseBtn').addEventListener('click',()=>{ if (game.on) togglePause(); });
+$('#resume').addEventListener('click',togglePause);
+$('#endNow').addEventListener('click',()=>{ $('#pause').hidden=true; game.paused=false; if (lob && lob.rol==='cliente') return; finish(); });
+$('#soundBtn').addEventListener('click',()=>{ S.mute=!S.mute; save(); Sound.init(); Sound.apply(); Sound.startMusic(); $('#waves').style.display=S.mute?'none':''; });
+$('#waves').style.display=S.mute?'none':'';
+function finish(r){
+  if (r){ game.score=r.sc; game.stats=r.st; game.mode=r.mo; }
+  game.on=false; $('#touch').hidden=true; Sound.fast=false; const mult=1+.25*(players.length-1);
+  if (lob && lob.rol==='host') lob.difundir({t:'fin',r:{sc:game.score,st:game.stats,mo:game.mode}});
+  const stars=R.estrellas.filter(x=>game.score>=x*mult).length;
+  $('#stars').innerHTML=[0,1,2].map(i=>i<stars?'★':'<span class="off">★</span>').join(''); $('#stars').setAttribute('aria-label',`${stars} de 3 estrellas`);
+  $('#results').innerHTML=`<div><b>${game.score}</b><span>puntos</span></div><div><b>${game.stats.piezas}</b><span>piezas entregadas</span></div><div><b>${game.stats.especial}</b><span>de calidad especial</span></div><div><b>${game.stats.perdidos}</b><span>pedidos perdidos</span></div>`;
+  $('#endText').textContent = stars===3 ? 'Feria de maestros: el puesto quedó lleno de piezas de calidad. Ganaste ventaja para la trivia.' : stars>=1 ? 'Buena feria. Amasen bien el barro y saquen las piezas del horno a tiempo para subir la calidad.' : 'Se perdieron muchas piezas. Repartan las estaciones entre todos y cuiden el secadero de la lluvia.';
+  if (game.mode==='reloj'){ PROG.fabrica=Math.max(PROG.fabrica||0,stars); saveProg(); }
+  const cli = lob && lob.rol==='cliente'; $('#again').hidden=cli; $('#nextBtn').hidden=cli; $('#waitHost').hidden=!cli;
+  $('#end').hidden=false; (cli?$('#end a'):$('#again')).focus(); }
+
+/* ---------------- Arranque ---------------- */
+(async()=>{
+  await Promise.race([document.fonts.load('700 28px "Alegreya SC"').catch(()=>{}), new Promise(r=>setTimeout(r,2000))]);
+  lob = Red.sala($('#sala'), { nombre:yo().nombre, avatar:yo().avatar,
+    onCambio:()=>{ if (!game.on) syncStart(); },
+    onEmpezar:(list)=>{ begin(list); },
+    onMensaje:(d,slot)=>{
+      if (lob.rol==='host'){ if (d.t==='in'){ const r=remote[slot]||(remote[slot]={ptk:d.tk,pue:d.ue,pdr:d.dr}); Object.assign(r,{x:d.x,z:d.z,u:d.u,tk:d.tk,ue:d.ue,dr:d.dr,si:d.si}); } return; }
+      if (d.t==='cfg'){ MODE=d.mode; game.mode=d.mode; }
+      else if (d.t==='estado') applySnapshot(d.s);
+      else if (d.t==='fin'){ finish(d.r); } },
+    onSalida:(slot)=>{ delete remote[slot]; const p=players.find(q=>q.slot===slot); if (p && game.on){ p.nombre+=' (salió)'; showBanner('Un jugador salió de la sala'); } },
+    onCierre:()=>{ if (game.on){ game.on=false; showBanner('Se cerró la sala del anfitrión'); } $('#end').hidden=true; $('#start').hidden=false; },
+  });
+  resize(); syncStart(); renderOrders(); requestAnimationFrame(frame); $('#goBtn').focus();
+  if (location.hash==='#prueba'){ begin([yo()]); window.__a={game,players,ST,take,use,step,R,camera,setCarry,tirar,accion,nearest,get cubierto(){return cubierto;}}; }
+})();
+})();
+</script>
+</body>
+</html>

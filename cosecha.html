@@ -513,9 +513,9 @@ function labels(){
     if (chica && s!==cerca) txt='';
     s.el.className='st '+cls; s.el.innerHTML=`<b>${s.name}</b>${txt}${bar!==null?`<div class="bar"><i style="width:${Math.max(0,Math.min(1,bar))*100}%"></i></div>`:''}`;
     const [x,y]=project(s.x,LABEL_Y[s.kind]||1.5,s.z); s.lx=x; s.ly=y; });
-  Estaciones.colocarLetreros(ST);
   players.forEach(p=>{ const [x,y]=project(p.x,0,p.z+.35); p.el.style.left=x+'px'; p.el.style.top=y+'px';
     p.el.textContent=p.nombre+(p.slot===mySlot()&&players.length>1?' (tú)':'')+(p.carry?` · ${NAMES[p.carry.type]}${p.carry.type==='canasto'?` ${p.carry.n}/${R.canasto}`:''} · ${qual(p.carry)} pts`:''); });
+  Estaciones.colocarLetreros(ST,undefined,players.map(p=>p.el));
   Estaciones.botonAccion(players.find(q=>q.slot===mySlot()),accion,touch);
   const m=Math.max(0,game.mode==='reloj'?R.duracion-game.t:game.t), mm=Math.floor(m/60), ss=Math.floor(m%60);
   $('#time').textContent=`${mm}:${String(ss).padStart(2,'0')}`; $('#time').classList.toggle('low',game.mode==='reloj'&&m<30);
