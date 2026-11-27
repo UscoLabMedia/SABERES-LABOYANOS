@@ -32,6 +32,7 @@ function pantallaRegistro(){
   titulo('Crear usuario');
   paso.innerHTML = `<form class="in-form" novalidate>${campo('inUser', 'Usuario (un apodo, sin apellidos)', 'text', 'autocomplete="username" autocapitalize="none" maxlength="20" placeholder="ana_07"')}
     <span class="in-ayuda">3 a 20 letras, números o guion bajo.</span>
+    <p class="in-aviso"><b>Anota tu usuario y tu contraseña.</b> Si la olvidas no se puede recuperar sola: tendrás que pedir ayuda a tu docente. Usa un apodo, no tu nombre completo.</p>
     ${campo('inPass', 'Contraseña (mínimo 6)', 'password', 'autocomplete="new-password"')}
     ${campo('inPass2', 'Repite la contraseña', 'password', 'autocomplete="new-password"')}
     <p class="in-err" id="inErr" role="alert"></p>

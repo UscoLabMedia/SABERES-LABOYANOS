@@ -51,7 +51,9 @@ Si al entrar sale `permission denied for table partidas`, falta dar permiso a la
 Si al crear un usuario sale "el dominio interno de correo no es válido", cambia el dominio en `config.js` con `dominio: 'tu-dominio.com'`.
 
 Límites conocidos:
-- **No hay "olvidé mi contraseña"**: sin correo real, solo el docente puede restablecerla en **Authentication → Users**.
+- **No hay "olvidé mi contraseña"**: el correo es inventado, así que no llega ningún enlace de recuperación. La pantalla de crear usuario ya avisa de esto.
+  - Opción A, sin perder nada: el docente pone una contraseña nueva desde **SQL Editor** (sin probar contra un proyecto real; cambia `apodo` y la clave): `update auth.users set encrypted_password = extensions.crypt('ClaveNueva1', extensions.gen_salt('bf')) where email = 'apodo@laboyos.app';`
+  - Opción B: borrar el usuario en **Authentication → Users**. El estudiante crea otro y pierde sus partidas.
 - Necesita internet para entrar.
 - Pide a los estudiantes usar un apodo, sin apellidos ni datos personales.
 - Si dejaste las funciones antiguas del guardado por código (`leer_progreso`, `guardar_progreso`) y la tabla `progreso`, ya no se usan. Puedes borrarlas con `drop function leer_progreso(text); drop function guardar_progreso(text,text,text,jsonb); drop table progreso;`.
