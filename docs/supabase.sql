@@ -12,6 +12,11 @@ create table if not exists public.partidas (
 create index if not exists partidas_user on public.partidas (user_id, actualizada desc);
 alter table public.partidas enable row level security;
 
+-- Permisos de la tabla para quien inició sesión. Sin esto, los proyectos nuevos de Supabase
+-- responden "permission denied for table partidas". Las reglas de abajo limitan a cada quien a lo suyo.
+grant usage on schema public to authenticated;
+grant select, insert, update, delete on public.partidas to authenticated;
+
 -- Cada quien solo ve, crea, cambia y borra SUS partidas.
 drop policy if exists "ver mis partidas" on public.partidas;
 drop policy if exists "crear mis partidas" on public.partidas;

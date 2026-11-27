@@ -46,6 +46,8 @@ Qué guarda cada parte del juego (objeto de progreso de una partida):
 supabase: { url: 'https://xxxx.supabase.co', key: 'eyJ...' },
 ```
 
+Si al entrar sale `permission denied for table partidas`, falta dar permiso a la tabla: ejecuta las dos líneas `grant` de `docs/supabase.sql`.
+
 Si al crear un usuario sale "el dominio interno de correo no es válido", cambia el dominio en `config.js` con `dominio: 'tu-dominio.com'`.
 
 Límites conocidos:
