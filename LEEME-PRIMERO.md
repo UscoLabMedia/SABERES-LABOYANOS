@@ -2,7 +2,7 @@
 
 Entrega a la otra IA el archivo `saberes-laboyos.zip` (todo el proyecto) y pídele que lea primero este archivo (`docs/CONTINUAR.md`). Está escrito para que pueda seguir sin preguntar lo que ya se decidió.
 
-Última actualización: 26 de noviembre de 2026.
+Última actualización: 27 de noviembre de 2026.
 
 ---
 
@@ -65,19 +65,22 @@ Todo el Nivel 1 está jugable, de principio a fin:
 
 | Archivo | Qué hace |
 |---|---|
-| `index.html` | Pantalla de inicio: libro que se abre, mapa de Pitalito con pop-ups. Menú, ajustes, **Mi progreso** (perfiles y código de respaldo) y progreso del recorrido. En el ZIP ya trae `<!doctype html>` y `<meta charset>` al inicio, listo para GitHub Pages. |
+| `index.html` | Pantalla de inicio: libro que se abre, mapa de Pitalito con pop-ups. Menú, ajustes, **Mi progreso** (usuario, partida, cambiar de partida y cerrar sesión) y progreso del recorrido. En el ZIP ya trae `<!doctype html>` y `<meta charset>` al inicio, listo para GitHub Pages. |
 | `finca.html` | Exploración del Nivel 1. Elección muñeco o muñeca. 3 NPC dan 3 pistas, cuaderno de saberes, aguacero al final. |
 | `cosecha.html` | Minijuego (teclado, mando, táctil y **ratón**: clic en el suelo para caminar, clic en una estación para tomar o soltar, mantener el clic para usar): cafetal → despulpadora (manivela, se atasca) → tanques (fermentar 18 s, lavar) → secadero (voltear, marquesina contra la lluvia) → chiva. Pedidos, calidad de taza (>80 = especial), 3 min o modo tranquilo. Reglas en el objeto `R`. |
 | `oleadas.html` | Defensa del cafetal (con **ratón**: clic o mantener para golpear hacia el puntero): 12 cafetos, 5 oleadas de broca, roya (salta al vecino) y ojo de gallo (con lluvia). Ataque con palo. Reglas en `FOE`, `WAVES` y `ATK`. |
 | `trivia.html` | 5 preguntas al azar de `data/trivia1.json`, 20 s cada una. Comodines 50/50, +10 s y Cuaderno. Saberes por acierto, rapidez y racha. |
 | `papel.js` | Utilidades compartidas: ajustes (`S`), sonido sintetizado (`Sound`), recortes troquelados (`cutout`), dibujos (`D`), texturas, cajas y techos. |
 | `muneco.js` | `Muneco.jugador(etapa, fem)`, `Muneco.npc(tipo)`, `Muneco.animar()` y `Muneco.retrato()`. |
-| `guardado.js` | Perfiles y progreso: `Guardado.progreso()`, `.guardar()`, `.codigo()`, `.importar()` y nube opcional (Supabase). Ver `docs/guardado.md`. |
+| `guardado.js` | Cuentas y partidas con Supabase Auth. Para los minijuegos la API no cambia: `Guardado.progreso()`, `.guardar()`, `.perfil()`, `.actualizarPerfil({avatar})`. Cuentas en `Guardado.cuenta`. Ver `docs/guardado.md`. |
+| `inicio.js` | Pantalla de entrada: usuario y contraseña, crear usuario, continuar o nueva partida, borrar partidas y borrar cuenta. |
 | `red.js` | Salas en red con PeerJS: `Red.sala(contenedor, opciones)` arma la pantalla de sala (Solo, Crear sala, Unirme). Modelo: el anfitrión simula; los invitados envían controles y reciben el estado a 15 Hz. |
 | `config.js` | Datos de Supabase y del servidor PeerJS. |
 | `data/nivel1.json` | Diálogos y pistas de la finca (editable por docentes). |
 | `data/trivia1.json` | Banco de preguntas (editable por docentes). |
-| `docs/guardado.md` | Cómo funciona el guardado, el SQL de Supabase y la red. |
+| `docs/guardado.md` | Cómo funcionan las cuentas y partidas, cómo activar Supabase y la red. |
+| `docs/supabase.sql` | SQL de la tabla `partidas`, sus permisos y reglas de seguridad. |
+| `arte/personajes/orquidera/` | Personaje La Orquídera: bloque 3D (Blender → GLB), hoja de diseño y README con decisiones. |
 | `docs/ideas.md` | Ideas anotadas. |
 | `propuesta-personaje.html`, `personaje-propuesta*.png` | Bocetos del personaje. No son parte del juego. |
 
@@ -93,13 +96,12 @@ Todo el Nivel 1 está jugable, de principio a fin:
   - Cadena completa de la cosecha.
   - Oleadas.
   - Trivia.
-  - Migración del progreso viejo a perfiles.
-  - Código de respaldo.
+  - Cuentas y partidas con un Supabase simulado (36 comprobaciones): registro, entrar, partidas, borrado, sin internet y renovación del token.
   - Ratón en cosecha (clic en cafeto → canasto) y en oleadas (clic → golpe hacia el puntero).
   - Elección libre de minijuegos con la finca completa.
   - Salas de 2 equipos en cosecha y oleadas (con un servidor PeerJS local).
+- Se probó con el **Supabase real** (a mano, 27 nov): crear usuario, nueva partida, guardado en la nube, continuar, borrar partida y borrar cuenta.
 - **No se ha probado:**
-  - Supabase real.
   - Mandos.
   - Controles táctiles en un celular real.
   - Sonido.
@@ -108,7 +110,7 @@ Todo el Nivel 1 está jugable, de principio a fin:
 
 ## 5. Tareas pendientes, en orden sugerido
 
-1. **Publicar en GitHub Pages** y probar la red entre celulares reales. Activar Supabase siguiendo `docs/guardado.md`.
+1. **Probar la red entre celulares reales.** El juego ya está publicado en GitHub Pages (`https://uscolabmedia.github.io/SABERES-LABOYANOS/`) y Supabase ya está activo.
 2. **Validar contenidos** con alguien de Pitalito:
    - Altura (~1.300 m) y cafetales hasta ~2.000 m.
    - Humedad del grano seco: 10–12 %.
@@ -121,6 +123,29 @@ Todo el Nivel 1 está jugable, de principio a fin:
 5. **Niveles 3 y 4**, después.
 6. **Comunidad, sala del moderador y archivo fotográfico** (ver sección 2), probablemente sobre Supabase (Auth + Storage).
 7. **Proyecto aparte (no mezclar):** juego para un programa de Comunicación Social y Periodismo, donde los niveles son asignaturas y el jugador elige a qué clase entrar.
+
+## 5b. Decisiones tomadas el 27 de noviembre de 2026 (no reabrir sin preguntar)
+
+**Cuentas y partidas**
+- Cada estudiante tiene un **usuario y una contraseña**. Un usuario tiene varias **partidas**; cada una guarda su propio progreso.
+- Siempre se pide usuario y contraseña al abrir el juego. Después, **Continuar** o **Nueva partida** (con nombre propio, o la fecha y hora si se deja vacío). Se pueden **borrar partidas** y **borrar la cuenta**.
+- **No hay recuperación de contraseña.** Quien la olvida crea un usuario nuevo con otro nombre y empieza de cero. Está avisado en las pantallas de Entrar y Crear usuario. No agregar "restablecer contraseña".
+- Se usa Supabase Auth con un correo inventado (`apodo@laboyos.app`), con "Confirm email" apagado. Pedir a los estudiantes un apodo, sin apellidos.
+- Los perfiles locales, el PIN y los códigos (`LAB-XXXXXX` y de respaldo) se quitaron.
+
+**Publicación**
+- GitHub Pages publica solo desde `main`. Los commits desde sesiones de Claude a veces no disparan la publicación; se resolvió y hoy funciona. Si el sitio se ve viejo, revisar la pestaña Actions.
+- Supabase: un proyecto nuevo no da permisos a la tabla; por eso `docs/supabase.sql` incluye los `grant`.
+
+**Etapa final: Festival del Bambuco y Reinado** (ver `docs/ideas.md`)
+- Concurso de baile tipo *Dance Contest* de Club Penguin: juego de ritmo con flechas que simula los pasos del sanjuanero. El reinado se juega en solitario o contra compañeros; gana quien acierte más teclas o tenga más puntaje. Al ganar se entrega la corona.
+- El **concurso de música es otro modo de juego**, estilo *Zelda* con ocarina; no suma al reinado.
+- El traje de sanjuanera (versión B de La Orquídera) es el premio.
+
+**Dirección visual 3D** (solo diseño; el juego aún usa los muñecos de papel)
+- El libro *pop-up* se mantiene como portada y mapa. Los escenarios pasarían a 3D con estilo *Painterly Stylized 3D* (referencia: Kena) y ternura tipo Sky.
+- Se migrará a una versión moderna de Three.js solo en un prototipo aparte (`demo-visual-3d/`); no subir la versión en el juego actual sin preguntar.
+- Personaje principal femenino: **La Orquídera**, versión A para jugar. Ver `arte/personajes/orquidera/README.md`.
 
 ## 6. Reglas de trabajo que pidió el usuario
 
