@@ -405,7 +405,7 @@ const PLACES = {
   tarima: {x:-1.8, z:2.2, label:'Tarima de música y danza', level:'Nivel 4 · Música y Danza',
     text:'El bambuco y el sanjuanero, los tiples, las bandas y las fiestas de San Juan y San Pedro.', chips:['Pistas','Minijuego','Trivia'], need:'Los Caballos'},
   taller: {x:4.2, z:2.2, label:'Taller de alfarería', level:'Nivel 2 · La Alfarería',
-    text:'El barro, el torno y el horno: el oficio que da forma a las vasijas y a las chivas de cerámica laboyanas.', chips:['Pistas','Fabricación','Carrera de chivas','Trivia'], need:'El Café'},
+    text:'El barro, el torno y el horno: el oficio que da forma a las vasijas y a las chivas de cerámica laboyanas.', chips:['Pistas','Fabricación','Carrera de chivas','Trivia'], need:'El Café', ready:true},
   torre:  {x:.15, z:-.2, label:'Torre de los saberes', level:'Sala de la comunidad',
     text:'Aquí estarán los tableros temáticos y el archivo de fotografías históricas. Cada tablero se abre cuando superas su nivel, y el moderador cuida lo que se publica.', chips:['Tableros por tema','Archivo fotográfico','Borradores sin conexión'], need:'El Café'},
 };
@@ -539,7 +539,7 @@ function buildAt(group, obj, x, z, delay, target=1){ const holder=new THREE.Grou
 
 function buildWorld(){
   const tiles=tileTex();
-  const LOCK_TINT='#8f8a80', LOCK_T=.5;
+  let LOCK_TINT='#8f8a80', LOCK_T=.5;   // por lugar: si está abierto se usan colores normales (ver bloqueado)
   // --- Finca cafetera (abierta)
   { const g=placeGroup('finca'); let d=0;
     cardAt(g, cutout(900,380,D.mountains()), 1.5, -.3, -1.25, d+=.0);
@@ -572,7 +572,7 @@ function buildWorld(){
     cardAt(g, cutout(320,340,D.tree(['#6b8f45','#577a3a','#7fa055'])), .7, -1.05, -.4, .6);
   }
   // --- Criadero de caballos (plegado)
-  { const g=placeGroup('caballos'); const o={tint:LOCK_TINT,target:LOCK_T}; let d=.3;
+  { const g=placeGroup('caballos'); LOCK_TINT='#8f8a80'; LOCK_T=.5; const o={tint:LOCK_TINT,target:LOCK_T}; let d=.3;
     const suelo=boxMesh(2.2,.03,1.6,paperMat('#b79a6a').clone()); suelo.material.color.set(LOCK_TINT).multiply(new THREE.Color('#d8c8a0'));
     buildAt(g, suelo, 0, 0, d, LOCK_T);
     [[-.5,-.75,0],[.5,-.75,0],[-.5,.75,0],[.5,.75,0],[-1.05,0,Math.PI/2],[1.05,0,Math.PI/2]]
@@ -583,7 +583,7 @@ function buildWorld(){
     cardAt(g, cutout(110,140,D.lock()), .35, -1.5, .95, d+=.1);
   }
   // --- Tarima de música y danza (plegada)
-  { const g=placeGroup('tarima'); const o={tint:LOCK_TINT,target:LOCK_T}; let d=.4;
+  { const g=placeGroup('tarima'); LOCK_TINT='#8f8a80'; LOCK_T=.5; const o={tint:LOCK_TINT,target:LOCK_T}; let d=.4;
     const plat=boxMesh(1.7,.22,.95,paperMat('#8a5a32').clone()); plat.material.color.set('#6f6a60');
     buildAt(g, plat, 0, 0, d, LOCK_T);
     cardAt(g, cutout(560,420,D.stageBack()), 1.25, 0, -.42, d+=.05, o);
@@ -593,13 +593,13 @@ function buildWorld(){
     cardAt(g, cutout(110,140,D.lock()), .35, -1.1, .6, d+=.1);
   }
   // --- Taller de alfarería (plegado)
-  { const g=placeGroup('taller'); const o={tint:LOCK_TINT,target:LOCK_T}; let d=.5;
+  { const g=placeGroup('taller'); const bloqueado=!abierto('taller'); LOCK_TINT=bloqueado?'#8f8a80':'#ffffff'; LOCK_T=bloqueado?.5:1; const o={tint:LOCK_TINT,target:LOCK_T}; let d=.5;
     [['#9bb83a','Pitalito',-.7,-.65],['#3f9bd1','Timaná',.6,-.65],['#e8872b','Laboyos',-.45,.0],['#8a5ac0','Huila',.8,.05]]
       .forEach(([cab,t,x,z])=>cardAt(g, cutout(360,200,D.chiva(cab,t)), .6, x, z, d+=.04, o));
     cardAt(g, cutout(260,260,D.kiln()), .6, 1.3, .95, d+=.05, o);
     cardAt(g, cutout(300,160,D.pots()), .35, -1.0, .85, d+=.05, o);
         cardAt(g, cutout(120,260,D.person({shirt:'#d8c8a0',pants:'#5a4a3a',hat:false})), .58, -.1, .75, d+=.05, o);
-    cardAt(g, cutout(110,140,D.lock()), .35, -1.1, .95, d+=.1);
+    if (bloqueado) cardAt(g, cutout(110,140,D.lock()), .35, -1.1, .95, d+=.1);
   }
 }
 
@@ -694,20 +694,23 @@ addEventListener('keydown',e=>{
   if ((e.key==='Enter'||e.key===' ') && state==='closed' && document.activeElement===document.body){ e.preventDefault(); openBook(); }
 });
 
+const nivelDe=n=>(LEVELS.find(l=>l[0]===n)||[])[1];
+const abierto=k=>{ const p=PLACES[k]; return !!(p.open || (p.ready && p.need && PROG[nivelDe(p.need)])); };   // el lugar se despliega al superar el nivel anterior (si su nivel ya existe)
+const ENTRADA={finca:['finca.html','Entrar a la finca','finca1','Ya completaste la finca. Elige a qué jugar:'], taller:['finca.html?nivel=2','Entrar al taller','taller2','Ya reuniste las 3 pistas del taller. Elige a qué jugar:']};
 function showPlace(k){
   const p=PLACES[k]; focusKey=k; state='focus'; goTo(focusView(k),1.3);
   $('#placeKicker').textContent=p.level; $('#placeTitle').textContent=p.label; $('#placeText').textContent=p.text;
   $('#placeChips').innerHTML=p.chips.map(c=>`<li>${c}</li>`).join('');
   const lock=$('#placeLock'), go=$('#placeGo'); PROG=Guardado.progreso();
-  $('#placeGames').hidden=!(k==='finca' && PROG.finca1); if (k==='finca' && PROG.finca1) $('#placeGameList').innerHTML=juegosHTML(PROG);
-  if (p.open){ lock.hidden=true; go.disabled=false; go.textContent='Entrar a la finca'; go.onclick=()=>{ location.href='finca.html'; }; }
-  else { lock.hidden=false; lock.textContent=`Se despliega al superar ${p.need}.`; go.disabled=true; go.textContent=k==='torre'?'Entrar a la sala':'Entrar'; go.onclick=null; }
+  const en=ENTRADA[k], hecho=!!(en && PROG[en[2]]); $('#placeGames').hidden=!hecho; if (hecho){ $('#placeGames p').textContent=en[3]; $('#placeGameList').innerHTML=juegosHTML(PROG,k==='taller'?2:1); }
+  if (abierto(k) && en){ lock.hidden=true; go.disabled=false; go.textContent=en[1]; go.onclick=()=>{ location.href=en[0]; }; }
+  else { lock.hidden=false; lock.textContent=p.ready||!PROG[nivelDe(p.need)]?`Se despliega al superar ${p.need}.`:'Este nivel está en construcción.'; go.disabled=true; go.textContent=k==='torre'?'Entrar a la sala':'Entrar'; go.onclick=null; }
   setTimeout(()=>openSheet('place'), S.motion?0:500);
 }
 
 $('#openBtn').addEventListener('click', openBook);
 $('#menu').addEventListener('click', e=>{ const b=e.target.closest('.slip'); if (!b) return; Sound.tick(); const act=b.dataset.act;
-  if (act==='play') showPlace('finca');
+  if (act==='play') showPlace(PROG.nivel1?'taller':'finca');
   else if (act==='map'){ toast('Toca o pasa el cursor sobre un lugar del libro.'); }
   else if (act==='community') toast(PROG.nivel1?'La sala de la comunidad está en construcción.':'La comunidad se abre al superar El Café: entra por la Torre de los saberes.');
   else if (act==='perfil'){ syncProfile(); openSheet('perfil'); }
@@ -742,8 +745,9 @@ function syncUI(){
   $('#keys').innerHTML=KEYMAPS.map(([t,rows])=>`<div><h3>${t}</h3><dl>${rows.map(([a,b])=>`<dt>${a}</dt><dd style="margin:0">${b}</dd>`).join('')}</dl></div>`).join('');
 }
 
-function juegosHTML(P){ const st=n=>n==null?'sin jugar':'★'.repeat(n)+'☆'.repeat(3-n);
-  return [['cosecha.html','La cosecha','Minijuego de estaciones · '+st(P.cosecha)],['oleadas.html','Defensa del cafetal','Oleadas de plagas · '+st(P.oleadas)],['trivia.html','Trivia del café',P.trivia1!=null?`Mejor: ${P.trivia1} de 5`:'sin jugar']]
+function juegosHTML(P,nivel=1){ const st=n=>n==null?'sin jugar':'★'.repeat(n)+'☆'.repeat(3-n);
+  return (nivel===2 ? [['alfareria.html','La fabricación','Taller de artesanías · '+st(P.fabrica)],['carrera.html','Carrera de chivas','Diseña tu chiva y corre · '+st(P.carrera)],['trivia.html?nivel=2','Trivia del barro',P.trivia2!=null?`Mejor: ${P.trivia2} de 5`:'sin jugar']]
+    : [['cosecha.html','La cosecha','Minijuego de estaciones · '+st(P.cosecha)],['oleadas.html','Defensa del cafetal','Oleadas de plagas · '+st(P.oleadas)],['trivia.html','Trivia del café',P.trivia1!=null?`Mejor: ${P.trivia1} de 5`:'sin jugar']])
     .map(([h,t,d])=>`<a href="${h}"><b>${t}</b><span>${d}</span></a>`).join(''); }
 /* ---------------- Perfil y progreso ---------------- */
 let PROG=Guardado.progreso();
@@ -751,12 +755,14 @@ const LEVELS=[['El Café','nivel1'],['La Alfarería','nivel2'],['Los Caballos','
 function syncProgress(){ PROG=Guardado.progreso(); const done=LEVELS.filter(l=>PROG[l[1]]).length;
   $('#progTitle').textContent=`RECORRIDO · ${done} DE 4`;
   $('#progList').innerHTML=LEVELS.map(([n,k],i)=>{ const ok=!!PROG[k], avail=i===0||!!PROG[LEVELS[i-1][1]];
-    return `<li class="${ok||avail?'open':''}"><span>${n}</span><span>${ok?'completado':avail?(i===0?'disponible':'pronto'):'plegado'}</span></li>`; }).join('');
-  const c=$('[data-act="community"]'); c.setAttribute('aria-disabled', String(!PROG.nivel1)); c.querySelector('.hint').textContent=PROG.nivel1?'en construcción':'al superar El Café'; }
+    return `<li class="${ok||avail?'open':''}"><span>${n}</span><span>${ok?'completado':avail?(i<2?'disponible':'pronto'):'plegado'}</span></li>`; }).join('');
+  const c=$('[data-act="community"]'); c.setAttribute('aria-disabled', String(!PROG.nivel1)); c.querySelector('.hint').textContent=PROG.nivel1?'en construcción':'al superar El Café';
+  const pj=$('[data-act="play"] .hint'); if (pj) pj.textContent=PROG.nivel1?'Nivel 2 · La Alfarería':'Nivel 1 · El Café'; }
 const CLOUD={local:'Desactivada: el progreso queda solo en este navegador.',sincronizado:'Sincronizado.',pendiente:'Sin internet: se sincroniza al volver la conexión.',error:'No se pudo sincronizar. Se intentará de nuevo.'};
 function syncProfile(){ const p=Guardado.perfil(); PROG=Guardado.progreso();
   $('#pfTitle').textContent=p.nombre; $('#whoHint').textContent=p.nombre; $('#pfUser').textContent=p.nombre; $('#pfPartida').textContent=p.partida;
-  const st=[PROG.nivel1?'Nivel 1 superado':'Nivel 1 en curso', PROG.cosecha!=null?`cosecha ${PROG.cosecha}★`:null, PROG.oleadas!=null?`defensa ${PROG.oleadas}★`:null, PROG.trivia1!=null?`trivia ${PROG.trivia1}/5`:null].filter(Boolean);
+  const st=[PROG.nivel1?'Nivel 1 superado':'Nivel 1 en curso', PROG.cosecha!=null?`cosecha ${PROG.cosecha}★`:null, PROG.oleadas!=null?`defensa ${PROG.oleadas}★`:null, PROG.trivia1!=null?`trivia ${PROG.trivia1}/5`:null,
+    PROG.nivel1?(PROG.nivel2?'Nivel 2 superado':'Nivel 2 en curso'):null, PROG.fabrica!=null?`fabricación ${PROG.fabrica}★`:null, PROG.carrera!=null?`carrera ${PROG.carrera}★`:null, PROG.trivia2!=null?`trivia del barro ${PROG.trivia2}/5`:null].filter(Boolean);
   $('#pfSummary').textContent=st.join(' · ')+'.';
   $('#pfCloud').textContent=Guardado.nube.activa?CLOUD[Guardado.nube.estado]||CLOUD.sincronizado:CLOUD.local; }
 $('#pfCambiar').addEventListener('click',()=>cambiarPartida());
@@ -787,7 +793,7 @@ async function boot(){
   if (location.hash==='#abierto'){ openBook(); openT0-=10; pops.forEach(p=>{ p.val=p.target; p.started=true; applyPop(p); }); tween.active=false; const o=openView(); camState.pos.copy(o.pos); camState.look.copy(o.look); }
 }
 addEventListener('resize', resize);
-if (location.hash==='#prueba') window.__i={PLACES,LEVELS,juegosHTML,syncProgress,get PROG(){ return PROG; }};   // gancho de prueba
+if (location.hash==='#prueba') window.__i={PLACES,LEVELS,juegosHTML,syncProgress,syncProfile,showPlace,abierto,get PROG(){ return PROG; }};   // gancho de prueba
 boot();
 })();
 </script>
