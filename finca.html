@@ -335,10 +335,13 @@ function addBuild(obj,x,z,opt={}){ const holder=new THREE.Group(); holder.positi
 const box=(x0,x1,z0,z1)=>colliders.push({x0,x1,z0,z1});
 
 const cache={}; const cut=(key,w,h,fn)=>cache[key]||(cache[key]=cutout(w,h,fn));
+// Cordillera del fondo: las montañas se solapan, así que cada una va a distinta profundidad (a la misma, los bordes tiemblan)
+const MONTES=[];
+function ponMontes(){ [-13,-4.5,4,12.5].forEach((x,i)=>{ const h=4.4, z=-11.3-(i%2)*.4; addCard(cut('mtn'+(i%2),900,380,D.mountains()),h,x,z,{always:true}); MONTES.push({x,z,w:h*900/380}); }); }
 function buildFinca(){
   const tiles=tileTex();
   // cordillera al fondo (siempre visible)
-  [-13,-4.5,4,12.5].forEach((x,i)=>addCard(cut('mtn'+(i%2),900,380,D.mountains()),4.4,x,-11.3,{always:true}));
+  ponMontes();
   // casa de la finca
   { const h=new THREE.Group(), wt=wallTex('finca'), wm=paperMat('#f3ecdc',wt), plain=paperMat('#f3ecdc');
     const body=boxMesh(3.6,1.5,2.2,[wm,wm,plain,plain,wm,wm]); h.add(body);
@@ -387,7 +390,7 @@ function buildFinca(){
 
 function buildTaller(){
   const tiles=tileTex();
-  [-13,-4.5,4,12.5].forEach((x,i)=>addCard(cut('mtn'+(i%2),900,380,D.mountains()),4.4,x,-11.3,{always:true}));
+  ponMontes();
   // el taller: casa de trabajo de adobe y teja
   { const h=new THREE.Group(), aw=wallTex('adobe'), wm=paperMat('#ead7b8',aw), plain=paperMat('#ead7b8');
     h.add(boxMesh(4.4,1.5,2.4,[wm,wm,plain,plain,wm,wm]));
@@ -619,7 +622,7 @@ async function boot(){
   if (collected.size>=LEVEL.pistas.length){ finished=true; $('#introGames').hidden=false; $('#introGameList').innerHTML=juegosHTML(PROG); $('#startBtn').textContent=LEVEL.explorar||'Explorar'; }
   $('#introText').textContent=finished?(LEVEL.visitado||''):LEVEL.objetivo; $('#startBtn').disabled=false; $('#startBtn').focus();
   syncHUD(); resize(); camPos.copy(camOffset()).add(new THREE.Vector3(player.x,0,player.z)); camLook.set(player.x,.6,player.z-1.2);
-  if (location.hash==='#prueba'){ start(); window.__f={player:()=>player,roofs,camera,SPOTS,npcs,capsules,collected,nivel:NIV,get PROG(){ return PROG; },get LEVEL(){ return LEVEL; }}; } // atajo de prueba
+  if (location.hash==='#prueba'){ start(); window.__f={montes:MONTES,player:()=>player,roofs,camera,SPOTS,npcs,capsules,collected,nivel:NIV,get PROG(){ return PROG; },get LEVEL(){ return LEVEL; }}; } // atajo de prueba
   requestAnimationFrame(frame);
 }
 boot();
