@@ -64,6 +64,11 @@
   "cierre": {
     "titulo": "¡Llegó la cosecha!",
     "texto": "Se viene el aguacero y hay café maduro en todo el cafetal. Hay que recoger, despulpar, lavar y secar antes de que caiga el agua.",
-    "siguiente": "Ir a la cosecha"
-  }
+    "siguiente": "Ir a la cosecha",
+    "url": "cosecha.html"
+  },
+  "kicker": "Nivel 1 · El Café",
+  "visitado": "La finca ya te contó sus saberes. Puedes volver a recorrerla o ir directo a un minijuego.",
+  "explorar": "Explorar la finca",
+  "aria": "Finca cafetera del Valle de Laboyos, en papel desplegable"
 }

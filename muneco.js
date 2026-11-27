@@ -1,6 +1,6 @@
 /* muneco.js — muñecos de papel plegado en 3D para "Saberes de Laboyos".
    Muneco.jugador(etapa, fem): 0 inicio · 1 café · 2 alfarería · 3 caballos · 4 música y danza
-   Muneco.npc('caficultor' | 'recolectora' | 'catadora')
+   Muneco.npc('caficultor' | 'recolectora' | 'catadora' | 'alfarero' | 'pintora' | 'aprendiz')
    Muneco.animar(modelo, dt, caminando, quieto) y Muneco.retrato(fnQueConstruye) -> dataURL.
    Requiere Three.js r128. */
 (() => {
@@ -158,6 +158,13 @@ function buildNPC(kind){
     const b=m.userData.body; const basket=piece(new THREE.CylinderGeometry(.11,.09,.13,8), mat('#9a6a33')); basket.position.set(0,.5,.17); b.add(basket);
     for(let i=0;i<7;i++){ const c=new THREE.Mesh(new THREE.IcosahedronGeometry(.022,0),mat(RED)); c.position.set(Math.cos(i)*.06,.57,.17+Math.sin(i)*.04); b.add(c); }
     const strap=piece(new THREE.BoxGeometry(.02,.3,.012), mat('#5a3a22'),{folds:false}); strap.position.set(0,.66,.16); b.add(strap); }
+  else if (kind==='alfarero'){ m=base({legMat:mat('#6b5440'), shoe:'#3a2a1c', sole:'#1f150e', torso:'#c9b79a', belly:true, torsoW:[.125,.15], hair:'#cfc8bb', older:true, mustache:true, apron:'#7a4a2a', apronLen:.36});
+    const pot=new THREE.Group(); const c=piece(new THREE.CylinderGeometry(.045,.03,.06,8), mat('#b5652f')); pot.add(c); const lip=piece(new THREE.CylinderGeometry(.05,.045,.015,8), mat('#9e5428')); lip.position.y=.037; pot.add(lip);
+    pot.position.set(0,.02,.05); pot.scale.setScalar(1.5); m.userData.rightHand.add(pot); const arm=m.userData.rightHand.parent; arm.rotation.x=-1.25; arm.rotation.z=.45; }
+  else if (kind==='pintora'){ m=base({legMat:mat(SKIN), shoe:'#3a2a1c', sole:'#1f150e', torso:'#f6f1e4', torsoW:[.112,.128], skirt:'long', skirtCol:'#2f6b8a', scarfHead:'#c0262c', lashes:true, hairStyle:'bun', hair:'#2a1a10'});
+    const br=piece(new THREE.CylinderGeometry(.008,.008,.16,5), mat('#8a5a32'),{folds:false}); br.position.set(0,.02,.06); br.rotation.x=1.1; const tip=piece(new THREE.CylinderGeometry(.012,.004,.03,5), mat('#c0262c'),{folds:false}); tip.position.set(0,.09,.0); br.add(tip);
+    m.userData.rightHand.add(br); const arm=m.userData.rightHand.parent; arm.rotation.x=-1.1; arm.rotation.z=.4; }
+  else if (kind==='aprendiz'){ m=base({legMat:mat('#2f4a63'), shoe:'#3a2a1c', sole:'#1f150e', torso:'#2f8a7a', cap:'#efe3c0', apron:'#8a5a32', apronLen:.3, shortSleeve:true}); }
   else { m=base({legMat:mat('#2a2a30'), shoe:'#3a2a1c', sole:'#1f150e', torso:'#f6f1e4', torsoW:[.112,.128], apron:'#5a3a22', apronLen:.3, lashes:true, hairStyle:'bun', hair:'#3a2214'});
     const cup=new THREE.Group(); const c=piece(new THREE.CylinderGeometry(.04,.032,.05,8), mat('#fbf7ee')); cup.add(c); const coffee=new THREE.Mesh(new THREE.CircleGeometry(.036,8),mat('#4a2a14')); coffee.rotation.x=-Math.PI/2; coffee.position.y=.026; cup.add(coffee);
     cup.position.set(0,.02,.05); cup.scale.setScalar(1.4); m.userData.rightHand.add(cup); const arm=m.userData.rightHand.parent; arm.rotation.x=-1.25; arm.rotation.z=.45; }

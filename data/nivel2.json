@@ -38,6 +38,54 @@
   "cierre": {
     "titulo": "¡Hay pedidos en el taller!",
     "texto": "Llegaron encargos de vasijas y chivas. Hay que preparar el barro, modelar, secar, hornear y pintar. Después, a diseñar tu chiva y a correr.",
-    "siguiente": "Ir al taller"
-  }
+    "siguiente": "Ir al taller",
+    "url": "alfareria.html"
+  },
+  "escenario": "El taller",
+  "kicker": "Nivel 2 · La Alfarería",
+  "objetivo": "Habla con la gente del taller y reúne las 3 pistas del barro de Pitalito.",
+  "visitado": "El taller ya te contó sus saberes. Puedes volver a recorrerlo o ir directo a un juego.",
+  "explorar": "Explorar el taller",
+  "aria": "Taller de alfarería de Pitalito, en papel desplegable",
+  "npcs": [
+    {
+      "id": "eliecer",
+      "nombre": "Don Eliécer",
+      "oficio": "Alfarero",
+      "pista": "barro",
+      "saludo": "Ya le conté del barro. ¡Mire su cuaderno!",
+      "dialogo": [
+        "¡Buenas, {nombre}! Pase al taller. Aquí todo empieza con un puñado de barro.",
+        "La arcilla con que trabajamos sale sobre todo de las minas del Salesiano y de Guachicos.",
+        "Trae caolín, feldespato, cuarzo y carbonato de calcio. Mezclada con agua se pone blanda y se deja modelar.",
+        "Le dejé una cápsula aquí al ladito. Recójala y apúntela en su cuaderno."
+      ]
+    },
+    {
+      "id": "marlene",
+      "nombre": "Doña Marlene",
+      "oficio": "Pintora de chivas",
+      "pista": "chiva",
+      "saludo": "Ya le conté de la chiva. ¡Mire su cuaderno!",
+      "dialogo": [
+        "¡Hola, {nombre}! Yo pinto chivas: ese bus de escalera con su carga de costales y cajas.",
+        "La chiva de barro la creó la maestra Cecilia Vargas Muñoz, nacida en Pitalito.",
+        "En 2018 la Ley 1891 exaltó su obra y llamó «La Ruta de la Chiva» al anillo turístico del sur del Huila: San Agustín, Pitalito, Isnos y Saladoblanco.",
+        "Le dejé una cápsula aquí al ladito. Recójala y apúntela en su cuaderno."
+      ]
+    },
+    {
+      "id": "yeison",
+      "nombre": "Yeison",
+      "oficio": "Aprendiz",
+      "pista": "origen",
+      "saludo": "Ya le conté lo del nombre. ¡Mire su cuaderno!",
+      "dialogo": [
+        "¡Quiubo, {nombre}! Yo estoy aprendiendo el oficio y quiero que mi chiva lleve el nombre de Pitalito.",
+        "Desde 2017 la «Chiva de Pitalito» tiene denominación de origen: la protegió la Superintendencia de Industria y Comercio con la Resolución 23889.",
+        "Eso quiere decir que solo la chiva de cerámica hecha con la arcilla de la zona y con los métodos tradicionales de sus artesanos puede llevar ese nombre. La cooperativa COARPI autoriza su uso.",
+        "Le dejé una cápsula aquí al ladito. Recójala y apúntela en su cuaderno."
+      ]
+    }
+  ]
 }

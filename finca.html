@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>La finca · Nivel 1</title>
+<title>Exploración · Nivel</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+SC:wght@700;800&family=Alegreya:ital,wght@0,400;0,600;1,400&family=Alegreya+Sans:wght@400;500;700&display=swap">
@@ -110,8 +110,8 @@ body{background:var(--desk);color:var(--on-desk);font-family:var(--f-ui);overflo
 
 <div class="hud">
   <section class="level" aria-label="Objetivo del nivel">
-    <p class="kicker">Nivel 1 · El Café</p>
-    <h1>La finca</h1>
+    <p class="kicker" id="hudKicker">Nivel 1 · El Café</p>
+    <h1 id="hudTitle">La finca</h1>
     <ul id="goals"></ul>
   </section>
   <div class="tools">
@@ -141,7 +141,7 @@ body{background:var(--desk);color:var(--on-desk);font-family:var(--f-ui);overflo
 
 <div class="scrim" id="intro">
   <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="introTitle">
-    <p class="kicker">Nivel 1 · El Café</p>
+    <p class="kicker" id="introKicker">Nivel 1 · El Café</p>
     <h2 id="introTitle">La finca</h2>
     <p id="introText">Cargando la finca…</p>
     <p style="font-size:.95rem;color:var(--ink-soft)" id="introKeys"></p>
@@ -164,7 +164,7 @@ body{background:var(--desk);color:var(--on-desk);font-family:var(--f-ui);overflo
 <div class="scrim" id="notebook" hidden>
   <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="nbTitle">
     <button class="close" data-close aria-label="Cerrar cuaderno">×</button>
-    <p class="kicker">Nivel 1 · El Café</p>
+    <p class="kicker" id="nbKicker">Nivel 1 · El Café</p>
     <h2 id="nbTitle">Cuaderno de saberes</h2>
     <ul class="notebook" id="nbList"></ul>
     <div class="actions"><button class="btn solid" data-close>Cerrar</button></div>
@@ -199,15 +199,21 @@ if (typeof THREE==='undefined' || !window.Papel){ fail('No se pudo cargar el mot
 const { S, save, Sound, mk, rnd, cutout, texFrom, card, paperMat, boxMesh, D, tileTex, wallTex, hipRoof, fiber } = Papel;
 document.documentElement.classList.toggle('big-text', S.text==='grande');
 const touch = matchMedia('(pointer: coarse)').matches;
+// Nivel: ?nivel=N (por defecto 1: la finca; 2: el taller de alfarería). Datos en data/nivel{N}.json
+const NIV=Math.max(1,Math.min(4,+new URLSearchParams(location.search).get('nivel')||1)), FLAG=NIV===1?'finca1':'taller'+NIV;
 
 /* ---------------- Mundo: una página de 36 × 24 ---------------- */
 const WX=18, WZ=12, GW=2048, GH=1366;
 const g2c=(x,z)=>[(x+WX)/(WX*2)*GW,(z+WZ)/(WZ*2)*GH];
 
-const SPOTS = {
+const SPOTS1 = {
   start:{x:0,z:7.5}, house:{x:0,z:-.8}, arnulfo:{x:-5,z:3.6}, rosa:{x:-8.2,z:-5.5}, lucia:{x:12.2,z:7.6},
   benef:{x:9.5,z:-3.6}, secadero:{x:9,z:4.4}, mirador:{x:-6.5,z:4.2},
 };
+const SPOTS2 = {   // el taller de alfarería
+  start:{x:0,z:7.5}, taller:{x:0,z:-1.4}, horno:{x:9.6,z:-3.6}, eliecer:{x:-5.4,z:3.6}, marlene:{x:8.8,z:5.2}, yeison:{x:-9.4,z:-3.4}, arcilla:{x:-10.6,z:-1.6},
+};
+let SPOTS = NIV===2 ? SPOTS2 : SPOTS1;
 
 function drawGround(){
   const c=mk(GW,GH), g=c.getContext('2d');
@@ -239,6 +245,26 @@ function drawGround(){
   return c;
 }
 
+function drawGroundTaller(){
+  const c=mk(GW,GH), g=c.getContext('2d');
+  g.fillStyle='#b9c48a'; g.fillRect(0,0,GW,GH);
+  for (let i=0;i<90;i++){ const x=rnd(0,GW),y=rnd(0,GH),r=rnd(40,180),gr=g.createRadialGradient(x,y,0,x,y,r);
+    gr.addColorStop(0,Math.random()<.5?'rgba(120,150,80,.3)':'rgba(215,200,150,.35)'); gr.addColorStop(1,'rgba(0,0,0,0)'); g.fillStyle=gr; g.fillRect(x-r,y-r,r*2,r*2); }
+  const rect=(x0,z0,x1,z1,col)=>{ const [a,b]=g2c(x0,z0),[c2,d]=g2c(x1,z1); g.fillStyle=col; g.fillRect(a,b,c2-a,d-b); };
+  const stroke=(pts,w,col)=>{ g.strokeStyle=col; g.lineWidth=w; g.lineCap='round'; g.lineJoin='round'; g.beginPath(); g.moveTo(...pts[0]);
+    for (let i=1;i<pts.length-1;i++){ const [x1,y1]=pts[i],[x2,y2]=pts[i+1]; g.quadraticCurveTo(x1,y1,(x1+x2)/2,(y1+y2)/2); } g.lineTo(...pts[pts.length-1]); g.stroke(); };
+  // patio del taller, secadero de piezas y mina de arcilla
+  rect(-4.2,-3.2,4.4,2.2,'#dcc29a'); rect(5.8,2.2,12.2,8,'#d9b98e'); rect(6.6,-6.2,12.4,-1.6,'#c9a77c');
+  const [ex,ey]=g2c(-10.6,-2.4); g.fillStyle='#a96a3c'; g.beginPath(); g.ellipse(ex,ey,230,150,0,0,7); g.fill(); g.fillStyle='#8f5530'; g.beginPath(); g.ellipse(ex+20,ey+10,150,90,0,0,7); g.fill();
+  const q=[[17.5,-12],[15.5,-6],[16.5,0],[14.5,6],[15.5,12]].map(([x,z])=>g2c(x,z)); stroke(q,52,'#eef2e6'); stroke(q,38,'#74a9b4');
+  const path=pts=>{ const P=pts.map(([x,z])=>g2c(x,z)); stroke(P,64,'#e6d3a6'); stroke(P,48,'#d8c08b'); };
+  path([[0,12],[0,7],[0,2.4]]); path([[0,5],[-2.6,4.2],[-5.4,3.8]]); path([[-2,2.6],[-5,0],[-8,-2]]); path([[1.5,3],[5,4.8],[8.8,5.2]]); path([[2,0],[6,-2.4],[9.4,-3.2]]);
+  for (let i=0;i<220;i++){ const x=rnd(0,GW),y=rnd(0,GH); g.fillStyle=['#f2e8c8','#e8a33a','#c0262c','#ffffff'][i%4]; g.beginPath(); g.arc(x,y,rnd(2,4),0,7); g.fill(); }
+  g.strokeStyle='rgba(90,60,30,.45)'; g.lineWidth=4; g.strokeRect(24,24,GW-48,GH-48);
+  g.globalAlpha=.9; g.fillStyle=g.createPattern(Papel.FIBER,'repeat'); g.fillRect(0,0,GW,GH); g.globalAlpha=1;
+  return c;
+}
+
 /* Dibujos propios de la finca */
 const F = {
   sign(text){ return (g,w,h)=>{ g.fillStyle='#6b4224'; g.fillRect(w*.46,h*.35,w*.08,h*.65);
@@ -260,6 +286,14 @@ const F = {
   hen(){ return (g,w,h)=>{ g.fillStyle='#f1e6d0'; g.beginPath(); g.ellipse(w*.45,h*.55,w*.32,h*.25,0,0,7); g.fill(); g.beginPath(); g.arc(w*.75,h*.3,w*.13,0,7); g.fill();
     g.fillStyle='#c0262c'; g.beginPath(); g.arc(w*.75,h*.15,w*.06,0,7); g.fill(); g.fillStyle='#e8a33a'; g.beginPath(); g.moveTo(w*.86,h*.3); g.lineTo(w*.98,h*.35); g.lineTo(w*.86,h*.38); g.fill();
     g.fillRect(w*.4,h*.78,w*.04,h*.22); g.fillRect(w*.52,h*.78,w*.04,h*.22); }; },
+  clay(){ return (g,w,h)=>{ g.fillStyle='#8f5530'; g.beginPath(); g.moveTo(0,h); g.quadraticCurveTo(w*.15,h*.25,w*.5,h*.12); g.quadraticCurveTo(w*.85,h*.25,w,h); g.fill();
+    g.fillStyle='#b5764a'; g.beginPath(); g.moveTo(w*.14,h*.8); g.quadraticCurveTo(w*.25,h*.35,w*.5,h*.22); g.quadraticCurveTo(w*.6,h*.4,w*.5,h*.8); g.fill();
+    g.strokeStyle='rgba(60,30,10,.35)'; g.lineWidth=3; for (let i=0;i<4;i++){ g.beginPath(); g.moveTo(w*(.2+i*.15),h*.9); g.lineTo(w*(.3+i*.12),h*.5); g.stroke(); } }; },
+  torno(){ return (g,w,h)=>{ g.fillStyle='#8a5a32'; g.fillRect(w*.08,h*.5,w*.84,h*.1); g.fillRect(w*.14,h*.6,w*.07,h*.4); g.fillRect(w*.79,h*.6,w*.07,h*.4);
+    g.fillStyle='#5a3a22'; g.beginPath(); g.ellipse(w*.5,h*.5,w*.28,h*.06,0,0,7); g.fill(); g.fillStyle='#b5652f'; g.beginPath(); g.moveTo(w*.42,h*.5); g.quadraticCurveTo(w*.34,h*.3,w*.44,h*.12); g.lineTo(w*.56,h*.12); g.quadraticCurveTo(w*.66,h*.3,w*.58,h*.5); g.fill();
+    g.fillStyle='#8f4a20'; g.fillRect(w*.43,h*.1,w*.14,h*.05); }; },
+  estante(){ return (g,w,h)=>{ g.fillStyle='#8a5a32'; g.fillRect(0,h*.46,w,h*.05); g.fillRect(0,h*.95,w,h*.05); g.fillRect(0,0,w*.05,h); g.fillRect(w*.95,0,w*.05,h);
+    [[.02,.05,'#9bb83a','Pitalito'],[.5,.05,'#3f9bd1','Timaná'],[.02,.5,'#e8872b','Laboyos'],[.5,.5,'#8a5ac0','Huila']].forEach(([x,y,cab,t])=>{ g.save(); g.translate(w*x+4,h*y); D.chiva(cab,t)(g,w*.46,h*.4); g.restore(); }); }; },
 };
 
 /* ---------------- Escena ---------------- */
@@ -351,6 +385,35 @@ function buildFinca(){
   for (let x=-16;x<=16;x+=4.4){ if (Math.abs(x)<1.5) continue; addCard(cut('fence',600,140,D.fence()),.6,x,11.2); }
 }
 
+function buildTaller(){
+  const tiles=tileTex();
+  [-13,-4.5,4,12.5].forEach((x,i)=>addCard(cut('mtn'+(i%2),900,380,D.mountains()),4.4,x,-11.3,{always:true}));
+  // el taller: casa de trabajo de adobe y teja
+  { const h=new THREE.Group(), aw=wallTex('adobe'), wm=paperMat('#ead7b8',aw), plain=paperMat('#ead7b8');
+    h.add(boxMesh(4.4,1.5,2.4,[wm,wm,plain,plain,wm,wm]));
+    const roof=hipRoof(5.2,3.2,1.2,new THREE.MeshStandardMaterial({map:tiles,roughness:.9,transparent:true})); roof.position.y=1.5; h.add(roof); roofs.push({mesh:roof,x:SPOTS.taller.x,z:SPOTS.taller.z,w:5.2,d:3.2,op:1});
+    h.add(boxMesh(5,.12,3.2,paperMat('#c9a77c')));
+    addBuild(h,SPOTS.taller.x,SPOTS.taller.z); box(SPOTS.taller.x-2.4,SPOTS.taller.x+2.4,SPOTS.taller.z-1.3,SPOTS.taller.z+1.3); }
+  addCard(cut('sign-taller',300,220,F.sign('Taller')),.95,SPOTS.taller.x+3.4,SPOTS.taller.z+1.9);
+  // horno de leña y su leña
+  addCard(cut('horno',260,260,D.kiln()),2.1,SPOTS.horno.x,SPOTS.horno.z,{collide:.9});
+  addCard(cut('sign-horno',300,220,F.sign('Horno')),.95,SPOTS.horno.x+2.2,SPOTS.horno.z+1.4);
+  [0,1,2].forEach(i=>addCard(cut('sack',120,150,D.sack()),.5,SPOTS.horno.x-2+i*.35,SPOTS.horno.z+1.5+(i%2)*.12));
+  // mina de arcilla (aprendiz) y montones de barro
+  [[-8.2,-.2,1.1],[-11.6,-4.6,1.3],[-12,.2,1],[-9,-5.6,.9]].forEach(([x,z,h],i)=>addCard(cut('clay',280,200,F.clay()),h,x,z,{collide:.5}));
+  addCard(cut('sign-arcilla',340,220,F.sign('Arcilla')),.95,SPOTS.arcilla.x-.5,SPOTS.arcilla.z+2.8);
+  // torno y vasijas de don Eliécer
+  addCard(cut('torno',300,170,F.torno()),.9,SPOTS.eliecer.x+1.4,SPOTS.eliecer.z-.2,{collide:.55});
+  [[-.9,.9],[2.6,1.1]].forEach(([dx,dz],i)=>addCard(cut('pots'+i,300,160,D.pots()),.5,SPOTS.eliecer.x+dx,SPOTS.eliecer.z+dz));
+  // estante de chivas de doña Marlene
+  addCard(cut('estante',420,300,F.estante()),1.5,SPOTS.marlene.x+2,SPOTS.marlene.z-.4,{collide:.8});
+  addCard(cut('sign-chivas',340,220,F.sign('Chivas')),.95,SPOTS.marlene.x-1.6,SPOTS.marlene.z+1.7);
+  // árboles del borde y cerca
+  const trees=[[6,-10],[10,-10.4],[15,-9],[16,-3],[16.4,2.5],[15.6,9.5],[4,9.8],[-6,9.6],[-11,8.6],[-13,3.5],[-14.6,-6],[-15,-9.6],[-3.6,-6],[5.6,-6.2]];
+  trees.forEach(([x,z],i)=>addCard(cut('tree'+(i%3),320,340,D.tree(i%3===1?['#c9752f','#a85a24','#e09a3c']:['#4f7d3a','#3f6a30','#5e8f45'])),rnd(2.2,3.2),x,z,{collide:.35,radius:11}));
+  for (let x=-16;x<=16;x+=4.4){ if (Math.abs(x)<1.5) continue; addCard(cut('fence',600,140,D.fence()),.6,x,11.2); }
+}
+
 /* ---------------- Personajes ---------------- */
 const LOOK = {
   player:{shirt:'#2f6b8a',pants:'#3a3a3a',hat:'#efe3c0',scarf:'#b3262b'},
@@ -358,7 +421,7 @@ const LOOK = {
   rosa:{dress:'#b84a3a',hat:false,skin:'#b07a52',trim:'#f2c94c',basket:true},
   lucia:{shirt:'#f6f1e4',pants:'#2f4a63',hat:false,skin:'#a8714a'},
 };
-const portraits={}, NPC_KIND={arnulfo:'caficultor', rosa:'recolectora', lucia:'catadora'};
+const portraits={}, NPC_KIND={arnulfo:'caficultor', rosa:'recolectora', lucia:'catadora', eliecer:'alfarero', marlene:'pintora', yeison:'aprendiz'};
 let PROG=Guardado.progreso();
 const buildFor=key=> key==='player' ? Muneco.jugador(PROG.etapa||0, S.avatar==='muneca') : Muneco.npc(NPC_KIND[key]);
 function makeChar(key,x,z){ portraits[key]=Muneco.retrato(()=>buildFor(key));
@@ -401,7 +464,7 @@ function spawnCapsule(n){
 }
 function collect(c){
   scene.remove(c.holder); capsules.splice(capsules.indexOf(c),1); collected.add(c.pista); Sound.chime();
-  PROG.pistas1=[...collected]; if (collected.size>=LEVEL.pistas.length) PROG.finca1=true; Guardado.guardar(PROG);
+  PROG['pistas'+NIV]=[...collected]; if (collected.size>=LEVEL.pistas.length) PROG[FLAG]=true; Guardado.guardar(PROG);
   const i=LEVEL.pistas.findIndex(p=>p.id===c.pista), p=LEVEL.pistas[i];
   $('#pistaArt').src=capCanvas.toDataURL(); $('#pistaKicker').textContent=`Pista ${collected.size} de ${LEVEL.pistas.length}`;
   $('#pistaTitle').textContent=p.titulo; $('#pistaText').textContent=p.texto; openSheet('pista'); syncHUD();
@@ -424,13 +487,14 @@ $('#nbBtn').addEventListener('click',()=>{ Sound.tick(); openSheet('notebook'); 
 $('#soundBtn').addEventListener('click',()=>{ S.mute=!S.mute; save(); Sound.init(); Sound.apply(); Sound.startMusic(); syncHUD(); });
 
 function juegosHTML(P){ const st=n=>n==null?'sin jugar':'★'.repeat(n)+'☆'.repeat(3-n);
-  return [['cosecha.html','La cosecha','Minijuego de estaciones · '+st(P.cosecha)],['oleadas.html','Defensa del cafetal','Oleadas de plagas · '+st(P.oleadas)],['trivia.html','Trivia del café',P.trivia1!=null?`Mejor: ${P.trivia1} de 5`:'sin jugar']]
+  return (NIV===2 ? [['alfareria.html','La fabricación','Taller de artesanías · '+st(P.fabrica)],['carrera.html','Carrera de chivas','Diseña tu chiva y corre · '+st(P.carrera)],['trivia.html?nivel=2','Trivia del barro',P.trivia2!=null?`Mejor: ${P.trivia2} de 5`:'sin jugar']]
+    : [['cosecha.html','La cosecha','Minijuego de estaciones · '+st(P.cosecha)],['oleadas.html','Defensa del cafetal','Oleadas de plagas · '+st(P.oleadas)],['trivia.html','Trivia del café',P.trivia1!=null?`Mejor: ${P.trivia1} de 5`:'sin jugar']])
     .map(([h,t,d])=>`<a href="${h}"><b>${t}</b><span>${d}</span></a>`).join(''); }
 /* El cambio de ritmo: de la calma a la cosecha bajo el aguacero */
 let storm=0, rain=null;
 function startHarvest(){
   finished=true; Sound.fast=true; $('#storm').classList.add('on');
-  $('#hvTitle').textContent=LEVEL.cierre.titulo; $('#hvText').textContent=LEVEL.cierre.texto; $('#hvNext').textContent=LEVEL.cierre.siguiente; $('#hvNext').disabled=false; $('#hvNext').onclick=()=>{ location.href='cosecha.html'; }; $('#hvGames').innerHTML=juegosHTML(PROG);
+  $('#hvTitle').textContent=LEVEL.cierre.titulo; $('#hvText').textContent=LEVEL.cierre.texto; $('#hvNext').textContent=LEVEL.cierre.siguiente; $('#hvNext').disabled=false; $('#hvNext').onclick=()=>{ location.href=LEVEL.cierre.url||'cosecha.html'; }; $('#hvGames').innerHTML=juegosHTML(PROG);
   const N=S.quality==='baja'?500:1400, pos=new Float32Array(N*6);
   for (let i=0;i<N;i++){ const x=rnd(-16,16), y=rnd(0,14), z=rnd(-12,12); pos.set([x,y,z,x-.05,y-.5,z],i*6); }
   const geo=new THREE.BufferGeometry(); geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
@@ -541,20 +605,21 @@ $('#startBtn').addEventListener('click',start);
 async function boot(){
   $('#hint').innerHTML = touch ? 'Toca el suelo para caminar · toca a una persona para hablar' : 'Camina con <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> o las flechas, o haz clic en el suelo · <kbd>E</kbd> para hablar';
   $('#introKeys').textContent = touch ? 'Toca el suelo para caminar y toca a cada persona para hablar con ella.' : 'Camina con W A S D o las flechas (o haz clic en el suelo). Pulsa E para hablar.';
-  try { const r=await fetch('data/nivel1.json'); if (!r.ok) throw 0; LEVEL=await r.json(); }
-  catch(e){ fail('No se pudo cargar el contenido del nivel (data/nivel1.json). Si abriste el archivo con doble clic, ábrelo desde un servidor web o desde GitHub Pages.'); return; }
+  try { const r=await fetch(`data/nivel${NIV}.json`); if (!r.ok) throw 0; LEVEL=await r.json(); if (!LEVEL.npcs||LEVEL.npcs.length!==3||!LEVEL.pistas) throw 0; }
+  catch(e){ fail(`No se pudo cargar el contenido del nivel (data/nivel${NIV}.json). Si abriste el archivo con doble clic, ábrelo desde un servidor web o desde GitHub Pages.`); return; }
+  document.title=`${LEVEL.escenario} · Nivel ${NIV}`; $('#hudKicker').textContent=$('#introKicker').textContent=$('#nbKicker').textContent=LEVEL.kicker||`Nivel ${NIV}`; $('#hudTitle').textContent=$('#introTitle').textContent=LEVEL.escenario; canvas.setAttribute('aria-label',LEVEL.aria||LEVEL.escenario);
   await Promise.race([Promise.all(['700 30px "Alegreya SC"','italic 400 30px "Alegreya"'].map(f=>document.fonts.load(f).catch(()=>{}))), new Promise(r=>setTimeout(r,2500))]);
-  ground=new THREE.Mesh(new THREE.PlaneGeometry(WX*2,WZ*2), new THREE.MeshStandardMaterial({map:texFrom(drawGround()),roughness:.95}));
+  ground=new THREE.Mesh(new THREE.PlaneGeometry(WX*2,WZ*2), new THREE.MeshStandardMaterial({map:texFrom(NIV===2?drawGroundTaller():drawGround()),roughness:.95}));
   ground.rotation.x=-Math.PI/2; ground.receiveShadow=true; scene.add(ground);
-  buildFinca();
+  if (NIV===2) buildTaller(); else buildFinca();
   player=makeChar('player',SPOTS.start.x,SPOTS.start.z);
   LEVEL.npcs.forEach(d=>{ const s=SPOTS[d.id]; const n=makeChar(d.id,s.x,s.z); n.key=d.id; n.data=d; npcs.push(n); colliders.push({x:s.x,z:s.z,r:.01}); });
   setAvatar(Guardado.perfil().avatar||S.avatar||'muneco');
-  (PROG.pistas1||[]).forEach(id=>{ if (LEVEL.pistas.some(p=>p.id===id)) collected.add(id); });
-  if (collected.size>=LEVEL.pistas.length){ finished=true; $('#introGames').hidden=false; $('#introGameList').innerHTML=juegosHTML(PROG); $('#startBtn').textContent='Explorar la finca'; }
-  $('#introText').textContent=finished?'La finca ya te contó sus saberes. Puedes volver a recorrerla o ir directo a un minijuego.':LEVEL.objetivo; $('#startBtn').disabled=false; $('#startBtn').focus();
+  (PROG['pistas'+NIV]||[]).forEach(id=>{ if (LEVEL.pistas.some(p=>p.id===id)) collected.add(id); });
+  if (collected.size>=LEVEL.pistas.length){ finished=true; $('#introGames').hidden=false; $('#introGameList').innerHTML=juegosHTML(PROG); $('#startBtn').textContent=LEVEL.explorar||'Explorar'; }
+  $('#introText').textContent=finished?(LEVEL.visitado||''):LEVEL.objetivo; $('#startBtn').disabled=false; $('#startBtn').focus();
   syncHUD(); resize(); camPos.copy(camOffset()).add(new THREE.Vector3(player.x,0,player.z)); camLook.set(player.x,.6,player.z-1.2);
-  if (location.hash==='#prueba'){ start(); window.__f={player:()=>player,roofs,camera,SPOTS}; } // atajo de prueba
+  if (location.hash==='#prueba'){ start(); window.__f={player:()=>player,roofs,camera,SPOTS,npcs,capsules,collected,nivel:NIV,get PROG(){ return PROG; },get LEVEL(){ return LEVEL; }}; } // atajo de prueba
   requestAnimationFrame(frame);
 }
 boot();
