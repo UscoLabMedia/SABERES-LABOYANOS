@@ -95,6 +95,8 @@ kbd{font-family:var(--f-ui);font-weight:700;font-size:.78rem;border:1px solid va
 /* controles táctiles */
 .touch{position:fixed;inset:auto 0 0 0;display:flex;justify-content:space-between;align-items:flex-end;pointer-events:none;z-index:6;
   padding-block:0 max(18px, env(safe-area-inset-bottom,0px));padding-left:max(18px, env(safe-area-inset-left,0px));padding-right:max(18px, env(safe-area-inset-right,0px))}
+.touch.pc .joy{display:none}.touch.pc{justify-content:flex-end}.touch.pc .tbtns button.act{width:92px;height:92px}
+.tbtns kbd{font:700 .65rem var(--f-ui);background:rgba(0,0,0,.18);padding:0 .3rem;border-radius:3px}
 .joy{width:120px;height:120px;border-radius:50%;background:rgba(239,227,198,.18);border:2px solid rgba(239,227,198,.4);position:relative;pointer-events:auto;touch-action:none}
 .joy i{position:absolute;left:50%;top:50%;width:50px;height:50px;margin:-25px 0 0 -25px;border-radius:50%;background:var(--paper)}
 .tbtns{display:flex;gap:12px;pointer-events:auto}
@@ -326,19 +328,27 @@ addEventListener('keydown',e=>{ if (e.target.tagName==='INPUT') return; if (e.re
 addEventListener('keyup',e=>down.delete(e.code));
 addEventListener('blur',()=>down.clear());
 const K={u:['KeyW','ArrowUp'],d:['KeyS','ArrowDown'],l:['KeyA','ArrowLeft'],r:['KeyD','ArrowRight'],take:['KeyE','Space','Enter'],use:['KeyQ','KeyF','ShiftLeft','ShiftRight'],drop:['KeyG','KeyX']};
-const tch={x:0,z:0,take:false,use:false,useEdge:false,drop:false};
+const tch={x:0,z:0,take:false,use:false,useEdge:false,drop:false,actDown:false,actEdge:false};
+const act={hold:false};   // la acción en curso pide mantener (moler, lavar, voltear)
 const any=(arr,set)=>arr.some(c=>set.has(c));
 let pad={};
 function localInput(){
   const I={x:0,z:0,take:false,use:false,useEdge:false,drop:false};
   if (any(K.u,down)) I.z-=1; if (any(K.d,down)) I.z+=1; if (any(K.l,down)) I.x-=1; if (any(K.r,down)) I.x+=1;
-  I.take=any(K.take,pressed); I.use=any(K.use,down); I.useEdge=any(K.use,pressed); I.drop=any(K.drop,pressed);
+  I.use=any(K.use,down); I.useEdge=any(K.use,pressed); I.drop=any(K.drop,pressed);
+  let actDown=any(K.take,down), actEdge=any(K.take,pressed);
   const gp=(navigator.getGamepads?[...navigator.getGamepads()]:[]).filter(Boolean)[0];
   if (gp){ const ax=gp.axes[0]||0, az=gp.axes[1]||0; if (Math.hypot(ax,az)>.25){ I.x+=ax; I.z+=az; }
-    const a=gp.buttons[0]?.pressed, x=gp.buttons[2]?.pressed, b=gp.buttons[1]?.pressed; if (a && !pad.a) I.take=true; if (b && !pad.b) I.drop=true; if (x){ I.use=true; if (!pad.x) I.useEdge=true; } pad={a,x,b}; }
-  if (touch){ I.x+=tch.x; I.z+=tch.z; I.take=I.take||tch.take; I.use=I.use||tch.use; I.useEdge=I.useEdge||tch.useEdge; I.drop=I.drop||tch.drop; }
+    const a=gp.buttons[0]?.pressed||gp.buttons[2]?.pressed, b=gp.buttons[1]?.pressed; if (a){ actDown=true; if (!pad.a) actEdge=true; } if (b && !pad.b) I.drop=true; pad={a,b}; }
+  if (touch){ I.x+=tch.x; I.z+=tch.z; }
+  I.drop=I.drop||tch.drop; actDown=actDown||tch.actDown; actEdge=actEdge||tch.actEdge;
+  // un solo botón de acción: tocar = tomar/dejar; si la estación pide mantener, mantener = usar
+  const me=players.find(q=>q.slot===mySlot());
+  if (actEdge && me){ act.hold=!!accion(me).hold; if (act.hold){ I.use=true; I.useEdge=true; } else I.take=true; }
+  else if (actDown && act.hold) I.use=true;
+  if (!actDown) act.hold=false;
   mouseInput(I);
-  pressed.clear(); tch.take=false; tch.useEdge=false; tch.drop=false; return I; }
+  pressed.clear(); tch.drop=false; tch.actEdge=false; return I; }
 // Ratón: clic en el suelo para caminar; clic en una estación para ir y tomar o soltar; mantener el clic para usarla
 const mouse={target:null,station:null,down:false,pending:false,since:0,edge:false};
 const mray=new THREE.Raycaster(), mndc=new THREE.Vector2(), floorPlane=new THREE.Plane(new THREE.Vector3(0,1,0),0), mpt=new THREE.Vector3();
@@ -357,8 +367,8 @@ function mouseInput(I){
   const s=mouse.station;
   if (s){ const d=Math.hypot(s.x-p.x,s.z-p.z)-s.r;
     if (d<reachOf(s)-.1){ I.si=ST.indexOf(s);
-      if (mouse.pending){ mouse.pending=false; mouse.since=performance.now(); if (s.kind==='despulpadora' && s.jam>0) I.useEdge=true; else I.take=true; }
-      else if (mouse.down && performance.now()-mouse.since>250 && s.kind!=='palanca'){ I.use=true; if (!mouse.edge){ I.useEdge=true; mouse.edge=true; } }
+      if (mouse.pending){ mouse.pending=false; mouse.since=performance.now(); if (accion(p,s).hold){ I.use=true; I.useEdge=true; mouse.edge=true; } else I.take=true; }
+      else if (mouse.down && (mouse.edge || performance.now()-mouse.since>250) && s.kind!=='palanca'){ I.use=true; if (!mouse.edge){ I.useEdge=true; mouse.edge=true; } }
       if (!mouse.down && !mouse.pending){ mouse.target=null; mouse.station=null; } }
     else { const dx=s.x-p.x, dz=s.z-p.z, l=Math.hypot(dx,dz)||1; I.x=dx/l; I.z=dz/l; } }
   else { const dx=mouse.target.x-p.x, dz=mouse.target.z-p.z, l=Math.hypot(dx,dz); if (l<.25) mouse.target=null; else { I.x=dx/l; I.z=dz/l; } }
@@ -385,8 +395,8 @@ function readInput(){
   const up=e=>{ if (e.pointerId!==id) return; id=null; knob.style.transform=''; tch.x=tch.z=0; }; joy.addEventListener('pointerup',up); joy.addEventListener('pointercancel',up);
   $('#tDrop').addEventListener('pointerdown',e=>{ e.preventDefault(); tch.drop=true; });
   // un solo botón: toque = tomar/dejar; si la estación pide mantener (moler, lavar, voltear), mantenerlo = usar
-  $('#tAct').addEventListener('pointerdown',e=>{ e.preventDefault(); const me=players.find(q=>q.slot===mySlot()); if (me && accion(me).hold){ tch.use=true; tch.useEdge=true; } else tch.take=true; });
-  ['pointerup','pointercancel','pointerleave'].forEach(ev=>$('#tAct').addEventListener(ev,()=>tch.use=false)); })();
+  $('#tAct').addEventListener('pointerdown',e=>{ e.preventDefault(); tch.actDown=true; tch.actEdge=true; });
+  ['pointerup','pointercancel','pointerleave'].forEach(ev=>$('#tAct').addEventListener(ev,()=>tch.actDown=false)); })();
 
 /* ---------------- Estado del juego ---------------- */
 const game={on:false,paused:false,mode:'reloj',t:0,score:0,orders:[],nextOrder:0,stats:{sacos:0,especial:0,perdidos:0},raining:false,rainWarned:{}};
@@ -409,7 +419,7 @@ const reachOf=s=>s.kind==='chiva'?1.3:.95;
 function pick(p){ const s=p.inp.si!=null?ST[p.inp.si]:null; if (s && Math.hypot(s.x-p.x,s.z-p.z)-s.r<reachOf(s)) return s; return nearest(p); }
 // Tirar lo que llevas en las manos: se pierde (no se puede recuperar)
 function tirar(p){ if (!p.carry){ banner('No llevas nada que soltar'); return; } const n=NAMES[p.carry.type]; setCarry(p,null); snd('tick'); banner(`Soltaste: ${n} (se perdió)`); }
-function accion(p){ const s=nearest(p), c=p.carry; if (!s) return {t:'Acción'};
+function accion(p,s=nearest(p)){ const c=p.carry; if (!s) return {t:'Acción'};
   switch(s.kind){
     case 'cafeto': return {t:s.state==='vacia'?'Ya recogido':'Recoger'};
     case 'despulpadora': if (s.jam) return {t:'Destrabar ×'+s.jam,hold:true,tap:true}; if (s.state==='cargada'||s.state==='moliendo') return {t:'Moler',hold:true,prog:s.prog};
@@ -505,7 +515,6 @@ function step(dt){
   ST.forEach(s=>{
     if (s.kind==='cafeto'){ if (s.state!=='roja'){ s.t+=dt; const lim=R.cafeto[s.state]; if (s.t>=lim){ s.t=0; s.state={vacia:'verde',verde:'pintona',pintona:'roja'}[s.state]; } }
       s.berries.visible=s.state!=='vacia'; if (s.state!=='vacia') s.cm.color.set(CHERRY[s.state]); }
-    if (s.kind==='despulpadora' && s.state==='moliendo' && !s.jam){ s.nextJam-=dt; if (s.nextJam<=0){ s.jam=3; s.nextJam=45+Math.random()*30; banner('¡Se atascó la despulpadora! Pulsa Usar 3 veces'); } }
     if (s.kind==='tanque'){ s.fill.visible=s.state!=='vacio';
       if (s.state==='fermentando'){ s.t+=dt; s.fill.material.color.set('#f1ead8'); if (s.t>=R.fermento){ s.state='lista'; s.t=0; s.prog=0; snd('pop',5); } }
       else if (s.state==='lista'){ s.t+=dt; if (s.t>=R.ventana){ s.state='pasada'; banner(`¡Se está pasando el ${s.name.toLowerCase()}!`); } }
@@ -568,11 +577,14 @@ function labels(){
     if (s.kind==='palanca'){ txt=marquesina?'Cerrada':'Abierta'; if (game.raining && !marquesina) cls='bad'; }
     if (s.kind==='chiva'){ txt='Entrega aquí los sacos'; }
     s.el.className='st '+cls; s.el.innerHTML=`<b>${s.name}</b>${txt}${bar!==null?`<div class="bar"><i style="width:${Math.max(0,Math.min(1,bar))*100}%"></i></div>`:''}`;
-    const [x,y]=project(s.x,LABEL_Y[s.kind]||1.5,s.z); s.el.style.left=x+'px'; s.el.style.top=y+'px'; });
+    const [x,y]=project(s.x,LABEL_Y[s.kind]||1.5,s.z); s.lx=x; s.ly=y; });
+  const puestos=[]; ST.filter(s=>s.el).sort((a,b)=>b.ly-a.ly).forEach(s=>{ const w=s.el.offsetWidth, h=s.el.offsetHeight; let y=s.ly;
+    for (let k=0;k<6;k++){ const o=puestos.find(q=>Math.abs(q.x-s.lx)<(q.w+w)/2+2 && y>q.y-q.h-2 && y-h<q.y+2); if (!o) break; y=o.y-o.h-3; }
+    puestos.push({x:s.lx,y,w,h}); s.el.style.left=s.lx+'px'; s.el.style.top=y+'px'; });
   players.forEach(p=>{ const [x,y]=project(p.x,2.2,p.z); p.el.style.left=x+'px'; p.el.style.top=y+'px';
     p.el.textContent=p.nombre+(p.slot===mySlot()&&players.length>1?' (tú)':'')+(p.carry?` · ${NAMES[p.carry.type]}${p.carry.type==='canasto'?` ${p.carry.n}/${R.canasto}`:''} · ${qual(p.carry)} pts`:''); });
-  if (touch){ const me=players.find(q=>q.slot===mySlot()), b=$('#tAct'); if (me){ const a=accion(me), k=a.t+(a.hold?1:0);
-      if (b.dataset.k!==k){ b.dataset.k=k; b.firstChild.textContent=a.t; b.lastChild.textContent=a.hold?(a.tap?'toca rápido':'mantén pulsado'):''; b.classList.toggle('hold',!!a.hold); b.setAttribute('aria-label',a.t+(a.hold?', mantén pulsado':'')); }
+  { const me=players.find(q=>q.slot===mySlot()), b=$('#tAct'); if (me){ const a=accion(me), k=a.t+(a.hold?1:0);
+      if (b.dataset.k!==k){ b.dataset.k=k; b.firstChild.textContent=a.t; b.lastChild.innerHTML=(touch?'':'<kbd>E</kbd> ')+(a.hold?'mantén pulsado':''); b.classList.toggle('hold',!!a.hold); b.setAttribute('aria-label',a.t+(a.hold?', mantén pulsado':'')); }
       b.style.setProperty('--p',a.hold&&a.prog?Math.min(1,a.prog):0); } }
   const m=Math.max(0,game.mode==='reloj'?R.duracion-game.t:game.t), mm=Math.floor(m/60), ss=Math.floor(m%60);
   $('#time').textContent=`${mm}:${String(ss).padStart(2,'0')}`; $('#time').classList.toggle('low',game.mode==='reloj'&&m<30);
@@ -615,7 +627,7 @@ function syncStart(){
   $$('#optMode button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===MODE)); $('#modeRow').hidden = rol==='cliente';
   const go=$('#goBtn'); go.hidden = rol==='cliente';
   go.disabled = rol==='host' && !lob.code; go.textContent = rol==='host' ? `Empezar con ${n} jugador${n>1?'es':''}` : 'Empezar';
-  const lines=['Moverse: <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> o flechas · tomar o soltar: <kbd>E</kbd>, <kbd>Espacio</kbd> o <kbd>Enter</kbd> · usar: mantener <kbd>Q</kbd> o <kbd>Shift</kbd> · soltar lo que llevas (se pierde): <kbd>G</kbd>, <kbd>X</kbd> o clic derecho<br>Con ratón: clic en el suelo para caminar, clic en una estación para tomar o soltar, mantén el clic para usarla · también con mando'];
+  const lines=['Moverse: <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> o flechas · acción: <kbd>E</kbd>, <kbd>Espacio</kbd> o <kbd>Enter</kbd> (para moler, lavar o voltear, mantenla pulsada) · soltar lo que llevas (se pierde): <kbd>G</kbd>, <kbd>X</kbd> o clic derecho<br>Con ratón: clic en el suelo para caminar, clic en una estación para tomar o soltar, mantén el clic para usarla · también con mando'];
   if (touch) lines.unshift('En pantalla táctil: palanca a la izquierda, a la derecha el botón de acción (cambia según donde estés; para moler, lavar o voltear mantenlo pulsado) y Soltar.');
   lines.push(n===1 ? 'Jugando solo, el grano se voltea por sí mismo en el secadero.' : 'En equipo hay que voltear el grano en el secadero.');
   $('#keysHelp').innerHTML=lines.join('<br>');
@@ -627,7 +639,7 @@ function reset(list){
   marquesina=false; $('#storm').classList.remove('on'); rainMesh.visible=false; makePlayers(list); }
 function begin(list){
   reset(list); if (!lob || lob.rol!=='cliente'){ addOrder(); addOrder(); game.nextOrder=R.pedidoCada; }
-  $('#start').hidden=true; $('#end').hidden=true; game.on=true; game.paused=false; $('#touch').hidden=!touch;
+  $('#start').hidden=true; $('#end').hidden=true; game.on=true; game.paused=false; $('#touch').hidden=false; $('#touch').classList.toggle('pc',!touch); if (!touch) $('#tDrop').innerHTML='Soltar<br><kbd>G</kbd>';
   Sound.init(); Sound.apply(); Sound.fast=true; Sound.startMusic(); showBanner(game.mode==='reloj'?'¡A recoger! Tienen 3 minutos':'Modo tranquilo: sin reloj'); canvas.focus(); }
 $('#goBtn').addEventListener('click',()=>{
   if (lob && lob.rol==='host'){ const list=lob.empezar(); lob.difundir({t:'cfg',mode:MODE}); begin(list); }
