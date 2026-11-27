@@ -99,6 +99,7 @@ kbd{font-family:var(--f-ui);font-weight:700;font-size:.78rem;border:1px solid va
 .joy i{position:absolute;left:50%;top:50%;width:50px;height:50px;margin:-25px 0 0 -25px;border-radius:50%;background:var(--paper)}
 .tbtns{display:flex;gap:12px;pointer-events:auto}
 .tbtns button{width:78px;height:78px;border-radius:50%;border:0;font-family:var(--f-display);font-weight:800;font-size:1rem;background:var(--paper);color:var(--ink);box-shadow:0 5px 0 #b9a47a;touch-action:none}
+.tbtns button#tDrop{width:60px;height:60px;font-size:.85rem;background:#d9cfb6;align-self:flex-end}
 .tbtns button.use{background:var(--cherry);color:#fff3e6;box-shadow:0 5px 0 #6b1418}
 .fallback{position:fixed;inset:0;display:grid;place-items:center;padding:24px;text-align:center;font-family:var(--f-body);font-size:1.1rem;z-index:40;background:var(--desk)}
 @media (max-width:700px){
@@ -134,7 +135,7 @@ kbd{font-family:var(--f-ui);font-weight:700;font-size:.78rem;border:1px solid va
 
 <div class="touch" id="touch" hidden>
   <div class="joy" id="joy"><i></i></div>
-  <div class="tbtns"><button id="tTake">Tomar</button><button class="use" id="tUse">Usar</button></div>
+  <div class="tbtns"><button id="tTake">Tomar</button><button class="use" id="tUse">Usar</button><button id="tDrop">Tirar</button></div>
 </div>
 
 <div class="scrim" id="start">
@@ -311,7 +312,7 @@ function makePlayers(list){
     const hand=new THREE.Group(); hand.position.set(0,.62,.32); holder.add(hand);
     const x=-2+i*1.3, z=1.2; holder.position.set(x,0,z); holder.scale.setScalar(1.3); scene.add(holder);
     const el=document.createElement('div'); el.className='pl'; el.style.background=PCOL[j.slot%4]; $('#labels').appendChild(el);
-    players.push({i,slot:j.slot,nombre:j.nombre||('J'+(j.slot+1)),holder,model,hand,x,z,tx:x,tz:z,face:Math.PI,carry:null,carryKey:'',el,moving:false,inp:{x:0,z:0,take:false,use:false,useEdge:false}});
+    players.push({i,slot:j.slot,nombre:j.nombre||('J'+(j.slot+1)),holder,model,hand,x,z,tx:x,tz:z,face:Math.PI,carry:null,carryKey:'',el,moving:false,inp:{x:0,z:0,take:false,use:false,drop:false,useEdge:false}});
   }); }
 function setCarry(p,it){ p.carry=it; p.carryKey=it?JSON.stringify(it):''; p.hand.clear(); if (it) p.hand.add(itemMesh(it)); p.model.userData.carry=!!it; }
 
@@ -321,20 +322,20 @@ addEventListener('keydown',e=>{ if (e.target.tagName==='INPUT') return; if (e.re
   if (e.code==='Escape' && game.on) togglePause(); if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code) && game.on) e.preventDefault(); });
 addEventListener('keyup',e=>down.delete(e.code));
 addEventListener('blur',()=>down.clear());
-const K={u:['KeyW','ArrowUp'],d:['KeyS','ArrowDown'],l:['KeyA','ArrowLeft'],r:['KeyD','ArrowRight'],take:['KeyE','Space','Enter'],use:['KeyQ','KeyF','ShiftLeft','ShiftRight']};
-const tch={x:0,z:0,take:false,use:false,useEdge:false};
+const K={u:['KeyW','ArrowUp'],d:['KeyS','ArrowDown'],l:['KeyA','ArrowLeft'],r:['KeyD','ArrowRight'],take:['KeyE','Space','Enter'],use:['KeyQ','KeyF','ShiftLeft','ShiftRight'],drop:['KeyG','KeyX']};
+const tch={x:0,z:0,take:false,use:false,useEdge:false,drop:false};
 const any=(arr,set)=>arr.some(c=>set.has(c));
 let pad={};
 function localInput(){
-  const I={x:0,z:0,take:false,use:false,useEdge:false};
+  const I={x:0,z:0,take:false,use:false,useEdge:false,drop:false};
   if (any(K.u,down)) I.z-=1; if (any(K.d,down)) I.z+=1; if (any(K.l,down)) I.x-=1; if (any(K.r,down)) I.x+=1;
-  I.take=any(K.take,pressed); I.use=any(K.use,down); I.useEdge=any(K.use,pressed);
+  I.take=any(K.take,pressed); I.use=any(K.use,down); I.useEdge=any(K.use,pressed); I.drop=any(K.drop,pressed);
   const gp=(navigator.getGamepads?[...navigator.getGamepads()]:[]).filter(Boolean)[0];
   if (gp){ const ax=gp.axes[0]||0, az=gp.axes[1]||0; if (Math.hypot(ax,az)>.25){ I.x+=ax; I.z+=az; }
-    const a=gp.buttons[0]?.pressed, x=gp.buttons[2]?.pressed; if (a && !pad.a) I.take=true; if (x){ I.use=true; if (!pad.x) I.useEdge=true; } pad={a,x}; }
-  if (touch){ I.x+=tch.x; I.z+=tch.z; I.take=I.take||tch.take; I.use=I.use||tch.use; I.useEdge=I.useEdge||tch.useEdge; }
+    const a=gp.buttons[0]?.pressed, x=gp.buttons[2]?.pressed, b=gp.buttons[1]?.pressed; if (a && !pad.a) I.take=true; if (b && !pad.b) I.drop=true; if (x){ I.use=true; if (!pad.x) I.useEdge=true; } pad={a,x,b}; }
+  if (touch){ I.x+=tch.x; I.z+=tch.z; I.take=I.take||tch.take; I.use=I.use||tch.use; I.useEdge=I.useEdge||tch.useEdge; I.drop=I.drop||tch.drop; }
   mouseInput(I);
-  pressed.clear(); tch.take=false; tch.useEdge=false; return I; }
+  pressed.clear(); tch.take=false; tch.useEdge=false; tch.drop=false; return I; }
 // Ratón: clic en el suelo para caminar; clic en una estación para ir y tomar o soltar; mantener el clic para usarla
 const mouse={target:null,station:null,down:false,pending:false,since:0,edge:false};
 const mray=new THREE.Raycaster(), mndc=new THREE.Vector2(), floorPlane=new THREE.Plane(new THREE.Vector3(0,1,0),0), mpt=new THREE.Vector3();
@@ -342,6 +343,7 @@ function stationAt(e){ const r=canvas.getBoundingClientRect(); mndc.set((e.clien
   const meshes=ST.filter(s=>s.mesh).map(s=>s.mesh); const h=mray.intersectObjects(meshes,true)[0];
   if (h){ let o=h.object; while (o && !meshes.includes(o)) o=o.parent; const s=ST.find(q=>q.mesh===o); if (s) return {s}; }
   if (mray.ray.intersectPlane(floorPlane,mpt)) return {x:mpt.x,z:mpt.z}; return null; }
+canvas.addEventListener('contextmenu',e=>{ e.preventDefault(); if (game.on) pressed.add('KeyG'); });
 canvas.addEventListener('pointerdown',e=>{ if (e.pointerType!=='mouse' || e.button!==0 || !game.on) return; const t=stationAt(e); if (!t) return;
   mouse.down=true; mouse.edge=false; if (t.s){ mouse.station=t.s; mouse.target={x:t.s.x,z:t.s.z}; mouse.pending=true; } else { mouse.station=null; mouse.target={x:t.x,z:t.z}; mouse.pending=false; } });
 addEventListener('pointerup',e=>{ if (e.pointerType==='mouse') mouse.down=false; });
@@ -359,17 +361,17 @@ function mouseInput(I){
   else { const dx=mouse.target.x-p.x, dz=mouse.target.z-p.z, l=Math.hypot(dx,dz); if (l<.25) mouse.target=null; else { I.x=dx/l; I.z=dz/l; } }
 }
 // Controles de los invitados: los toques se cuentan para no perder ninguno por la red
-const remote={}; const sent={tk:0,ue:0,last:0,key:''};
+const remote={}; const sent={tk:0,ue:0,dr:0,last:0,key:''};
 function readInput(){
   const I=localInput();
   if (lob && lob.rol==='cliente'){
-    if (I.take) sent.tk++; if (I.useEdge) sent.ue++;
-    const msg={t:'in',x:+I.x.toFixed(2),z:+I.z.toFixed(2),u:I.use?1:0,tk:sent.tk,ue:sent.ue,si:I.si??-1}, key=JSON.stringify(msg), now=performance.now();
+    if (I.take) sent.tk++; if (I.useEdge) sent.ue++; if (I.drop) sent.dr++;
+    const msg={t:'in',x:+I.x.toFixed(2),z:+I.z.toFixed(2),u:I.use?1:0,tk:sent.tk,ue:sent.ue,dr:sent.dr,si:I.si??-1}, key=JSON.stringify(msg), now=performance.now();
     if (key!==sent.key || now-sent.last>200){ lob.enviar(msg); sent.key=key; sent.last=now; } return; }
   players.forEach(p=>{
     if (p.slot===mySlot()){ p.inp=I; return; }
-    const r=remote[p.slot]; if (!r){ p.inp={x:0,z:0,take:false,use:false,useEdge:false}; return; }
-    p.inp={x:r.x||0,z:r.z||0,use:!!r.u,take:r.tk!==r.ptk,useEdge:r.ue!==r.pue,si:r.si>=0?r.si:null}; r.ptk=r.tk; r.pue=r.ue; });
+    const r=remote[p.slot]; if (!r){ p.inp={x:0,z:0,take:false,use:false,useEdge:false,drop:false}; return; }
+    p.inp={x:r.x||0,z:r.z||0,use:!!r.u,take:r.tk!==r.ptk,useEdge:r.ue!==r.pue,drop:r.dr!==r.pdr,si:r.si>=0?r.si:null}; r.ptk=r.tk; r.pue=r.ue; r.pdr=r.dr; });
 }
 // joystick táctil
 (() => { const joy=$('#joy'), knob=joy.querySelector('i'); let id=null, cx=0, cy=0;
@@ -379,6 +381,7 @@ function readInput(){
   joy.addEventListener('pointermove',move);
   const up=e=>{ if (e.pointerId!==id) return; id=null; knob.style.transform=''; tch.x=tch.z=0; }; joy.addEventListener('pointerup',up); joy.addEventListener('pointercancel',up);
   $('#tTake').addEventListener('pointerdown',e=>{ e.preventDefault(); tch.take=true; });
+  $('#tDrop').addEventListener('pointerdown',e=>{ e.preventDefault(); tch.drop=true; });
   $('#tUse').addEventListener('pointerdown',e=>{ e.preventDefault(); tch.use=true; tch.useEdge=true; });
   ['pointerup','pointercancel','pointerleave'].forEach(ev=>$('#tUse').addEventListener(ev,()=>tch.use=false)); })();
 
@@ -401,6 +404,8 @@ function nearest(p){ let best=null, bd=1e9; ST.forEach(s=>{ const d=Math.hypot(s
 
 const reachOf=s=>s.kind==='chiva'?1.3:.95;
 function pick(p){ const s=p.inp.si!=null?ST[p.inp.si]:null; if (s && Math.hypot(s.x-p.x,s.z-p.z)-s.r<reachOf(s)) return s; return nearest(p); }
+// Tirar lo que llevas en las manos: se pierde (no se puede recuperar)
+function tirar(p){ if (!p.carry){ banner('No llevas nada que tirar'); return; } const n=NAMES[p.carry.type]; setCarry(p,null); snd('tick'); banner(`Tiraste: ${n} (se perdió)`); }
 function take(p){
   const s=pick(p), c=p.carry; if (!s){ return; }
   switch(s.kind){
@@ -480,7 +485,7 @@ function step(dt){
     if (moving){ const sp=4.6*Math.min(1,l)*(p.carry?.92:1); p.x+=I.x/Math.max(1,l)*sp*dt; p.z+=I.z/Math.max(1,l)*sp*dt; collide(p); p.face=Math.atan2(I.x,I.z); }
     p.holder.position.set(p.x,0,p.z); let d=p.face-p.holder.rotation.y; d=Math.atan2(Math.sin(d),Math.cos(d)); p.holder.rotation.y+=d*Math.min(1,dt*14);
     Muneco.animar(p.model,dt,moving,S.motion);
-    if (I.take) take(p); if (I.use) use(p,dt); who=null; });
+    if (I.take) take(p); if (I.drop) tirar(p); if (I.use) use(p,dt); who=null; });
   // estaciones
   ST.forEach(s=>{
     if (s.kind==='cafeto'){ if (s.state!=='roja'){ s.t+=dt; const lim=R.cafeto[s.state]; if (s.t>=lim){ s.t=0; s.state={vacia:'verde',verde:'pintona',pintona:'roja'}[s.state]; } }
@@ -591,8 +596,8 @@ function syncStart(){
   $$('#optMode button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===MODE)); $('#modeRow').hidden = rol==='cliente';
   const go=$('#goBtn'); go.hidden = rol==='cliente';
   go.disabled = rol==='host' && !lob.code; go.textContent = rol==='host' ? `Empezar con ${n} jugador${n>1?'es':''}` : 'Empezar';
-  const lines=['Moverse: <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> o flechas · tomar o soltar: <kbd>E</kbd>, <kbd>Espacio</kbd> o <kbd>Enter</kbd> · usar: mantener <kbd>Q</kbd> o <kbd>Shift</kbd><br>Con ratón: clic en el suelo para caminar, clic en una estación para tomar o soltar, mantén el clic para usarla · también con mando'];
-  if (touch) lines.unshift('En pantalla táctil: palanca a la izquierda, botones Tomar y Usar a la derecha.');
+  const lines=['Moverse: <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> o flechas · tomar o soltar: <kbd>E</kbd>, <kbd>Espacio</kbd> o <kbd>Enter</kbd> · usar: mantener <kbd>Q</kbd> o <kbd>Shift</kbd> · tirar lo que llevas (se pierde): <kbd>G</kbd>, <kbd>X</kbd> o clic derecho<br>Con ratón: clic en el suelo para caminar, clic en una estación para tomar o soltar, mantén el clic para usarla · también con mando'];
+  if (touch) lines.unshift('En pantalla táctil: palanca a la izquierda, botones Tomar, Usar y Tirar a la derecha.');
   lines.push(n===1 ? 'Jugando solo, el grano se voltea por sí mismo en el secadero.' : 'En equipo hay que voltear el grano en el secadero.');
   $('#keysHelp').innerHTML=lines.join('<br>');
   makePlayers(lob && rol!=='solo' ? lob.jugadores : [yo()]); }
@@ -635,7 +640,7 @@ function finish(r){
     onCambio:()=>{ if (!game.on) syncStart(); },
     onEmpezar:(list)=>{ begin(list); },
     onMensaje:(d,slot)=>{
-      if (lob.rol==='host'){ if (d.t==='in'){ const r=remote[slot]||(remote[slot]={ptk:d.tk,pue:d.ue}); Object.assign(r,{x:d.x,z:d.z,u:d.u,tk:d.tk,ue:d.ue,si:d.si}); } return; }
+      if (lob.rol==='host'){ if (d.t==='in'){ const r=remote[slot]||(remote[slot]={ptk:d.tk,pue:d.ue,pdr:d.dr}); Object.assign(r,{x:d.x,z:d.z,u:d.u,tk:d.tk,ue:d.ue,dr:d.dr,si:d.si}); } return; }
       if (d.t==='cfg'){ MODE=d.mode; game.mode=d.mode; }
       else if (d.t==='estado') applySnapshot(d.s);
       else if (d.t==='fin'){ finish(d.r); } },
@@ -643,7 +648,7 @@ function finish(r){
     onCierre:()=>{ if (game.on){ game.on=false; showBanner('Se cerró la sala del anfitrión'); } $('#end').hidden=true; $('#start').hidden=false; },
   });
   resize(); syncStart(); renderOrders(); requestAnimationFrame(frame); $('#goBtn').focus();
-  if (location.hash==='#prueba'){ begin([yo()]); window.__c={game,players,ST,take,use,step,R,camera,get roof(){return marquesina;}}; }
+  if (location.hash==='#prueba'){ begin([yo()]); window.__c={game,players,ST,take,use,step,R,camera,setCarry,tirar,get roof(){return marquesina;}}; }
 })();
 })();
 </script>
