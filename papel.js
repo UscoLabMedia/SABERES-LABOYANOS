@@ -221,18 +221,19 @@ const D = {
       g.fillStyle='rgba(255,240,210,.45)'; g.fillRect(w*(x-s*.2),h*(1-s*.55),w*s*.4,h*s*.05); };
     pot(.2,.8,'#b5652f'); pot(.5,1,'#c4723a'); pot(.8,.7,'#9e5428');
   };},
-  chiva(cab='#9bb83a', txt='Pitalito'){ return (g,w,h) => { // chiva de barro de Pitalito: corta, 3 ventanas laterales + la del conductor, carga de cajas de colores
+  chiva(cab='#9bb83a', txt='Pitalito', o={}){ return (g,w,h) => {   // o: {cuerpo, franja, carga 0..2} para la carrera de chivas
+    const CARGAS=[['#2f6bd1','#d83a2a','#f2b21c','#3f8a4a','#f08aa8','#8a5ac0','#e8872b'],['#8a5a32','#c98a58','#d9b98e','#6b4224','#a96a3c','#e8c9a0','#7d5a3c'],['#2f6bd1','#3f9bd1','#2f8a5a','#8a5ac0','#f08aa8','#f4efe3','#e8872b']][o.carga||0]||[]; // chiva de barro de Pitalito: corta, 3 ventanas laterales + la del conductor, carga de cajas de colores
     const R=(x,y,a,b,r,c)=>{ g.fillStyle=c; g.beginPath(); g.roundRect(w*x,h*y,w*a,h*b,Math.min(w,h)*r); g.fill(); };
     g.fillStyle='rgba(0,0,0,.18)'; g.beginPath(); g.ellipse(w*.5,h*.94,w*.44,h*.04,0,0,7); g.fill();
     // carga del techo: cajas y bultos cuadrados de varios tamaños y colores
-    [['#2f6bd1',.08,.1,.12,.15],['#d83a2a',.21,.14,.09,.11],['#f2b21c',.31,.06,.13,.19],['#3f8a4a',.45,.12,.1,.13],['#f08aa8',.56,.08,.09,.17],['#8a5ac0',.66,.15,.08,.1],['#e8872b',.18,.04,.08,.1]]
-      .forEach(([c,x,y,a,b])=>{ R(x,y,a,b,.012,c); g.strokeStyle='rgba(60,30,10,.55)'; g.lineWidth=1.6; g.beginPath(); g.roundRect(w*x,h*y,w*a,h*b,3); g.stroke(); });
+    [[0,.08,.1,.12,.15],[1,.21,.14,.09,.11],[2,.31,.06,.13,.19],[3,.45,.12,.1,.13],[4,.56,.08,.09,.17],[5,.66,.15,.08,.1],[6,.18,.04,.08,.1]]
+      .forEach(([ci,x,y,a,b])=>{ const c=CARGAS[ci]; R(x,y,a,b,.012,c); g.strokeStyle='rgba(60,30,10,.55)'; g.lineWidth=1.6; g.beginPath(); g.roundRect(w*x,h*y,w*a,h*b,3); g.stroke(); });
     g.strokeStyle='#d8d8d8'; g.lineWidth=2; g.strokeRect(w*.06,h*.22,w*.7,h*.05);
     // techo blanco
     R(.03,.25,.74,.1,.03,'#fbf7ee'); R(.05,.265,.2,.065,.01,'#f2b21c');
     g.fillStyle='#1b1b1b'; g.textAlign='center'; g.font=`700 ${h*.05}px "Alegreya SC", serif`; g.fillText('COLOMBIA',w*.15,h*.318); g.font=`italic 700 ${h*.065}px "Alegreya", serif`; g.fillText(txt,w*.5,h*.325);
     // cuerpo rojo con franjas
-    R(.04,.35,.72,.45,.03,'#c0262c'); g.fillStyle='#f2b21c'; g.fillRect(w*.04,h*.64,w*.72,h*.07); g.fillStyle='#2f6bd1'; g.fillRect(w*.04,h*.71,w*.72,h*.035);
+    R(.04,.35,.72,.45,.03,o.cuerpo||'#c0262c'); g.fillStyle=o.franja||'#f2b21c'; g.fillRect(w*.04,h*.64,w*.72,h*.07); g.fillStyle='#2f6bd1'; g.fillRect(w*.04,h*.71,w*.72,h*.035);
     // tres ventanas laterales
     g.fillStyle='#3a1a14'; [.09,.27,.45].forEach(x=>{ g.beginPath(); g.roundRect(w*x,h*.41,w*.14,h*.17,4); g.fill(); });
     // cabina (ventana del conductor) y trompa corta
