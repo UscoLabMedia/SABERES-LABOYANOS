@@ -1,0 +1,81 @@
+<!doctype html><meta charset=utf-8><title>Generador de texturas · Saberes de Laboyos</title>
+<style>
+@font-face{font-family:"Alegreya SC";font-weight:800;src:url(fuentes/alegreya-sc-latin-800-normal.woff2) format("woff2")}
+@font-face{font-family:"Alegreya";font-style:italic;font-weight:400;src:url(fuentes/alegreya-latin-400-italic.woff2) format("woff2")}
+body{font:16px Georgia,serif;padding:1rem}</style>
+<p>Generador de texturas del libro y la mesa. Se usa con <code>hornear.js</code> (ver README).</p>
+<script>
+/* ---------- ruido ---------- */
+const hash=(x,y)=>{const h=Math.sin(x*127.1+y*311.7)*43758.5453;return h-Math.floor(h);};
+const vn=(x,y)=>{const xi=Math.floor(x),yi=Math.floor(y),xf=x-xi,yf=y-yi,u=xf*xf*(3-2*xf),v=yf*yf*(3-2*yf);return(hash(xi,yi)*(1-u)+hash(xi+1,yi)*u)*(1-v)+(hash(xi,yi+1)*(1-u)+hash(xi+1,yi+1)*u)*v;};
+const fbm=(x,y,o=4)=>{let s=0,a=.5,f=1;for(let i=0;i<o;i++){s+=a*vn(x*f,y*f);f*=2;a*=.5;}return s;};
+let sd=3;const R=()=>{sd=(sd*16807)%2147483647;return sd/2147483647;};
+/* ---------- normal desde altura ---------- */
+function normalDe(h,W,H,fuerza){const c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d'),im=g.createImageData(W,H);
+ for(let y=0;y<H;y++)for(let x=0;x<W;x++){const l=h[y*W+(x+W-1)%W],r=h[y*W+(x+1)%W],u=h[((y+H-1)%H)*W+x],d=h[((y+1)%H)*W+x];let nx=(l-r)*fuerza,ny=(u-d)*fuerza,nz=1;const k=1/Math.hypot(nx,ny,nz);const i=(y*W+x)*4;im.data[i]=(nx*k*.5+.5)*255;im.data[i+1]=(ny*k*.5+.5)*255;im.data[i+2]=(nz*k*.5+.5)*255;im.data[i+3]=255;}
+ g.putImageData(im,0,0);return c;}
+/* ---------- MADERA: tablones con veta, nudos, rayones y barniz ---------- */
+const PAL={azul:{tin:[52,66,76],v:6,mul:1.05},miel:{tin:[150,104,58],v:14,mul:1.0},nogal:{tin:[60,37,23],v:6,mul:.98}};let pal=PAL.azul;
+function madera(S=2048,tablones=12){const W=S,H=S,col=new Uint8ClampedArray(W*H*4),alt=new Float32Array(W*H),rug=new Uint8ClampedArray(W*H*4);const th=H/tablones;
+ for(let k=0;k<tablones;k++){const y0=Math.round(k*th),y1=Math.round((k+1)*th),seed=k*37.7+3.1,tono=.82+R()*.36,tin=[pal.tin[0]+R()*pal.v,pal.tin[1]+R()*pal.v*.6,pal.tin[2]+R()*pal.v*.5];
+  const nudos=[];if(R()<.4)nudos.push({x:W*(.1+R()*.8),y:th*(.3+R()*.4),r:th*(.05+R()*.05)});
+  const desfase=0;
+  for(let y=y0;y<y1;y++)for(let x=0;x<W;x++){const py=y-y0,px=(x+desfase)%W;let warp=fbm(px*.0022+seed,py*.008+seed,3)*34;let ring=py+warp,nud=0;
+    for(const n of nudos){const dx=(px-n.x)*.55,dy=py-n.y,d=Math.hypot(dx,dy);if(d<n.r*3){const f=Math.exp(-d*d/(n.r*n.r*3.2));ring+=f*14*(dy<0?-1:1);nud=Math.max(nud,Math.exp(-d*d/(n.r*n.r*.45)));}}
+    const anillos=.5+.5*Math.sin(ring*.42+fbm(px*.002,py*.008+seed,2)*3),fibra=fbm(px*.0011+seed,py*.5,3),poros=vn(px*.05+seed,py*.9)>.86?1:0;
+    let l=.5+.5*(anillos*.55-.28)+.5*(fibra-.5)-poros*.1-nud*.4;l*=tono;
+    let sh=1;if(py<2.5)sh=.22;else if(py<5)sh=1.35;else if(py>th-4)sh=.8;
+    const i=(y*W+x)*4;col[i]=Math.min(255,tin[0]*(.5+l*.8)*sh*pal.mul);col[i+1]=Math.min(255,tin[1]*(.5+l*.8)*sh*pal.mul);col[i+2]=Math.min(255,tin[2]*(.5+l*.8)*sh*pal.mul);col[i+3]=255;
+    alt[y*W+x]=(anillos*.35+fibra*.45+nud*.3)*(py<2.5?-3:1)+(py>th-4?-.4:0);
+    const rg=Math.min(255,(.42+.4*fibra+poros*.2+(py<2.5?.4:0))*255);rug[i]=rug[i+1]=rug[i+2]=rg;rug[i+3]=255;}}
+ const c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');g.putImageData(new ImageData(col,W,H),0,0);
+ // rayones y marcas de uso
+ g.globalAlpha=1;for(let i=0;i<260;i++){const x=R()*W,y=R()*H,l=20+R()*160,a=(R()-.5)*.5;g.strokeStyle=R()<.7?`rgba(190,150,100,${.05+R()*.12})`:`rgba(15,8,4,${.1+R()*.2})`;g.lineWidth=.6+R()*1.2;g.beginPath();g.moveTo(x,y);g.lineTo(x+Math.cos(a)*l,y+Math.sin(a)*l);g.stroke();}
+ for(let i=0;i<14;i++){const x=R()*W,y=R()*H,r=14+R()*30,gr=g.createRadialGradient(x,y,0,x,y,r);gr.addColorStop(0,'rgba(20,10,4,.28)');gr.addColorStop(1,'rgba(20,10,4,0)');g.fillStyle=gr;g.fillRect(x-r,y-r,r*2,r*2);}
+ const cr=document.createElement('canvas');cr.width=W;cr.height=H;cr.getContext('2d').putImageData(new ImageData(rug,W,H),0,0);
+ return {color:c,normal:normalDe(alt,W,H,2.2),rough:cr};}
+/* ---------- CUERO: grano, desgaste y estampado dorado ---------- */
+function portada(){const W=1024,H=1400,c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');
+ const alt=new Float32Array(W*H);
+ const base=g.createLinearGradient(0,0,W,H);base.addColorStop(0,'#6a2a1c');base.addColorStop(.5,'#5a2418');base.addColorStop(1,'#4a1c12');g.fillStyle=base;g.fillRect(0,0,W,H);
+ // grano de cuero (guijarro)
+ for(let i=0;i<26000;i++){const x=R()*W,y=R()*H,r=2+R()*4;g.fillStyle=`rgba(${R()<.5?25:150},${R()<.5?8:60},${R()<.5?4:30},${.05+R()*.1})`;g.beginPath();g.arc(x,y,r,0,7);g.fill();}
+ const hg=document.createElement('canvas');hg.width=W;hg.height=H;const h=hg.getContext('2d');h.fillStyle='#808080';h.fillRect(0,0,W,H);
+ for(let i=0;i<30000;i++){const x=R()*W,y=R()*H,r=2+R()*5,v=90+R()*80;h.fillStyle=`rgb(${v},${v},${v})`;h.beginPath();h.arc(x,y,r,0,7);h.fill();}
+ // desgaste en bordes y esquinas
+ [[0,0],[W,0],[0,H],[W,H]].forEach(([x,y])=>{const gr=g.createRadialGradient(x,y,0,x,y,170);gr.addColorStop(0,'rgba(185,120,80,.55)');gr.addColorStop(1,'rgba(185,120,80,0)');g.fillStyle=gr;g.fillRect(x-170,y-170,340,340);});
+ for(let i=0;i<90;i++){const x=R()*W,y=R()*H,l=20+R()*90,a=R()*6.28;g.strokeStyle=`rgba(200,150,110,${.05+R()*.14})`;g.lineWidth=.8+R();g.beginPath();g.moveTo(x,y);g.lineTo(x+Math.cos(a)*l,y+Math.sin(a)*l);g.stroke();}
+ // contorno oscuro que hace resaltar el oro (grabado)
+ g.lineJoin='round';g.strokeStyle='rgba(22,5,2,.8)';g.lineWidth=11;g.textAlign='center';g.font='800 128px "Alegreya SC",Georgia,serif';g.strokeText('Saberes',512,520);g.strokeText('de Laboyos',512,656);g.font='italic 400 56px "Alegreya",Georgia,serif';g.lineWidth=8;g.strokeText('Pitalito · Huila',512,772);g.lineWidth=11;g.strokeRect(64,64,896,1272);
+ const ob=g.createLinearGradient(0,0,0,H);ob.addColorStop(0,'rgba(0,0,0,0)');ob.addColorStop(1,'rgba(0,0,0,.18)');g.fillStyle=ob;g.fillRect(0,0,W,H);
+ // estampado en oro (mascara) + relieve
+ const mk=document.createElement('canvas');mk.width=W;mk.height=H;const m=mk.getContext('2d');m.fillStyle='#000';m.fillRect(0,0,W,H);m.strokeStyle='#fff';m.fillStyle='#fff';m.textAlign='center';
+ m.lineWidth=6;m.strokeRect(64,64,896,1272);m.lineWidth=2;m.strokeRect(88,88,848,1224);
+ [[64,64],[960,64],[64,1336],[960,1336]].forEach(([x,y])=>{m.beginPath();m.arc(x,y,16,0,7);m.fill();});
+ m.font='800 128px "Alegreya SC",Georgia,serif';m.fillText('Saberes',512,520);m.fillText('de Laboyos',512,656);m.font='italic 400 56px "Alegreya",Georgia,serif';m.fillText('Pitalito · Huila',512,772);
+ m.save();m.translate(512,1010);m.beginPath();m.ellipse(0,0,150,56,-.4,0,7);m.fill();m.strokeStyle='#000';m.lineWidth=6;m.beginPath();m.moveTo(-125,42);m.lineTo(125,-42);m.stroke();[[64,74],[100,62],[82,106]].forEach(([x,y])=>{m.fillStyle='#fff';m.beginPath();m.arc(x,y,23,0,7);m.fill();});m.restore();
+ // filigrana
+ m.lineWidth=3;m.strokeStyle='#fff';for(let i=0;i<8;i++){m.beginPath();m.arc(512,330,60+i*9,Math.PI*1.1,Math.PI*1.9);m.stroke();}
+ const mask=m.getImageData(0,0,W,H).data;
+ // oro: degradado metálico solo donde hay máscara
+ const oro=document.createElement('canvas');oro.width=W;oro.height=H;const o=oro.getContext('2d');const og=o.createLinearGradient(0,0,W,H);og.addColorStop(0,'#fff3b8');og.addColorStop(.35,'#f2cf6a');og.addColorStop(.6,'#ffe9a0');og.addColorStop(1,'#d2a040');o.fillStyle=og;o.fillRect(0,0,W,H);
+ const od=o.getImageData(0,0,W,H),cd=g.getImageData(0,0,W,H),hd=h.getImageData(0,0,W,H);const rg=document.createElement('canvas');rg.width=W;rg.height=H;const rr=rg.getContext('2d'),rdd=rr.createImageData(W,H),mg=document.createElement('canvas');mg.width=W;mg.height=H;const mm=mg.getContext('2d'),mdd=mm.createImageData(W,H);
+ const h2=new Float32Array(W*H);const eg=document.createElement('canvas');eg.width=W;eg.height=H;const em=eg.getContext('2d'),emd=em.createImageData(W,H);
+ for(let i=0;i<W*H;i++){const k=mask[i*4]/255,p=i*4;const v=hd.data[p]/255;
+  if(k>.5){const f=.75+.25*vn((i%W)*.02,(i/W|0)*.02);cd.data[p]=od.data[p]*f;cd.data[p+1]=od.data[p+1]*f;cd.data[p+2]=od.data[p+2]*f;}
+  h2[i]=v*.25+k*1.2;rdd.data[p]=rdd.data[p+1]=rdd.data[p+2]=k>.5?95:185+v*40;rdd.data[p+3]=255;mdd.data[p]=mdd.data[p+1]=mdd.data[p+2]=k>.5?255:0;mdd.data[p+3]=255;emd.data[p]=k>.5?cd.data[p]:0;emd.data[p+1]=k>.5?cd.data[p+1]:0;emd.data[p+2]=k>.5?cd.data[p+2]:0;emd.data[p+3]=255;}
+ g.putImageData(cd,0,0);rr.putImageData(rdd,0,0);mm.putImageData(mdd,0,0);em.putImageData(emd,0,0);
+ return {color:c,normal:normalDe(h2,W,H,2.5),rough:rg,metal:mg,emis:eg};}
+
+/* ---------- API para hornear.js ---------- */
+window.generar=async function(opc={}){
+  pal=PAL[opc.paleta||'azul']; sd=opc.semilla||3;
+  await Promise.all([document.fonts.load('800 128px "Alegreya SC"'),document.fonts.load('italic 400 56px "Alegreya"')]);
+  const escala=(c,w)=>{const o=document.createElement('canvas');o.width=w;o.height=Math.round(c.height*w/c.width);o.getContext('2d').drawImage(c,0,0,o.width,o.height);return o;};
+  const M=madera(opc.mesa||1536,12), P=portada();
+  const cuero=(()=>{const c=document.createElement('canvas');c.width=c.height=256;const g=c.getContext('2d');g.fillStyle='#6a2c1d';g.fillRect(0,0,256,256);for(let i=0;i<3000;i++){g.fillStyle=`rgba(${R()<.5?20:160},${R()<.5?6:70},${R()<.5?4:40},${.05+R()*.1})`;g.beginPath();g.arc(R()*256,R()*256,1+R()*2.5,0,7);g.fill();}return c;})();
+  const out={ 'mesa-color':M.color,'mesa-normal':escala(M.normal,768),'mesa-rug':escala(M.rough,768),
+    'portada-color':P.color,'portada-normal':escala(P.normal,768),'portada-rug':escala(P.rough,512),'portada-emis':escala(P.emis,512),'cuero-color':cuero};
+  const res={};for(const k in out) res[k]=out[k].toDataURL('image/jpeg', k.endsWith('-color')?(k==='mesa-color'?.82:.88):.85);
+  return res; };
+</script>

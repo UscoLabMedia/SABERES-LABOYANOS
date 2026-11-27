@@ -80,6 +80,7 @@ Todo el Nivel 1 está jugable, de principio a fin:
 | `data/trivia1.json` | Banco de preguntas (editable por docentes). |
 | `docs/guardado.md` | Cómo funcionan las cuentas y partidas, cómo activar Supabase y la red. |
 | `docs/supabase.sql` | SQL de la tabla `partidas`, sus permisos y reglas de seguridad. |
+| `assets/` y `arte/texturas/` | Texturas horneadas de la mesa de madera y la portada de cuero del libro (≈800 KB), y el generador para rehacerlas. Ver `arte/texturas/README.md`. |
 | `arte/personajes/orquidera/` | Personaje La Orquídera: bloque 3D (Blender → GLB), hoja de diseño y README con decisiones. |
 | `docs/ideas.md` | Ideas anotadas. |
 | `propuesta-personaje.html`, `personaje-propuesta*.png` | Bocetos del personaje. No son parte del juego. |
