@@ -57,3 +57,10 @@ Solo anotado. Sin diseño ni código todavía. Fuente: observaciones de quienes 
 - **Cambiar la imagen del movimiento:** hoy solo se mueve el brazo (`swingArm`). Falta un efecto visible del barrido.
 - **Ampliar a 360°:** el margen del golpe debe poder llegar a 360° (encaja con el giro del power-up).
 - Pendiente de aclarar: si "dirigir el personaje" con el clic es solo **mirar** hacia el puntero o también **caminar** hacia allí.
+
+**Hecho el 27 de noviembre (en `oleadas.html`), decidido con el usuario:**
+- **Clic con el mouse:** el personaje **mira y camina** hacia el punto. Mantener el clic lo sigue; las teclas, la palanca o el mando cancelan el camino.
+- **Barrido visible:** cada golpe dibuja en el suelo un sector con el alcance y la apertura reales (`ATK`: 1,45 y ~143°).
+- **Poder (`POD`):** se carga al derrotar **5 plagas** (por jugador). Lo **activa el jugador** con la tecla **R**, **Shift**, el botón **Poder** (también en celular) o el mando. Dura **15 s**: golpe **giratorio de 360°**, daño 2 y alcance 1,8. El personaje se **ilumina** con un aura y un aro dorados, y parpadean en los últimos 3 s. Mientras dura no se carga otro. Funciona en red: la carga y el tiempo viajan en la instantánea del anfitrión.
+- Pendiente de esta lista: **techos transparentes** al entrar a edificaciones.
+- Parámetros para ajustar a gusto: `POD.bajas` (5), `POD.dura` (15), `POD.dano` (2), `POD.alcance` (1,8).
