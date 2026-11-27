@@ -42,6 +42,6 @@ async function caso(nombre,opt,celular){ const {p,c}=await T.abrir('alfareria.ht
   let peor=[]; for (const [x,z] of [[-2,1.2],[-8,-4],[2,-3],[6,1],[0,4]]){ await p.evaluate(([x,z])=>{ const m=__a.players[0]; m.x=x; m.z=z; },[x,z]); await p.waitForTimeout(600); const o=await solapes(p); if (o.length>peor.length) peor=o; }
   T.ok(peor.length===0,'letreros y HUD sin encimarse '+JSON.stringify(peor));
   T.ok(p.errs.length===0,'sin errores '+JSON.stringify(p.errs)); await c.close(); }
-(async()=>{ await caso('pc',{viewport:{width:1280,height:760}},false); await caso('celular',{viewport:{width:390,height:844},hasTouch:true,isMobile:true,deviceScaleFactor:1},true);
+(async()=>{ await caso('celular horizontal',{viewport:{width:844,height:390},hasTouch:true,isMobile:true,deviceScaleFactor:1},true); await caso('pc',{viewport:{width:1280,height:760}},false); await caso('celular',{viewport:{width:390,height:844},hasTouch:true,isMobile:true,deviceScaleFactor:1},true);
   { const {p}=await T.abrir('alfareria.html?exigir#prueba'); await p.waitForURL(/finca\.html\?nivel=2/,{timeout:15000}).catch(()=>{}); T.ok(/finca\.html\?nivel=2/.test(p.url()),'sin las pistas del taller, vuelve a la exploración: '+p.url()); }
   await T.fin(); })();

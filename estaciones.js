@@ -94,6 +94,7 @@ function colocarLetreros(ST, hud=['.clock','#orders','.tools'], obstaculos=[]){ 
   ST.filter(s=>s.el).sort((a,b)=>b.ly-a.ly).forEach(s=>{ const w=s.el.offsetWidth, h=s.el.offsetHeight; let y=s.ly, baja=false;
     for (let k=0;k<8;k++){ const o=puestos.find(q=>Math.abs(q.x-s.lx)<(q.w+w)/2+2 && y>q.y-q.h-2 && y-h<q.y+2); if (!o) break; y=baja?o.y+h+3:o.y-o.h-3; if (!baja && y-h<techo){ baja=true; y=s.ly; } }
     if (y-h<techo) y=techo+h;   // nunca debajo del HUD de arriba
+    for (let k=0;k<8;k++){ const o=puestos.find(q=>Math.abs(q.x-s.lx)<(q.w+w)/2+2 && y>q.y-q.h-2 && y-h<q.y+2); if (!o) break; y=o.y+h+3; }   // si al bajar se encima con otro, sigue bajando
     puestos.push({x:s.lx,y,w,h}); s.el.style.left=s.lx+'px'; s.el.style.top=y+'px'; });
 }
 

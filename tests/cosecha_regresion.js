@@ -24,4 +24,4 @@ async function caso(nombre,opt,celular){ const {p,c}=await T.abrir('cosecha.html
   await ir('chiva'); await p.waitForTimeout(400); const pts0=await p.evaluate(()=>__c.game.score); await pulsar(); T.ok(await carry()==null&&await p.evaluate(()=>__c.game.score)>pts0,'acción entrega a la chiva y suma puntos');
   await p.evaluate(()=>__c.setCarry(__c.players[0],{type:'saco',q:80})); if (celular) await p.tap('#tDrop'); else await p.keyboard.press('g'); await p.waitForTimeout(400); T.ok(await carry()==null,'Soltar suelta (se pierde)');
   T.ok(p.errs.length===0,'sin errores '+JSON.stringify(p.errs)); await c.close(); }
-(async()=>{ await caso('pc',{viewport:{width:1280,height:760}},false); await caso('celular',{viewport:{width:390,height:844},hasTouch:true,isMobile:true,deviceScaleFactor:1},true); await T.fin(); })();
+(async()=>{ await caso('celular horizontal',{viewport:{width:844,height:390},hasTouch:true,isMobile:true,deviceScaleFactor:1},true); await caso('pc',{viewport:{width:1280,height:760}},false); await caso('celular',{viewport:{width:390,height:844},hasTouch:true,isMobile:true,deviceScaleFactor:1},true); await T.fin(); })();

@@ -75,3 +75,5 @@ No están hechos; cada uno necesita confirmar el alcance antes de programarse.
 4. **Celular: moverse con joystick** también donde hoy se toca el suelo (la finca y la exploración del taller), igual que en los minijuegos.
 5. **Fabricación (alfareria.html) rediseñada por pedidos con receta.** Llega un cliente y pide una figura; **cada figura tiene procesos distintos**; en pantalla aparece la **receta** (pasos en orden) que se sigue y luego se **entrega al cliente**. Reemplazaría la cadena única actual (barro → amasado → torno/mesa → secadero → horno → pintura). Hace falta diseño nuevo y propuesta en PNG antes de construir. Los datos de cada figura deben salir de fuentes verificadas (`docs/nivel2-fuentes.md`).
 6. **Aviso de voltear** para mejorar la jugabilidad en celular: un aviso claro (visual, sonido y/o vibración) cuando el grano del secadero necesita voltearse en la cosecha.
+
+7. **Minijuego de los caballos (Nivel 3): referencia del usuario** — https://youtu.be/Rvs7O4oqgGo?t=168 (minuto 2:48). Anotado el 27 nov 2026; falta confirmar con el usuario qué mecánica de ese video quiere tomar (no se pudo ver el video desde el entorno de trabajo).

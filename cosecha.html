@@ -107,7 +107,7 @@ kbd{font-family:var(--f-ui);font-weight:700;font-size:.78rem;border:1px solid va
 .tbtns button.act.hold{outline:3px dashed #fff3e6;outline-offset:-9px}
 .tbtns button.use{background:var(--cherry);color:#fff3e6;box-shadow:0 5px 0 #6b1418}
 .fallback{position:fixed;inset:0;display:grid;place-items:center;padding:24px;text-align:center;font-family:var(--f-body);font-size:1.1rem;z-index:40;background:var(--desk)}
-@media (max-width:700px){
+@media (max-width:700px), (max-height:520px){
   .hud{grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto 1fr auto}
   .orders{grid-column:1 / -1;grid-row:2;justify-content:flex-start}
   .orders{flex-wrap:nowrap;overflow:hidden;gap:6px}
@@ -116,6 +116,9 @@ kbd{font-family:var(--f-ui);font-weight:700;font-size:.78rem;border:1px solid va
   .order span{display:none}
   .order .bar{margin-top:.2rem}
   .st{font-size:.68rem;min-width:0;max-width:9rem;padding:.15rem .35rem .2rem}
+  .st.min{font-size:.56rem;padding:.05rem .25rem;box-shadow:0 2px 5px rgba(0,0,0,.25)}
+  .st.min b{display:inline;font-size:.6rem}
+  .st.min .bar{display:none}
   .st b{font-size:.74rem}
   .tools{grid-column:2;justify-self:end}
   .clock .time{font-size:1.5rem}
@@ -505,7 +508,7 @@ const v3=new THREE.Vector3();
 function project(x,y,z){ v3.set(x,y,z).project(camera); return [(v3.x+1)/2*innerWidth,(1-v3.y)/2*innerHeight]; }
 const LABEL_Y={despulpadora:1.9,tanque:1.2,cama:1.0,palanca:1.5,chiva:2.6};
 function labels(){
-  const chica=innerWidth<700, yo_=players.find(q=>q.slot===mySlot()), cerca=yo_?nearest(yo_):null;
+  const chica=innerWidth<700||innerHeight<520, yo_=players.find(q=>q.slot===mySlot()), cerca=yo_?nearest(yo_):null;
   ST.forEach(s=>{ if (!s.el) return; let txt='', bar=null, cls='';
     if (s.kind==='despulpadora'){ txt={vacio:'Trae un canasto lleno',cargada:'Mantén pulsado para moler',moliendo:'Moliendo… sigue pulsando',lista:'¡Lista! Recoge el café'}[s.state]; if (s.state==='moliendo'||s.state==='cargada') bar=s.prog; if (s.jam){ txt='¡Atascada! Pulsa ×'+s.jam; cls='bad'; } if (s.state==='lista') cls='ok'; }
     if (s.kind==='tanque'){ txt={vacio:'Vacío',fermentando:'Fermentando',lista:'¡Listo! Lavar',pasada:'¡Se pasa! Lavar ya',lavado:'Lavado: recógelo'}[s.state];
@@ -515,7 +518,7 @@ function labels(){
     if (s.kind==='palanca'){ txt=marquesina?'Cerrada':'Abierta'; if (game.raining && !marquesina) cls='bad'; }
     if (s.kind==='chiva'){ txt='Entrega aquí los sacos'; }
     if (chica && s!==cerca) txt='';
-    s.el.className='st '+cls; s.el.innerHTML=`<b>${s.name}</b>${txt}${bar!==null?`<div class="bar"><i style="width:${Math.max(0,Math.min(1,bar))*100}%"></i></div>`:''}`;
+    s.el.className='st '+cls+(chica&&s!==cerca?' min':''); s.el.innerHTML=`<b>${s.name}</b>${txt}${bar!==null?`<div class="bar"><i style="width:${Math.max(0,Math.min(1,bar))*100}%"></i></div>`:''}`;
     const [x,y]=project(s.x,LABEL_Y[s.kind]||1.5,s.z); s.lx=x; s.ly=y; });
   players.forEach(p=>{ const [x,y]=project(p.x,0,p.z+.35); p.el.style.left=x+'px'; p.el.style.top=y+'px';
     p.el.textContent=p.nombre+(p.slot===mySlot()&&players.length>1?' (tú)':'')+(p.carry?` · ${NAMES[p.carry.type]}${p.carry.type==='canasto'?` ${p.carry.n}/${R.canasto}`:''} · ${qual(p.carry)} pts`:''); });

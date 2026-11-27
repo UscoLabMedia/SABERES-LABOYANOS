@@ -24,6 +24,21 @@ const T=require('./lib');
    const r=await p.evaluate(()=>({puesto:__r.game.puesto,laps:__r.cars.map(c=>c.lap),prog:Guardado.progreso().carrera})); T.ok(r.puesto>=1&&r.puesto<=4,'puesto final '+r.puesto); T.ok(r.laps.every(l=>l>=1),'las 4 chivas avanzaron '+JSON.stringify(r.laps)); T.ok(r.prog===[0,3,2,1,0][r.puesto],'estrellas guardadas según el puesto: '+r.prog);
    T.ok(p.errs.length===0,'sin errores '+JSON.stringify(p.errs)); }
  // --- celular: la palanca gira la chiva
+ // --- hallazgos de la revisión final
+ { const {p}=await T.abrir('carrera.html#prueba',{viewport:{width:1280,height:760}}); await p.waitForFunction(()=>window.__r&&__r.game.on,null,{timeout:30000});
+   // (1) el "¡Ya!" suena una sola vez
+   const n=await p.evaluate(()=>{ let n=0; const o=Papel.Sound.chime; Papel.Sound.chime=function(...a){ n++; return o.apply(this,a); }; __r.reiniciar(); for (let i=0;i<20;i++) __r.step(.2); for (let i=0;i<40;i++) __r.step(.05); return n; });
+   T.ok(n<=1,'el "¡Ya!" de la salida suena una sola vez ('+n+' campanazos)');
+   // (2) una chiva que llegó a la meta se detiene y no vuelve a la pista una y otra vez
+   const f=await p.evaluate(()=>{ __r.reiniciar(); const c=__r.cars[1]; for (let i=0;i<70;i++) __r.step(.05); c.fin=true; c.tFin=__r.game.t; c.lap=3; c.v=5; const x0=c.x,z0=c.z; let saltos=0, px=c.x, pz=c.z; for (let i=0;i<400;i++){ __r.step(.05); if (Math.hypot(c.x-px,c.z-pz)>3) saltos++; px=c.x; pz=c.z; } return {v:c.v,saltos,d:Math.hypot(c.x-x0,c.z-z0)}; });
+   T.ok(f.v===0&&f.saltos===0&&f.d<12,'la chiva que llegó frena y no salta de vuelta a la pista '+JSON.stringify(f));
+   // (3) los avisos de otro jugador no los ve quien no corre con él
+   const av=await p.evaluate(()=>{ const b=document.getElementById('banner'); b.className='banner'; b.textContent=''; __r.avisar(1,'AVISO-AJENO'); const ajeno=b.textContent; __r.avisar(0,'AVISO-PROPIO'); return {ajeno,propio:b.textContent}; });
+   T.ok(av.ajeno!=='AVISO-AJENO'&&av.propio==='AVISO-PROPIO','el aviso de otro jugador no se muestra a los demás '+JSON.stringify(av));
+   // (4) los colores de los demás jugadores llegan aunque la sala se arme antes que el diseño
+   const col=await p.evaluate(()=>{ __r.hacer([{slot:0,nombre:'A'},{slot:1,nombre:'B'}]); const antes=__r.colorCuerpo(1); __r.aplicaDisenios({1:{cuerpo:'#2f8a5a',cab:'#3f9bd1'}}); return {antes,despues:__r.colorCuerpo(1)}; });
+   T.ok(col.antes!==col.despues&&col.despues==='#2f8a5a','el diseño del otro jugador se aplica al llegar: '+JSON.stringify(col));
+   T.ok(p.errs.length===0,'sin errores '+JSON.stringify(p.errs)); await p.context().close(); }
  { const {p,c}=await T.abrir('carrera.html#prueba',{viewport:{width:390,height:844},hasTouch:true,isMobile:true}); await p.waitForFunction(()=>window.__r&&__r.game.on,null,{timeout:30000}); const cdp=await c.newCDPSession(p);
    await p.evaluate(()=>{ __r.game.t=1; }); const a0=await p.evaluate(()=>{ const c=__r.cars[0]; c.ai=false; c.ang=0; return c.ang; });
    const bb=await p.locator('#joy').boundingBox(), x=bb.x+bb.width/2, y=bb.y+bb.height/2; await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y,id:1}]}); for (let i=1;i<=4;i++) await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:x+10*i,y,id:1}]});
