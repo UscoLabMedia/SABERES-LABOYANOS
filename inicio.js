@@ -61,13 +61,13 @@ function pantallaPin(id){
     if (Guardado.verificarPin(id, $('#inPin2').value)) entrar(id); else { $('#inErr').textContent = 'PIN incorrecto.'; $('#inPin2').value = ''; } };
 }
 function pantallaCodigo(){
-  paso.innerHTML = `<form class="in-form"><label for="inCod">Pega tu código de respaldo</label>
-    <textarea id="inCod" rows="3" placeholder="Lo encuentras en Mi progreso, en el otro celular" style="font:.8rem/1.3 monospace;width:100%;box-sizing:border-box;border:1.5px solid var(--ink);background:#fbf5e6;padding:.5rem"></textarea>
+  paso.innerHTML = `<form class="in-form"><label for="inCod">Tu código (LAB-XXXXXX o el de respaldo)</label>
+    <textarea id="inCod" rows="3" placeholder="LAB-K7M2PQ" style="font:.8rem/1.3 monospace;width:100%;box-sizing:border-box;border:1.5px solid var(--ink);background:#fbf5e6;padding:.5rem"></textarea>
     <p class="in-err" id="inErr" role="alert"></p>
     <div class="in-acts"><button type="button" class="btn" data-a="volver">Volver</button><button class="btn solid">Cargar</button></div></form>`;
   $('#inCod').focus(); paso.querySelector('[data-a="volver"]').onclick = pantallaMenu;
-  paso.querySelector('form').onsubmit = e => { e.preventDefault();
-    try { const p = Guardado.importar($('#inCod').value); entrar(p.id); } catch (err) { $('#inErr').textContent = err.message; } };
+  paso.querySelector('form').onsubmit = async e => { e.preventDefault(); const err = $('#inErr'); err.textContent = 'Buscando…';
+    try { const p = await Guardado.entrarConCodigo($('#inCod').value); entrar(p.id); } catch (x) { err.textContent = x.message; } };
 }
 
 // bloquea Enter/Espacio/Escape del libro mientras la pantalla está abierta

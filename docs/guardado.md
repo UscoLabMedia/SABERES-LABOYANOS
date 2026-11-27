@@ -81,7 +81,9 @@ supabase: { url: 'https://xxxx.supabase.co', key: 'eyJ...' },
 
 La clave `anon` es pública por diseño; lo que protege los datos son las funciones de arriba. Límite conocido: quien tenga el código `LAB-XXXXXX` de un perfil puede leerlo y escribirlo. Para un curso real conviene pasar a cuentas con Supabase Auth.
 
-> Esta parte no está probada contra un proyecto real de Supabase: se escribió sin acceso a uno.
+Con la nube activa, el **código corto** `LAB-XXXXXX` (se ve en Mi progreso) basta para entrar desde otro celular: **Entrar con mi código**. El código largo de respaldo sigue funcionando.
+
+> Probado con un Supabase simulado (cliente y funciones). Falta la prueba contra el proyecto real, desde un celular.
 
 ## Jugar en red
 

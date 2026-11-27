@@ -84,13 +84,27 @@ const nube = {
       if (!r.ok) throw new Error(r.status); const [fila] = await r.json();
       const local = progreso();
       if (fila && (fila.datos?.actualizado||0) > (local.actualizado||0)){ LS.set(K.prog(id), fila.datos); window.dispatchEvent(new CustomEvent('laboyos:progreso')); }
-      if (LS.get(K.pend(id), false)) await this.subir(); else this._set('sincronizado');
+      if (!fila || LS.get(K.pend(id), false)) await this.subir(); else this._set('sincronizado');   // perfil nuevo: aún no está en la nube
     } catch (e) { this._set(navigator.onLine === false ? 'pendiente' : 'error'); }
   },
 };
+// Código corto LAB-XXXXXX: trae el perfil desde la nube (solo si Supabase está activo).
+async function traerDeNube(id){
+  if (!nube.activa) throw new Error('El código corto necesita la nube. Usa el código de respaldo largo.');
+  let r; try { r = await fetch(`${CFG.url}/rest/v1/rpc/leer_progreso`, { method:'POST', headers:nube._h(), body:JSON.stringify({ p_id:id }) }); }
+  catch (e) { throw new Error('No hay conexión. Intenta de nuevo con internet.'); }
+  if (!r.ok) throw new Error('No se pudo consultar la nube. Intenta de nuevo.');
+  const [fila] = await r.json(); if (!fila) throw new Error('No encontré ese código. Revísalo.');
+  const p = { id, nombre:fila.nombre || 'Jugador', avatar:fila.avatar || 'muneco' };
+  const i = perfiles.findIndex(q => q.id === id); if (i >= 0) perfiles[i] = { ...perfiles[i], ...p }; else perfiles.push(p);
+  LS.set(K.perfiles, perfiles); activo = id; LS.set(K.activo, id);
+  const local = LS.get(K.prog(id), null); if (!local || (fila.datos?.actualizado||0) >= (local.actualizado||0)) LS.set(K.prog(id), fila.datos || {});
+  sincAjustes(); return p;
+}
+const entrarConCodigo = async txt => /^LAB-[A-Z0-9]{6}$/i.test(String(txt).trim()) ? traerDeNube(String(txt).trim().toUpperCase()) : importar(txt);
 addEventListener('online', () => { if (LS.get(K.pend(activo), false)) nube.subir(); });
 sincAjustes();
 if (nube.activa) nube.bajar();
 
-window.Guardado = { perfil, perfiles:()=>perfiles.slice(), progreso, progresoDe, tienePin, ponerPin, verificarPin, guardar, crearPerfil, usarPerfil, actualizarPerfil, codigo, importar, nube, sincronizar:()=>nube.bajar() };
+window.Guardado = { entrarConCodigo, perfil, perfiles:()=>perfiles.slice(), progreso, progresoDe, tienePin, ponerPin, verificarPin, guardar, crearPerfil, usarPerfil, actualizarPerfil, codigo, importar, nube, sincronizar:()=>nube.bajar() };
 })();
