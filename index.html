@@ -727,9 +727,9 @@ bindSeg('s-quality','quality',applyQuality); bindSeg('s-text','text');
 $('#resetBtn').addEventListener('click',()=>{ Object.assign(S,DEFAULTS); save(); syncUI(); applyQuality(); Sound.apply(); toast('Se restauraron los valores de fábrica.'); });
 
 const KEYMAPS=[
-  ['Teclado y ratón',[['Moverse','<kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd>, flechas o clic en el suelo'],['Hablar (finca)','<kbd>E</kbd>, <kbd>Espacio</kbd> o clic en la persona'],['Tomar / soltar (cosecha) · golpear (oleadas)','<kbd>E</kbd>, <kbd>Espacio</kbd> o <kbd>Enter</kbd>'],['Usar estación (cosecha)','mantener <kbd>Q</kbd> o <kbd>Shift</kbd>'],['Tirar lo que llevas (cosecha)','<kbd>G</kbd>, <kbd>X</kbd> o clic derecho'],['Poder (oleadas)','<kbd>R</kbd>'],['Responder (trivia)','<kbd>1</kbd> a <kbd>4</kbd> o clic']]],
+  ['Teclado y ratón',[['Moverse','<kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd>, flechas o clic en el suelo'],['Hablar (finca)','<kbd>E</kbd>, <kbd>Espacio</kbd> o clic en la persona'],['Tomar / soltar (cosecha) · golpear (oleadas)','<kbd>E</kbd>, <kbd>Espacio</kbd> o <kbd>Enter</kbd>'],['Usar estación (cosecha)','mantener <kbd>Q</kbd> o <kbd>Shift</kbd>'],['Soltar lo que llevas (cosecha)','<kbd>G</kbd>, <kbd>X</kbd> o clic derecho'],['Poder (oleadas)','<kbd>R</kbd>'],['Responder (trivia)','<kbd>1</kbd> a <kbd>4</kbd> o clic']]],
   ['Mando',[['Moverse','palanca'],['Tomar · golpear','<kbd>A</kbd>'],['Usar estación','<kbd>X</kbd>'],['Tirar · poder','<kbd>B</kbd>']]],
-  ['Celular',[['Moverse','palanca (cosecha y oleadas) o tocar el suelo (finca)'],['Acciones','botones Tomar, Usar, Tirar, Palo y Poder'],['Hablar','tocar a la persona o el botón Hablar']]],
+  ['Celular',[['Moverse','palanca (cosecha y oleadas) o tocar el suelo (finca)'],['Acciones','cosecha: botón Acción (cambia según la estación; para moler, lavar o voltear se mantiene) y Soltar · oleadas: Palo y Poder'],['Hablar','tocar a la persona o el botón Hablar']]],
 ];
 function syncUI(){
   $('#s-music').value=S.music; $('#o-music').textContent=S.music+'%';

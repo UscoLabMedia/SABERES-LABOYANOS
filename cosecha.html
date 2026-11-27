@@ -100,6 +100,9 @@ kbd{font-family:var(--f-ui);font-weight:700;font-size:.78rem;border:1px solid va
 .tbtns{display:flex;gap:12px;pointer-events:auto}
 .tbtns button{width:78px;height:78px;border-radius:50%;border:0;font-family:var(--f-display);font-weight:800;font-size:1rem;background:var(--paper);color:var(--ink);box-shadow:0 5px 0 #b9a47a;touch-action:none}
 .tbtns button#tDrop{width:60px;height:60px;font-size:.85rem;background:#d9cfb6;align-self:flex-end}
+.tbtns button.act{width:104px;height:104px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;line-height:1.05;padding:6px;background:conic-gradient(#2f8a5a calc(var(--p,0)*1turn),var(--cherry) 0);color:#fff3e6;box-shadow:0 5px 0 #6b1418}
+.tbtns button.act b{font-size:1rem}.tbtns button.act small{font-family:var(--f-ui);font-weight:700;font-size:.72rem;opacity:.95}
+.tbtns button.act.hold{outline:3px dashed #fff3e6;outline-offset:-9px}
 .tbtns button.use{background:var(--cherry);color:#fff3e6;box-shadow:0 5px 0 #6b1418}
 .fallback{position:fixed;inset:0;display:grid;place-items:center;padding:24px;text-align:center;font-family:var(--f-body);font-size:1.1rem;z-index:40;background:var(--desk)}
 @media (max-width:700px){
@@ -135,7 +138,7 @@ kbd{font-family:var(--f-ui);font-weight:700;font-size:.78rem;border:1px solid va
 
 <div class="touch" id="touch" hidden>
   <div class="joy" id="joy"><i></i></div>
-  <div class="tbtns"><button id="tTake">Tomar</button><button class="use" id="tUse">Usar</button><button id="tDrop">Tirar</button></div>
+  <div class="tbtns"><button id="tDrop" aria-label="Soltar lo que llevas (se pierde)">Soltar</button><button class="act" id="tAct"><b>Acción</b><small></small></button></div>
 </div>
 
 <div class="scrim" id="start">
@@ -380,10 +383,10 @@ function readInput(){
     knob.style.transform=`translate(${dx}px,${dy}px)`; tch.x=dx/m; tch.z=dy/m; };
   joy.addEventListener('pointermove',move);
   const up=e=>{ if (e.pointerId!==id) return; id=null; knob.style.transform=''; tch.x=tch.z=0; }; joy.addEventListener('pointerup',up); joy.addEventListener('pointercancel',up);
-  $('#tTake').addEventListener('pointerdown',e=>{ e.preventDefault(); tch.take=true; });
   $('#tDrop').addEventListener('pointerdown',e=>{ e.preventDefault(); tch.drop=true; });
-  $('#tUse').addEventListener('pointerdown',e=>{ e.preventDefault(); tch.use=true; tch.useEdge=true; });
-  ['pointerup','pointercancel','pointerleave'].forEach(ev=>$('#tUse').addEventListener(ev,()=>tch.use=false)); })();
+  // un solo botón: toque = tomar/dejar; si la estación pide mantener (moler, lavar, voltear), mantenerlo = usar
+  $('#tAct').addEventListener('pointerdown',e=>{ e.preventDefault(); const me=players.find(q=>q.slot===mySlot()); if (me && accion(me).hold){ tch.use=true; tch.useEdge=true; } else tch.take=true; });
+  ['pointerup','pointercancel','pointerleave'].forEach(ev=>$('#tAct').addEventListener(ev,()=>tch.use=false)); })();
 
 /* ---------------- Estado del juego ---------------- */
 const game={on:false,paused:false,mode:'reloj',t:0,score:0,orders:[],nextOrder:0,stats:{sacos:0,especial:0,perdidos:0},raining:false,rainWarned:{}};
@@ -405,7 +408,19 @@ function nearest(p){ let best=null, bd=1e9; ST.forEach(s=>{ const d=Math.hypot(s
 const reachOf=s=>s.kind==='chiva'?1.3:.95;
 function pick(p){ const s=p.inp.si!=null?ST[p.inp.si]:null; if (s && Math.hypot(s.x-p.x,s.z-p.z)-s.r<reachOf(s)) return s; return nearest(p); }
 // Tirar lo que llevas en las manos: se pierde (no se puede recuperar)
-function tirar(p){ if (!p.carry){ banner('No llevas nada que tirar'); return; } const n=NAMES[p.carry.type]; setCarry(p,null); snd('tick'); banner(`Tiraste: ${n} (se perdió)`); }
+function tirar(p){ if (!p.carry){ banner('No llevas nada que soltar'); return; } const n=NAMES[p.carry.type]; setCarry(p,null); snd('tick'); banner(`Soltaste: ${n} (se perdió)`); }
+function accion(p){ const s=nearest(p), c=p.carry; if (!s) return {t:'Acción'};
+  switch(s.kind){
+    case 'cafeto': return {t:s.state==='vacia'?'Ya recogido':'Recoger'};
+    case 'despulpadora': if (s.jam) return {t:'Destrabar ×'+s.jam,hold:true,tap:true}; if (s.state==='cargada'||s.state==='moliendo') return {t:'Moler',hold:true,prog:s.prog};
+      if (s.state==='lista') return {t:c?'Manos llenas':'Sacar café'}; return {t:c&&c.type==='canasto'?'Echar canasto':'Despulpadora'};
+    case 'tanque': if (s.state==='lista'||s.state==='pasada') return {t:'Lavar',hold:true,prog:s.prog}; if (s.state==='lavado') return {t:c?'Manos llenas':'Sacar café'};
+      if (s.state==='vacio' && c && c.type==='baba') return {t:'Echar café'}; return {t:s.state==='fermentando'?'Fermenta…':'Tanque'};
+    case 'cama': if (s.state==='secando' && s.needsTurn) return {t:'Voltear',hold:true,prog:s.turnProg||0}; if (s.state==='seco') return {t:c?'Manos llenas':'Empacar'};
+      if (s.state==='vacio' && c && c.type==='lavado') return {t:'Extender'}; return {t:s.state==='secando'?'Secando…':'Cama'};
+    case 'palanca': return {t:marquesina?'Abrir techo':'Cerrar techo'};
+    case 'chiva': return {t:'Entregar'};
+  } return {t:'Acción'}; }
 function take(p){
   const s=pick(p), c=p.carry; if (!s){ return; }
   switch(s.kind){
@@ -421,17 +436,17 @@ function take(p){
       if (s.state==='vacio' && c?.type==='canasto'){ if (c.n<R.canasto){ banner(`Llena el canasto: ${c.n} de ${R.canasto} cerezas`); return; }
         s.state='cargada'; s.prog=0; s.q=qual(c); setCarry(p,null); snd('pop',1); return; }
       if (s.state==='lista' && !c){ setCarry(p,{type:'baba',q:s.q}); s.state='vacio'; s.out.visible=false; snd('pop',3); return; }
-      if (s.state!=='vacio' && s.state!=='lista') banner('Dale a la manivela: mantén Usar'); else if (!c) banner('Trae un canasto lleno'); else banner('Aquí va el canasto lleno');
+      if (s.state!=='vacio' && s.state!=='lista') banner('Mantén pulsado para moler'); else if (!c) banner('Trae un canasto lleno'); else banner('Aquí va el canasto lleno');
       return;
     case 'tanque':
       if (s.state==='vacio' && c?.type==='baba'){ s.state='fermentando'; s.t=0; s.q=c.q; setCarry(p,null); snd('pop',1); return; }
       if (s.state==='lavado' && !c){ setCarry(p,{type:'lavado',q:s.q}); s.state='vacio'; snd('pop',3); return; }
-      if (s.state==='fermentando') banner('Todavía fermenta'); else if (s.state==='lista'||s.state==='pasada') banner('Lávalo: mantén Usar'); else banner('Aquí va el café en baba');
+      if (s.state==='fermentando') banner('Todavía fermenta'); else if (s.state==='lista'||s.state==='pasada') banner('Mantén pulsado para lavar'); else banner('Aquí va el café en baba');
       return;
     case 'cama':
       if (s.state==='vacio' && c?.type==='lavado'){ s.state='secando'; s.prog=0; s.q=c.q; s.turnT=R.voltearCada; s.needsTurn=false; setCarry(p,null); snd('pop',1); return; }
       if (s.state==='seco' && !c){ setCarry(p,{type:'saco',q:s.q}); s.state='vacio'; snd('pop',3); return; }
-      if (s.state==='secando') banner(s.needsTurn?'Voltea el grano: mantén Usar':'Se está secando'); else banner('Aquí va el café lavado');
+      if (s.state==='secando') banner(s.needsTurn?'Mantén pulsado para voltear el grano':'Se está secando'); else banner('Aquí va el café lavado');
       return;
     case 'palanca': toggleRoof(); return;
     case 'chiva':
@@ -545,16 +560,20 @@ function project(x,y,z){ v3.set(x,y,z).project(camera); return [(v3.x+1)/2*inner
 const LABEL_Y={despulpadora:1.9,tanque:1.2,cama:1.0,palanca:1.5,chiva:2.6};
 function labels(){
   ST.forEach(s=>{ if (!s.el) return; let txt='', bar=null, cls='';
-    if (s.kind==='despulpadora'){ txt={vacio:'Trae un canasto lleno',cargada:'Dale a la manivela',moliendo:'Moliendo…',lista:'¡Lista! Recoge el café'}[s.state]; if (s.state==='moliendo'||s.state==='cargada') bar=s.prog; if (s.jam){ txt='¡Atascada! Usar ×'+s.jam; cls='bad'; } if (s.state==='lista') cls='ok'; }
+    if (s.kind==='despulpadora'){ txt={vacio:'Trae un canasto lleno',cargada:'Mantén pulsado para moler',moliendo:'Moliendo… sigue pulsando',lista:'¡Lista! Recoge el café'}[s.state]; if (s.state==='moliendo'||s.state==='cargada') bar=s.prog; if (s.jam){ txt='¡Atascada! Pulsa ×'+s.jam; cls='bad'; } if (s.state==='lista') cls='ok'; }
     if (s.kind==='tanque'){ txt={vacio:'Vacío',fermentando:'Fermentando',lista:'¡Listo! Lavar',pasada:'¡Se pasa! Lavar ya',lavado:'Lavado: recógelo'}[s.state];
-      if (s.state==='fermentando') bar=s.t/R.fermento; if (s.state==='lista'){ bar=1-s.t/R.ventana; cls='ok'; } if (s.state==='pasada') cls='bad'; if (s.state==='lavado') cls='ok'; if (s.state!=='vacio') txt+=` · ${Math.round(s.q)}`; }
-    if (s.kind==='cama'){ txt={vacio:'Vacía',secando:'Secando',seco:'¡Seco! Empaca'}[s.state]; if (s.state==='secando'){ bar=s.prog; if (s.needsTurn){ txt='¡Voltear!'; cls='warn'; } if (game.raining&&!marquesina){ txt='¡Se moja!'; cls='bad'; } } if (s.state==='seco') cls='ok'; if (s.state!=='vacio') txt+=` · ${Math.round(s.q)}`; }
+      if (s.state==='fermentando') bar=s.t/R.fermento; if (s.state==='lista'){ bar=1-s.t/R.ventana; cls='ok'; } if (s.state==='pasada') cls='bad';
+      if ((s.state==='lista'||s.state==='pasada')){ if (s.prog>0){ txt='Lavando… sigue pulsando'; bar=s.prog; } else txt=(s.state==='pasada'?'¡Se pasa! ':'¡Listo! ')+'Mantén pulsado para lavar'; } if (s.state==='lavado') cls='ok'; if (s.state!=='vacio') txt+=` · ${Math.round(s.q)}`; }
+    if (s.kind==='cama'){ txt={vacio:'Vacía',secando:'Secando',seco:'¡Seco! Empaca'}[s.state]; if (s.state==='secando'){ bar=s.prog; if (s.needsTurn){ txt=s.turnProg>0?'Volteando… sigue pulsando':'¡Voltear! Mantén pulsado'; cls='warn'; if (s.turnProg>0) bar=s.turnProg; } if (game.raining&&!marquesina){ txt='¡Se moja!'; cls='bad'; } } if (s.state==='seco') cls='ok'; if (s.state!=='vacio') txt+=` · ${Math.round(s.q)}`; }
     if (s.kind==='palanca'){ txt=marquesina?'Cerrada':'Abierta'; if (game.raining && !marquesina) cls='bad'; }
     if (s.kind==='chiva'){ txt='Entrega aquí los sacos'; }
     s.el.className='st '+cls; s.el.innerHTML=`<b>${s.name}</b>${txt}${bar!==null?`<div class="bar"><i style="width:${Math.max(0,Math.min(1,bar))*100}%"></i></div>`:''}`;
     const [x,y]=project(s.x,LABEL_Y[s.kind]||1.5,s.z); s.el.style.left=x+'px'; s.el.style.top=y+'px'; });
   players.forEach(p=>{ const [x,y]=project(p.x,2.2,p.z); p.el.style.left=x+'px'; p.el.style.top=y+'px';
     p.el.textContent=p.nombre+(p.slot===mySlot()&&players.length>1?' (tú)':'')+(p.carry?` · ${NAMES[p.carry.type]}${p.carry.type==='canasto'?` ${p.carry.n}/${R.canasto}`:''} · ${qual(p.carry)} pts`:''); });
+  if (touch){ const me=players.find(q=>q.slot===mySlot()), b=$('#tAct'); if (me){ const a=accion(me), k=a.t+(a.hold?1:0);
+      if (b.dataset.k!==k){ b.dataset.k=k; b.firstChild.textContent=a.t; b.lastChild.textContent=a.hold?(a.tap?'toca rápido':'mantén pulsado'):''; b.classList.toggle('hold',!!a.hold); b.setAttribute('aria-label',a.t+(a.hold?', mantén pulsado':'')); }
+      b.style.setProperty('--p',a.hold&&a.prog?Math.min(1,a.prog):0); } }
   const m=Math.max(0,game.mode==='reloj'?R.duracion-game.t:game.t), mm=Math.floor(m/60), ss=Math.floor(m%60);
   $('#time').textContent=`${mm}:${String(ss).padStart(2,'0')}`; $('#time').classList.toggle('low',game.mode==='reloj'&&m<30);
   $('#pts').textContent=`${game.score} puntos`;
@@ -596,8 +615,8 @@ function syncStart(){
   $$('#optMode button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===MODE)); $('#modeRow').hidden = rol==='cliente';
   const go=$('#goBtn'); go.hidden = rol==='cliente';
   go.disabled = rol==='host' && !lob.code; go.textContent = rol==='host' ? `Empezar con ${n} jugador${n>1?'es':''}` : 'Empezar';
-  const lines=['Moverse: <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> o flechas · tomar o soltar: <kbd>E</kbd>, <kbd>Espacio</kbd> o <kbd>Enter</kbd> · usar: mantener <kbd>Q</kbd> o <kbd>Shift</kbd> · tirar lo que llevas (se pierde): <kbd>G</kbd>, <kbd>X</kbd> o clic derecho<br>Con ratón: clic en el suelo para caminar, clic en una estación para tomar o soltar, mantén el clic para usarla · también con mando'];
-  if (touch) lines.unshift('En pantalla táctil: palanca a la izquierda, botones Tomar, Usar y Tirar a la derecha.');
+  const lines=['Moverse: <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> o flechas · tomar o soltar: <kbd>E</kbd>, <kbd>Espacio</kbd> o <kbd>Enter</kbd> · usar: mantener <kbd>Q</kbd> o <kbd>Shift</kbd> · soltar lo que llevas (se pierde): <kbd>G</kbd>, <kbd>X</kbd> o clic derecho<br>Con ratón: clic en el suelo para caminar, clic en una estación para tomar o soltar, mantén el clic para usarla · también con mando'];
+  if (touch) lines.unshift('En pantalla táctil: palanca a la izquierda, a la derecha el botón de acción (cambia según donde estés; para moler, lavar o voltear mantenlo pulsado) y Soltar.');
   lines.push(n===1 ? 'Jugando solo, el grano se voltea por sí mismo en el secadero.' : 'En equipo hay que voltear el grano en el secadero.');
   $('#keysHelp').innerHTML=lines.join('<br>');
   makePlayers(lob && rol!=='solo' ? lob.jugadores : [yo()]); }
@@ -648,7 +667,7 @@ function finish(r){
     onCierre:()=>{ if (game.on){ game.on=false; showBanner('Se cerró la sala del anfitrión'); } $('#end').hidden=true; $('#start').hidden=false; },
   });
   resize(); syncStart(); renderOrders(); requestAnimationFrame(frame); $('#goBtn').focus();
-  if (location.hash==='#prueba'){ begin([yo()]); window.__c={game,players,ST,take,use,step,R,camera,setCarry,tirar,get roof(){return marquesina;}}; }
+  if (location.hash==='#prueba'){ begin([yo()]); window.__c={game,players,ST,take,use,step,R,camera,setCarry,tirar,accion,get roof(){return marquesina;}}; }
 })();
 })();
 </script>
