@@ -42,3 +42,18 @@ Solo anotado. Sin diseño ni código todavía.
 - **Trenza:** cae por la espalda hasta la **mitad de la espalda**. De frente no debe verse larga.
 - Se busca que los personajes sean más **tiernos y lindos**, sin llegar a estilo Disney ni apariencia infantil. Pendiente de definir cuánto (ver bosquejos).
 - Estilo visual buscado: Painterly Stylized 3D (referencia: Kena: Bridge of Spirits). Aún en etapa de bosquejos, sin modelado.
+
+## Notas de las pruebas con estudiantes (27 de noviembre de 2026)
+
+Solo anotado. Sin diseño ni código todavía. Fuente: observaciones de quienes probaron el juego publicado, incluido Andrés Janet.
+
+**Estética: techos transparentes**
+- Al entrar a una edificación techada (casa, beneficiadero), el techo debe volverse transparente para ver el interior. Hoy los techos son `hipRoof` fijos en `finca.html` (casa y beneficiadero) y la marquesina de `cosecha.html`.
+
+**Oleadas: ataque**
+- **Power-up:** al matar X enemigos seguidos, el golpe se vuelve un **movimiento circular (giro)** que hace **más daño**.
+- **Clic con el mouse:** debe **dirigir el personaje hacia esa dirección** (hoy solo golpea hacia el puntero; el personaje gira solo si el golpe está listo).
+- **Alcance visible:** el golpe debe tener un **rango de impacto en distancia y apertura**. Hoy existe en `ATK` (`alcance` 1,45 y `angulo` 1,25 rad a cada lado, o sea un arco de ~143°), pero el jugador no lo ve.
+- **Cambiar la imagen del movimiento:** hoy solo se mueve el brazo (`swingArm`). Falta un efecto visible del barrido.
+- **Ampliar a 360°:** el margen del golpe debe poder llegar a 360° (encaja con el giro del power-up).
+- Pendiente de aclarar: si "dirigir el personaje" con el clic es solo **mirar** hacia el puntero o también **caminar** hacia allí.
