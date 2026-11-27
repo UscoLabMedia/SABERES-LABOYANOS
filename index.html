@@ -442,7 +442,8 @@ function drawMap(){
   // rótulos
   const label=(txt,x,y,size=38,col='#3a2414',font='700 %spx "Alegreya SC", serif')=>{ g.font=font.replace('%s',size); g.textAlign='center';
     g.lineWidth=8; g.strokeStyle='rgba(240,228,200,.9)'; g.strokeText(txt,x,y); g.fillStyle=col; g.fillText(txt,x,y); };
-  Object.entries(PLACES).forEach(([k,p])=>{ const [x,y]=w2c(p.x,p.z+({torre:1.3,finca:1.95,taller:1.5}[k]||1.15)); label(p.label,x,y,k==='torre'?34:38); });
+  Object.entries(PLACES).forEach(([k,p])=>{ if (k==='torre'){ const [x,y]=w2c(1.55,.95); label('Torre de',x,y-14,34); label('los saberes',x,y+24,34); return; }
+    const [x,y]=w2c(p.x,p.z+({finca:1.95,taller:1.5}[k]||1.15)); label(p.label,x,y,38); });
   label('Río Guarapas',1420,800,28,'#2f6a78','italic 400 %spx "Alegreya", serif');
   g.save(); g.translate(2000,760); g.rotate(-Math.PI/2.3); label('Río Magdalena',0,0,28,'#2f6a78','italic 400 %spx "Alegreya", serif'); g.restore();
   label('a Neiva',1560,250,26,'#6b5640','italic 400 %spx "Alegreya", serif');
@@ -570,15 +571,14 @@ function buildWorld(){
   }
   // --- Criadero de caballos (plegado)
   { const g=placeGroup('caballos'); const o={tint:LOCK_TINT,target:LOCK_T}; let d=.3;
-    const st=new THREE.Group(); const sw=wallTex('stable');
-    const body=boxMesh(1.7,.55,.6,[paperMat(LOCK_TINT,sw),paperMat(LOCK_TINT,sw),paperMat(LOCK_TINT),paperMat(LOCK_TINT),paperMat(LOCK_TINT,sw),paperMat(LOCK_TINT,sw)]);
-    const roof=hipRoof(2.0,.9,.38,new THREE.MeshStandardMaterial({map:tiles,color:LOCK_TINT,roughness:.9})); roof.position.y=.55; st.add(body,roof);
-    buildAt(g, st, 0, -.5, d, LOCK_T);
-    cardAt(g, cutout(600,140,D.fence()), .32, 0, .75, d+=.05, o);
-    cardAt(g, cutout(300,220,D.horse('#7a4a2a')), .55, -.55, .35, d+=.05, o);
-    cardAt(g, cutout(300,300,D.horse('#d9d2c4',true)), .75, .5, .3, d+=.05, o);
-    cardAt(g, cutout(320,340,D.tree()), .9, 1.2, -.6, d+=.05, o);
-    cardAt(g, cutout(110,140,D.lock()), .35, -1.25, .75, d+=.1);
+    const suelo=boxMesh(2.2,.03,1.6,paperMat('#b79a6a').clone()); suelo.material.color.set(LOCK_TINT).multiply(new THREE.Color('#d8c8a0'));
+    buildAt(g, suelo, 0, 0, d, LOCK_T);
+    [[-.5,-.75,0],[.5,-.75,0],[-.5,.75,0],[.5,.75,0],[-1.05,0,Math.PI/2],[1.05,0,Math.PI/2]]
+      .forEach(([x,z,ry])=>cardAt(g, cutout(600,140,D.fence()), .34, x, z, d+=.02, {...o,ry}));
+    cardAt(g, cutout(300,220,D.horse('#7a4a2a')), .55, -.6, .1, d+=.05, o);
+    cardAt(g, cutout(300,300,D.horse('#d9d2c4',true)), .75, .5, -.15, d+=.05, o);
+    cardAt(g, cutout(320,340,D.tree()), .9, 1.4, -1.0, d+=.05, o);
+    cardAt(g, cutout(110,140,D.lock()), .35, -1.5, .95, d+=.1);
   }
   // --- Tarima de música y danza (plegada)
   { const g=placeGroup('tarima'); const o={tint:LOCK_TINT,target:LOCK_T}; let d=.4;
@@ -592,14 +592,11 @@ function buildWorld(){
   }
   // --- Taller de alfarería (plegado)
   { const g=placeGroup('taller'); const o={tint:LOCK_TINT,target:LOCK_T}; let d=.5;
-    const sh=new THREE.Group(); const aw=wallTex('adobe');
-    const back=boxMesh(1.5,.8,.15,[paperMat(LOCK_TINT),paperMat(LOCK_TINT),paperMat(LOCK_TINT),paperMat(LOCK_TINT),paperMat(LOCK_TINT,aw),paperMat(LOCK_TINT)]);
-    back.position.z=-.5; const roof=boxMesh(1.7,.05,.6,new THREE.MeshStandardMaterial({map:tiles,color:LOCK_TINT,roughness:.9})); roof.position.set(0,.8,-.4); roof.rotation.x=.18;
-    sh.add(back,roof); buildAt(g, sh, 0, 0, d, LOCK_T);
-    cardAt(g, cutout(260,260,D.kiln()), .65, .65, .3, d+=.05, o);
-    cardAt(g, cutout(300,160,D.pots()), .35, -.55, .75, d+=.05, o);
-    cardAt(g, cutout(320,190,D.chiva()), .34, .25, .8, d+=.05, o);
-    cardAt(g, cutout(120,260,D.person({shirt:'#d8c8a0',pants:'#5a4a3a',hat:false})), .58, -.15, .3, d+=.05, o);
+    [['#9bb83a','Pitalito',-.7,-.65],['#3f9bd1','Timaná',.6,-.65],['#e8872b','Laboyos',-.45,.0],['#8a5ac0','Huila',.8,.05]]
+      .forEach(([cab,t,x,z])=>cardAt(g, cutout(360,200,D.chiva(cab,t)), .6, x, z, d+=.04, o));
+    cardAt(g, cutout(260,260,D.kiln()), .6, 1.3, .95, d+=.05, o);
+    cardAt(g, cutout(300,160,D.pots()), .35, -1.0, .85, d+=.05, o);
+        cardAt(g, cutout(120,260,D.person({shirt:'#d8c8a0',pants:'#5a4a3a',hat:false})), .58, -.1, .75, d+=.05, o);
     cardAt(g, cutout(110,140,D.lock()), .35, -1.1, .95, d+=.1);
   }
 }

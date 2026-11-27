@@ -206,14 +206,26 @@ const D = {
       g.fillStyle='rgba(255,240,210,.45)'; g.fillRect(w*(x-s*.2),h*(1-s*.55),w*s*.4,h*s*.05); };
     pot(.2,.8,'#b5652f'); pot(.5,1,'#c4723a'); pot(.8,.7,'#9e5428');
   };},
-  chiva(){ return (g,w,h) => { // chiva de barro: el bus de escalera que se modela en Pitalito
-    g.fillStyle='#f4efe3'; g.fillRect(w*.04,h*.22,w*.92,h*.58);
-    const cols=['#c0262c','#f2c94c','#2f6b8a','#2f8a5a'];
-    cols.forEach((c,i)=>{ g.fillStyle=c; g.fillRect(w*.04,h*(.62+i*.045),w*.92,h*.04); });
-    g.fillStyle='#2a1c11'; for(let i=0;i<5;i++) g.fillRect(w*(.1+i*.17),h*.3,w*.12,h*.22);
-    g.fillStyle='#c0262c'; g.fillRect(w*.04,h*.14,w*.92,h*.08);
-    g.fillStyle='#8a5a32'; [.15,.38,.6].forEach(x=>g.fillRect(w*x,h*.02,w*.16,h*.12));
-    g.fillStyle='#2a1c11'; [.22,.78].forEach(x=>{ g.beginPath(); g.arc(w*x,h*.85,h*.14,0,7); g.fill(); });
+  chiva(cab='#9bb83a', txt='Pitalito'){ return (g,w,h) => { // chiva de barro de Pitalito: corta, 3 ventanas laterales + la del conductor, carga de cajas de colores
+    const R=(x,y,a,b,r,c)=>{ g.fillStyle=c; g.beginPath(); g.roundRect(w*x,h*y,w*a,h*b,Math.min(w,h)*r); g.fill(); };
+    g.fillStyle='rgba(0,0,0,.18)'; g.beginPath(); g.ellipse(w*.5,h*.94,w*.44,h*.04,0,0,7); g.fill();
+    // carga del techo: cajas y bultos cuadrados de varios tamaños y colores
+    [['#2f6bd1',.08,.1,.12,.15],['#d83a2a',.21,.14,.09,.11],['#f2b21c',.31,.06,.13,.19],['#3f8a4a',.45,.12,.1,.13],['#f08aa8',.56,.08,.09,.17],['#8a5ac0',.66,.15,.08,.1],['#e8872b',.18,.04,.08,.1]]
+      .forEach(([c,x,y,a,b])=>{ R(x,y,a,b,.012,c); g.strokeStyle='rgba(60,30,10,.55)'; g.lineWidth=1.6; g.beginPath(); g.roundRect(w*x,h*y,w*a,h*b,3); g.stroke(); });
+    g.strokeStyle='#d8d8d8'; g.lineWidth=2; g.strokeRect(w*.06,h*.22,w*.7,h*.05);
+    // techo blanco
+    R(.03,.25,.74,.1,.03,'#fbf7ee'); R(.05,.265,.2,.065,.01,'#f2b21c');
+    g.fillStyle='#1b1b1b'; g.textAlign='center'; g.font=`700 ${h*.05}px "Alegreya SC", serif`; g.fillText('COLOMBIA',w*.15,h*.318); g.font=`italic 700 ${h*.065}px "Alegreya", serif`; g.fillText(txt,w*.5,h*.325);
+    // cuerpo rojo con franjas
+    R(.04,.35,.72,.45,.03,'#c0262c'); g.fillStyle='#f2b21c'; g.fillRect(w*.04,h*.64,w*.72,h*.07); g.fillStyle='#2f6bd1'; g.fillRect(w*.04,h*.71,w*.72,h*.035);
+    // tres ventanas laterales
+    g.fillStyle='#3a1a14'; [.09,.27,.45].forEach(x=>{ g.beginPath(); g.roundRect(w*x,h*.41,w*.14,h*.17,4); g.fill(); });
+    // cabina (ventana del conductor) y trompa corta
+    R(.7,.38,.17,.42,.03,'#9d1a22'); R(.73,.42,.11,.17,.012,'#2a1a14');
+    R(.8,.56,.17,.24,.06,cab); R(.8,.5,.13,.08,.04,'#c0262c');
+    R(.93,.7,.06,.07,.02,'#fbf7ee'); R(.94,.6,.04,.09,.01,'#2a1a14');
+    // ruedas
+    [[.22,.82,.12],[.82,.82,.11]].forEach(([x,y,r])=>{ g.fillStyle='#1b1b1b'; g.beginPath(); g.arc(w*x,h*y,h*r,0,7); g.fill(); g.fillStyle='#c8c8c8'; g.beginPath(); g.arc(w*x,h*y,h*r*.42,0,7); g.fill(); });
   };},
   lock(){ return (g,w,h) => {
     g.fillStyle='#efe3c6'; g.fillRect(0,h*.15,w,h*.85); g.strokeStyle='#2a1c11'; g.lineWidth=w*.07;
