@@ -23,7 +23,8 @@ function pantallaLogin(msg){
     ${campo('inPass', 'Contraseña', 'password', 'autocomplete="current-password"')}
     <p class="in-err" id="inErr" role="alert">${esc(msg || '')}</p>
     <button class="btn solid" id="inGo">Entrar</button>
-    <p class="in-alt">¿No tienes usuario? <button type="button" class="in-link" id="inReg">Crear usuario</button></p></form>`;
+    <p class="in-alt">¿No tienes usuario? <button type="button" class="in-link" id="inReg">Crear usuario</button></p>
+    <p class="in-ayuda" id="inOlvide">¿Olvidaste tu contraseña? No se puede recuperar sola: pide ayuda a tu docente.</p></form>`;
   $('#inUser').focus(); $('#inReg').onclick = () => pantallaRegistro();
   paso.querySelector('form').onsubmit = async e => { e.preventDefault(); const b = $('#inGo'), err = $('#inErr'); err.textContent = ''; ocupado(b, 'Entrando…');
     try { await C.entrar($('#inUser').value, $('#inPass').value); await pantallaPartidas(); } catch (x) { err.textContent = x.message; libre(b); } };
