@@ -4,7 +4,7 @@ Un arreglo, una línea: **síntoma → causa → arreglo → prueba**. Anota aqu
 
 | Fecha | Síntoma | Arreglo | Prueba |
 |---|---|---|---|
-| 28 nov 2026 | La fabricación era una cadena única con leña, lluvia y toldo; la red no llevaba todo el estado nuevo | Pedidos con receta por figura; `snapshot` lleva clientes, repisa, estaciones y piezas en mano; `contenido2` prohíbe leña, toldo y lluvia | `tests/alfareria_red.js`, `tests/contenido2.js` |
+| 28 nov 2026 | Aviso 5: la fabricación era una cadena única con leña, lluvia y toldo | Fabricación nueva por pedidos con receta (clientes, 4 figuras, taller en 3 columnas). Cierre: prueba de ida y vuelta de la red (`snapshot`→`applySnapshot`) y regla en `contenido2` que prohíbe leña, toldo y lluvia | `tests/alfareria_red.js`, `tests/contenido2.js` |
 | 28 nov 2026 | Inicio y trivia no tenían pantalla completa en horizontal; el botón chocaba con el título y las ayudas | Botón en la esquina inferior derecha en esas pantallas; `usabilidad.js` ahora exige el botón en horizontal | `tests/usabilidad.js` |
 | 28 nov 2026 | Celular: la finca y el taller no tenían joystick; en horizontal los cuadros tapaban la pantalla; no había pantalla completa | Joystick táctil, cuadros compactos (`@media` horizontal), botón ⛶ y primer toque en horizontal | `tests/finca_celular.js` |
 | 28 nov 2026 | La gorra amarilla de ella parecía pelo rubio; la elección decía «muñeco/muñeca» | Ella empieza sin gorra; se elige con dos retratos sin etiqueta al crear la partida | `tests/personaje.js` |
