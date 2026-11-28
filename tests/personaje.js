@@ -26,4 +26,16 @@ const gorra=fem=>`(()=>{ let n=0; Muneco.jugador(0,${fem}).traverse(o=>{ if (o.g
   T.ok(posts.length===1&&posts[0].datos.avatar==='muneca','la partida nueva guarda el personaje '+JSON.stringify(posts[0]&&posts[0].datos));
   T.ok(await p.evaluate(()=>Guardado.perfil().avatar)==='muneca','al entrar, el perfil tiene el elegido');
   T.ok(p.errs.length===0,'sin errores '+JSON.stringify(p.errs)); await p.context().close(); }
+ { // 3. cambiar en Mi progreso; la finca ya no pregunta; finca y trivia usan el de la partida
+  const espia=c=>c.addInitScript(()=>{ let M; Object.defineProperty(window,'Muneco',{configurable:true,get:()=>M,set(v){ M=v; const j=v.jugador; v.jugador=(e,f)=>{ (window.__fems=window.__fems||[]).push(!!f); return j(e,f); }; }}); });
+  const {c,p}=await T.abrir('finca.html#prueba',{},espia); await p.waitForFunction(()=>window.__f,null,{timeout:30000});
+  T.ok(await p.locator('[data-av],.avatar-pick').count()===0,'la finca ya no tiene selector'); T.ok(!PROHIBIDAS.test(await p.textContent('body')),'la finca no dice muñeco/muñeca');
+  T.ok(await p.evaluate(()=>window.__fems.length>0&&!window.__fems.includes(true)),'partida sin personaje guardado: pelo corto, sin errores');
+  const q=await c.newPage(); q.errs=[]; q.on('pageerror',e=>q.errs.push(e.message)); await q.goto(p.url().replace(/finca\.html.*/,'index.html#prueba')); await q.waitForFunction(()=>window.Muneco&&window.Guardado);
+  await q.evaluate(()=>document.querySelector('[data-act=perfil]').click()); await q.waitForSelector('#pfPj [data-pj]',{state:'visible'});
+  await q.click('#pfPj [data-pj=muneca]'); T.ok(await q.evaluate(()=>Guardado.perfil().avatar)==='muneca','Mi progreso cambia el personaje');
+  T.ok(await q.getAttribute('#pfPj [data-pj=muneca]','aria-pressed')==='true','Mi progreso marca el actual');
+  for (const pg of ['finca','trivia']){ const r=await c.newPage(); r.errs=[]; r.on('pageerror',e=>r.errs.push(e.message)); await r.goto(p.url().replace(/finca\.html.*/,pg+'.html#prueba')); await r.waitForFunction(()=>window.__fems&&window.__fems.length,null,{timeout:30000});
+    T.ok(await r.evaluate(()=>window.__fems[0]===true),pg+' usa el personaje de la partida'); T.ok(r.errs.length===0,pg+' sin errores '+JSON.stringify(r.errs)); }
+  T.ok(p.errs.length===0&&q.errs.length===0,'sin errores '+JSON.stringify(p.errs.concat(q.errs))); await c.close(); }
  await T.fin(); })();

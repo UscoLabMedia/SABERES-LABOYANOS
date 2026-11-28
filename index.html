@@ -303,6 +303,7 @@ kbd{font-family:var(--f-ui);font-weight:700;font-size:.8rem;border:1px solid var
     <div class="tabpanel" style="padding-top:.4rem">
       <div class="row"><span class="lbl">Usuario</span><span id="pfUser"></span></div>
       <div class="row"><span class="lbl">Partida</span><span id="pfPartida"></span></div>
+      <div class="row" style="display:block"><span class="lbl" id="pfPjT">Personaje</span><div id="pfPj"></div></div>
       <div class="row"><span class="lbl">En la nube</span><span id="pfCloud"></span></div>
     </div>
     <div class="sheet-actions"><button class="btn" id="pfCambiar">Cambiar de partida</button><button class="btn solid" id="pfSalir">Cerrar sesión</button></div>
@@ -762,6 +763,7 @@ function syncProgress(){ PROG=Guardado.progreso(); const done=LEVELS.filter(l=>P
 const CLOUD={local:'Desactivada: el progreso queda solo en este navegador.',sincronizado:'Sincronizado.',pendiente:'Sin internet: se sincroniza al volver la conexión.',error:'No se pudo sincronizar. Se intentará de nuevo.'};
 function syncProfile(){ const p=Guardado.perfil(); PROG=Guardado.progreso();
   $('#pfTitle').textContent=p.nombre; $('#whoHint').textContent=p.nombre; $('#pfUser').textContent=p.nombre; $('#pfPartida').textContent=p.partida;
+  Muneco.selector($('#pfPj'),p.avatar,v=>Guardado.actualizarPerfil({avatar:v})); $('#pfPj [role=group]').setAttribute('aria-labelledby','pfPjT');
   const st=[PROG.nivel1?'Nivel 1 superado':'Nivel 1 en curso', PROG.cosecha!=null?`cosecha ${PROG.cosecha}★`:null, PROG.oleadas!=null?`defensa ${PROG.oleadas}★`:null, PROG.trivia1!=null?`trivia ${PROG.trivia1}/5`:null,
     PROG.nivel1?(PROG.nivel2?'Nivel 2 superado':'Nivel 2 en curso'):null, PROG.fabrica!=null?`fabricación ${PROG.fabrica}★`:null, PROG.carrera!=null?`carrera ${PROG.carrera}★`:null, PROG.trivia2!=null?`trivia del barro ${PROG.trivia2}/5`:null].filter(Boolean);
   $('#pfSummary').textContent=st.join(' · ')+'.';

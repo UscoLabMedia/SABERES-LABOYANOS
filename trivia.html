@@ -182,7 +182,7 @@ let signM=null; const dibujaCartel=txt=>{ const g=sign.getContext('2d'); g.fillS
 [-2.6,2.6].forEach(x=>{ const m=cardMesh(cutout(260,300,D.coffee()),1.1); m.position.set(x,0,-.6); scene.add(m); });
 // presentador y jugador
 const host=Muneco.npc('caficultor'); host.position.set(1.15,0,.2); host.rotation.y=-.45; scene.add(host);
-const player=Muneco.jugador(PROG.etapa||0, S.avatar==='muneca'); player.position.set(-1.15,0,.3); player.rotation.y=.45; scene.add(player);
+const player=Muneco.jugador(PROG.etapa||0, Guardado.perfil().avatar==='muneca'); player.position.set(-1.15,0,.3); player.rotation.y=.45; scene.add(player);
 const podium=boxMesh(.7,.5,.5,paperMat('#c8101e')); podium.position.set(-1.15,0,.85); scene.add(podium);
 // confeti de papel
 const confetti=[]; const CC=['#c8101e','#f2c94c','#2f6b8a','#2f8a5a','#f4efe3'];

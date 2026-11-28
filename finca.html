@@ -83,9 +83,6 @@ body{background:var(--desk);color:var(--on-desk);font-family:var(--f-ui);overflo
 .notebook li.missing{border-left-color:#bba987;color:var(--ink-soft)}
 .notebook h3{margin:0 0 .25rem;font-family:var(--f-display);font-size:1.05rem}
 .notebook p{margin:0;font-size:1rem}
-.avatar-pick{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-top:.4rem;font-weight:700}
-.avatar-pick button{font-family:var(--f-display);font-weight:700;font-size:1rem;padding:.45rem 1rem;border:1.5px solid var(--ink);background:transparent;color:var(--ink);cursor:pointer}
-.avatar-pick button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
 .games{display:grid;grid-template-columns:repeat(auto-fit,minmax(10rem,1fr));gap:.5rem;margin-top:.8rem}
 .games a{display:block;text-decoration:none;color:var(--ink);background:rgba(42,28,17,.06);border:1.5px solid rgba(42,28,17,.3);padding:.6rem .75rem}
 .games a:hover,.games a:focus-visible{border-color:var(--ink);background:rgba(42,28,17,.1)}
@@ -148,7 +145,6 @@ body{background:var(--desk);color:var(--on-desk);font-family:var(--f-ui);overflo
     <p id="introText">Cargando la finca…</p>
     <p style="font-size:.95rem;color:var(--ink-soft)" id="introKeys"></p>
     <div id="introGames" hidden><p style="margin:.6rem 0 0;font-weight:700">Ya reuniste las 3 pistas. Elige a qué jugar:</p><div class="games" id="introGameList"></div></div>
-    <div class="avatar-pick" role="group" aria-label="Elige tu personaje"><span>Juego con:</span><button data-av="muneco">Muñeco</button><button data-av="muneca">Muñeca</button></div>
     <div class="actions"><a class="btn" href="index.html#abierto">Volver al libro</a><button class="btn solid" id="startBtn" disabled>Empezar</button></div>
   </section>
 </div>
@@ -428,14 +424,13 @@ const LOOK = {
 };
 const portraits={}, NPC_KIND={arnulfo:'caficultor', rosa:'recolectora', lucia:'catadora', eliecer:'alfarero', marlene:'pintora', yeison:'aprendiz'};
 let PROG=Guardado.progreso();
-const buildFor=key=> key==='player' ? Muneco.jugador(PROG.etapa||0, S.avatar==='muneca') : Muneco.npc(NPC_KIND[key]);
+const buildFor=key=> key==='player' ? Muneco.jugador(PROG.etapa||0, Guardado.perfil().avatar==='muneca') : Muneco.npc(NPC_KIND[key]);
 function makeChar(key,x,z){ portraits[key]=Muneco.retrato(()=>buildFor(key));
   const holder=new THREE.Group(); holder.position.set(x,0,z); const model=buildFor(key); holder.add(model); scene.add(holder);
   const hit=new THREE.Mesh(new THREE.CylinderGeometry(.45,.45,1.5,8), new THREE.MeshBasicMaterial({visible:false})); hit.position.y=.75; holder.add(hit);
   return {holder,model,hit,x,z,face:0}; }
-function setAvatar(av){ S.avatar=av; save(); Guardado.actualizarPerfil({avatar:av}); $$('[data-av]').forEach(b=>b.setAttribute('aria-pressed', b.dataset.av===av));
+function setAvatar(av){ S.avatar=av; save(); Guardado.actualizarPerfil({avatar:av});
   if (player){ player.holder.remove(player.model); player.model=buildFor('player'); player.holder.add(player.model); portraits.player=Muneco.retrato(()=>buildFor('player')); } }
-$$('[data-av]').forEach(b=>b.addEventListener('click',()=>{ setAvatar(b.dataset.av); Sound.tick(); }));
 
 let LEVEL=null, player, npcs=[], capsules=[], collected=new Set(), finished=false;
 const keys=new Set(); let moveTarget=null, pendingTalk=null, walkT=0, stepT=0;
