@@ -4,6 +4,7 @@ Un arreglo, una línea: **síntoma → causa → arreglo → prueba**. Anota aqu
 
 | Fecha | Síntoma | Arreglo | Prueba |
 |---|---|---|---|
+| 28 nov 2026 | Celular: la finca y el taller no tenían joystick; en horizontal los cuadros tapaban la pantalla; no había pantalla completa | Joystick táctil, cuadros compactos (`@media` horizontal), botón ⛶ y primer toque en horizontal | `tests/finca_celular.js` |
 | 28 nov 2026 | La gorra amarilla de ella parecía pelo rubio; la elección decía «muñeco/muñeca» | Ella empieza sin gorra; se elige con dos retratos sin etiqueta al crear la partida | `tests/personaje.js` |
 | 28 nov 2026 | Celular en vertical: los juegos se ven mal y nadie avisa | Aviso «Gira el celular» (no bloquea; se puede cerrar) | `tests/girar.js` |
 | 28 nov 2026 | No se sabía con qué usuario se jugaba | El usuario aparece bajo el jugador y en los diálogos de finca y taller | `tests/nombre.js` |

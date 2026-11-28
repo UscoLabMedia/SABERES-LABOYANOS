@@ -78,7 +78,7 @@ No están hechos; cada uno necesita confirmar el alcance antes de programarse.
    - **Poco espacio para pasar** entre estaciones: ampliar el taller o separar las estaciones.
    - **No se sabe qué figura fabricar:** llega un **cliente que pide la figura**; luego aparece una **receta** (pasos en orden) para saber cómo hacerla. Es el rediseño por pedidos del punto 5.
    - Antes de construir: boceto PNG y datos de cada figura de `docs/nivel2-fuentes.md`.
-4b. **Notas del Nivel 2 (28 nov, solo anotadas, sin tocar código):**
+4b. ~~**Notas del Nivel 2**~~ **Hechas (rama, 28 nov):** pantalla completa, cuadros del taller compactos en horizontal y joystick. Prueba `tests/finca_celular.js`. Texto original: **Notas del Nivel 2 (28 nov):**
    - **a. Pantalla completa en horizontal:** al girar el celular a horizontal no se activa la pantalla completa. Esperado: que se active sola o con un botón visible.
    - **b. Los cuadros de El Taller tapan demasiado en horizontal:** los diálogos/paneles de `finca.html?nivel=2` cubren gran parte de la pantalla. Compactarlos (como en los minijuegos).
    - **c. El personaje no se mueve con joystick:** es el Aviso 4 (arriba, punto 4), también en El Taller.

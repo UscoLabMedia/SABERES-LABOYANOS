@@ -285,7 +285,26 @@ function avisoGirar(){
   document.getElementById('girarOk').addEventListener('click',()=>{ cerrado=true; try { sessionStorage.setItem('laboyos.girar','1'); } catch(x){} act(); });
   const act=()=>{ e.hidden=cerrado || innerWidth>innerHeight; };
   addEventListener('resize',act); addEventListener('orientationchange',act); act();
+  pantallaCompleta();
 }
 
-window.Papel = { avisoGirar, DEFAULTS, S, save, Sound, mk, rnd, FIBER, fiber, cutout, texFrom, card, shadowables, paperMat, boxMesh, D, tileTex, wallTex, hipRoof };
+/* Pantalla completa en el celular: botón ⛶ y, en horizontal, el primer toque la pide sola (el navegador solo la concede tras un toque).
+   No hay en PC, ni donde el navegador no la permite (p. ej. iPhone). Si el usuario sale de la pantalla completa, no se vuelve a pedir sola. */
+function pantallaCompleta(){
+  const raiz=document.documentElement;
+  if (!matchMedia('(pointer: coarse)').matches || document.getElementById('fsBtn') || !raiz.requestFullscreen) return;
+  const st=document.createElement('style'); st.textContent='#fsBtn{position:fixed;left:50%;top:max(6px,env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:55;width:44px;height:36px;border-radius:10px;border:1px solid rgba(242,231,208,.3);background:rgba(27,18,12,.6);color:#f2e7d0;display:grid;place-items:center;cursor:pointer;padding:0}#fsBtn svg{width:20px;height:20px}#fsBtn[hidden]{display:none}';
+  document.head.appendChild(st);
+  const b=document.createElement('button'); b.id='fsBtn'; b.type='button'; b.setAttribute('aria-label','Pantalla completa'); b.hidden=true;
+  b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>'; document.body.appendChild(b);
+  let rechazada=false; const pide=()=>{ try { const r=raiz.requestFullscreen(); if (r&&r.catch) r.catch(()=>{ rechazada=true; }); } catch(e){ rechazada=true; } };
+  const horizontal=()=>innerWidth>innerHeight, activa=()=>!!document.fullscreenElement;
+  const act=()=>{ b.hidden=activa()||!horizontal(); };
+  b.addEventListener('click',()=>{ if (activa()) document.exitFullscreen&&document.exitFullscreen(); else pide(); });
+  addEventListener('pointerup',e=>{ if (e.pointerType==='mouse'||rechazada||activa()||!horizontal()||e.target.closest&&e.target.closest('a')) return; try { if (sessionStorage.getItem('laboyos.fsSalio')==='1') return; } catch(x){} pide(); },true);
+  document.addEventListener('fullscreenchange',()=>{ if (!activa()){ try { sessionStorage.setItem('laboyos.fsSalio','1'); } catch(x){} } act(); });
+  addEventListener('resize',act); addEventListener('orientationchange',act); act();
+}
+
+window.Papel = { pantallaCompleta, avisoGirar, DEFAULTS, S, save, Sound, mk, rnd, FIBER, fiber, cutout, texFrom, card, shadowables, paperMat, boxMesh, D, tileTex, wallTex, hipRoof };
 })();

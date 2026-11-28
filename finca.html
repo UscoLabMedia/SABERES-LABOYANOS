@@ -53,6 +53,11 @@ body{background:var(--desk);color:var(--on-desk);font-family:var(--f-ui);overflo
   padding:.45rem .9rem;box-shadow:0 4px 0 #b9a47a,0 10px 20px rgba(0,0,0,.4);white-space:nowrap;z-index:5}
 .talk kbd{font-family:var(--f-ui);font-size:.75rem;border:1px solid var(--ink-soft);border-bottom-width:2px;padding:0 .3rem;margin-left:.3rem}
 
+/* Joystick (solo pantallas táctiles) */
+.joy{position:fixed;left:max(18px,env(safe-area-inset-left,0px));bottom:max(18px,env(safe-area-inset-bottom,0px));width:120px;height:120px;border-radius:50%;background:rgba(239,227,198,.18);border:2px solid rgba(239,227,198,.4);touch-action:none;z-index:6;display:none}
+.joy i{position:absolute;left:50%;top:50%;width:50px;height:50px;margin:-25px 0 0 -25px;border-radius:50%;background:var(--paper)}
+.touch .joy{display:block}
+.touch .hint{margin-left:150px}
 /* Diálogo */
 .dialog{position:fixed;left:50%;bottom:max(16px, env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:min(46rem,calc(100% - 32px));z-index:10;
   background:var(--paper);color:var(--ink);box-shadow:0 20px 50px rgba(0,0,0,.55);display:grid;grid-template-columns:auto minmax(0,1fr);gap:1rem;padding:1rem 1.2rem;cursor:pointer;
@@ -99,6 +104,15 @@ body{background:var(--desk);color:var(--on-desk);font-family:var(--f-ui);overflo
   .dialog img{display:none}
   .hint{font-size:.82rem}
 }
+/* Celular en horizontal (poca altura): cuadros chicos para ver el escenario; el diálogo va a la derecha y deja libre el joystick */
+@media (orientation:landscape) and (max-height:520px){
+  .level{padding:.3rem .6rem .35rem;max-width:15.5rem}
+  .level .kicker{font-size:.62rem}.level h1{font-size:1.15rem;margin:0 0 .15rem}.level ul{font-size:.72rem;gap:0}
+  .hint{font-size:.75rem;padding:.25rem .55rem}
+  .dialog{left:auto;right:max(16px,env(safe-area-inset-right,0px));transform:none;width:min(34rem,calc(100% - 190px));grid-template-columns:minmax(0,1fr);gap:.2rem;padding:.5rem .8rem;bottom:max(10px,env(safe-area-inset-bottom,0px))}
+  .dialog img{display:none}
+  .dialog .who{font-size:1rem}.dialog p.line{font-size:1rem;line-height:1.3;min-height:0;margin:.15rem 0 .25rem}.dialog .next{font-size:.85rem}
+}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -137,6 +151,8 @@ body{background:var(--desk);color:var(--on-desk);font-family:var(--f-ui);overflo
     <button class="next" id="dlgNext">Continuar ▸</button>
   </div>
 </section>
+
+<div class="joy" id="joy" aria-hidden="true"><i></i></div>
 
 <div class="scrim" id="intro">
   <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="introTitle">
@@ -433,7 +449,7 @@ function setAvatar(av){ S.avatar=av; save(); Guardado.actualizarPerfil({avatar:a
   if (player){ player.holder.remove(player.model); player.model=buildFor('player'); player.holder.add(player.model); portraits.player=Muneco.retrato(()=>buildFor('player')); } }
 
 let LEVEL=null, player, npcs=[], capsules=[], collected=new Set(), finished=false;
-const keys=new Set(); let moveTarget=null, pendingTalk=null, walkT=0, stepT=0;
+const keys=new Set(), joyV={x:0,z:0}; let moveTarget=null, pendingTalk=null, walkT=0, stepT=0;
 
 /* ---------------- Diálogo ---------------- */
 const dlg={open:false,npc:null,lines:[],i:0,typing:null,shown:''};
@@ -522,6 +538,12 @@ canvas.addEventListener('pointerdown',e=>{
   if (hitN){ const n=npcs.find(q=>q.hit===hitN.object); moveTarget=new THREE.Vector2(n.x,n.z+1.1); pendingTalk=n; hideHint(); return; }
   const h=ray.intersectObject(ground,false)[0]; if (h){ moveTarget=new THREE.Vector2(h.point.x,h.point.z); pendingTalk=null; hideHint(); }
 });
+Papel.pantallaCompleta();
+if (touch){ document.body.classList.add('touch'); const joy=$('#joy'), knob=joy.querySelector('i'); let jid=null, jx=0, jy=0;   // joystick: mover al personaje con el dedo
+  const jmove=e=>{ if (e.pointerId!==jid) return; let dx=e.clientX-jx, dy=e.clientY-jy; const d=Math.hypot(dx,dy), m=45; if (d>m){ dx*=m/d; dy*=m/d; } knob.style.transform=`translate(${dx}px,${dy}px)`; joyV.x=dx/m; joyV.z=dy/m; };
+  joy.addEventListener('pointerdown',e=>{ e.preventDefault(); jid=e.pointerId; const r=joy.getBoundingClientRect(); jx=r.left+r.width/2; jy=r.top+r.height/2; joy.setPointerCapture(jid); moveTarget=null; pendingTalk=null; hideHint(); jmove(e); });
+  joy.addEventListener('pointermove',jmove);
+  const jup=e=>{ if (e.pointerId!==jid) return; jid=null; knob.style.transform=''; joyV.x=joyV.z=0; }; joy.addEventListener('pointerup',jup); joy.addEventListener('pointercancel',jup); }
 $('#talk').addEventListener('click',()=>{ const n=nearNPC(); if (n) talkTo(n); });
 let hintHidden=false; function hideHint(){ if (hintHidden) return; hintHidden=true; setTimeout(()=>$('#hint').style.opacity=0,2500); }
 
@@ -543,11 +565,12 @@ function updatePlayer(dt){
   let vx=0, vz=0;
   if (keys.has('w')||keys.has('arrowup')) vz-=1; if (keys.has('s')||keys.has('arrowdown')) vz+=1;
   if (keys.has('a')||keys.has('arrowleft')) vx-=1; if (keys.has('d')||keys.has('arrowright')) vx+=1;
+  if (Math.hypot(joyV.x,joyV.z)>.2 && !dlg.open){ vx=joyV.x; vz=joyV.z; moveTarget=null; }
   if (moveTarget){ const dx=moveTarget.x-player.x, dz=moveTarget.y-player.z, d=Math.hypot(dx,dz);
     if (d<.15 || (pendingTalk && Math.hypot(pendingTalk.x-player.x,pendingTalk.z-player.z)<1.6)){ moveTarget=null; if (pendingTalk){ const n=pendingTalk; pendingTalk=null; talkTo(n); } }
     else { vx=dx/d; vz=dz/d; } }
-  const len=Math.hypot(vx,vz); const moving=len>0;
-  if (moving){ const ox=player.x, oz=player.z; player.x+=vx/len*SPEED*dt; player.z+=vz/len*SPEED*dt; collide(player);
+  const len=Math.hypot(vx,vz); const moving=len>0; const fuerza=Math.min(1,len);   // el joystick: más lejos, más rápido
+  if (moving){ const ox=player.x, oz=player.z; player.x+=vx/len*SPEED*fuerza*dt; player.z+=vz/len*SPEED*fuerza*dt; collide(player);
     if (moveTarget && Math.hypot(player.x-ox,player.z-oz)<SPEED*dt*.15) moveTarget=null; // atascado
     player.face=Math.atan2(vx,vz);
     walkT+=dt*11; stepT+=dt; if (stepT>.3){ stepT=0; Sound.footstep(); } }
@@ -606,8 +629,8 @@ $('#startBtn').addEventListener('click',start);
 
 /* ---------------- Arranque ---------------- */
 async function boot(){
-  $('#hint').innerHTML = touch ? 'Toca el suelo para caminar · toca a una persona para hablar' : 'Camina con <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> o las flechas, o haz clic en el suelo · <kbd>E</kbd> para hablar';
-  $('#introKeys').textContent = touch ? 'Toca el suelo para caminar y toca a cada persona para hablar con ella.' : 'Camina con W A S D o las flechas (o haz clic en el suelo). Pulsa E para hablar.';
+  $('#hint').innerHTML = touch ? 'Camina con el joystick o toca el suelo · toca a una persona para hablar' : 'Camina con <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> o las flechas, o haz clic en el suelo · <kbd>E</kbd> para hablar';
+  $('#introKeys').textContent = touch ? 'Camina con el joystick (o toca el suelo) y toca a cada persona para hablar con ella.' : 'Camina con W A S D o las flechas (o haz clic en el suelo). Pulsa E para hablar.';
   try { const r=await fetch(`data/nivel${NIV}.json`); if (!r.ok) throw 0; LEVEL=await r.json(); if (!LEVEL.npcs||LEVEL.npcs.length!==3||!LEVEL.pistas) throw 0; }
   catch(e){ fail(`No se pudo cargar el contenido del nivel (data/nivel${NIV}.json). Si abriste el archivo con doble clic, ábrelo desde un servidor web o desde GitHub Pages.`); return; }
   document.title=`${LEVEL.escenario} · Nivel ${NIV}`; $('#hudKicker').textContent=$('#introKicker').textContent=$('#nbKicker').textContent=LEVEL.kicker||`Nivel ${NIV}`; $('#hudTitle').textContent=$('#introTitle').textContent=LEVEL.escenario; canvas.setAttribute('aria-label',LEVEL.aria||LEVEL.escenario);
