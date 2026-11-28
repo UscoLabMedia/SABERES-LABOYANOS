@@ -69,7 +69,7 @@ Solo anotado. Sin diseño ni código todavía. Fuente: observaciones de quienes 
 
 No están hechos; cada uno necesita confirmar el alcance antes de programarse.
 
-1. **Nombre bajo el jugador = el usuario.** El nombre que se escribe al entrar (usuario) debe ser el que aparece bajo el personaje en todos los juegos. Revisar dónde sale otro nombre (en la finca los diálogos usan `S.name` o «visitante»; los minijuegos usan `Guardado.perfil().nombre`).
+1. ~~**Nombre bajo el jugador = el usuario.**~~ **Hecho (28 nov):** la finca y el taller muestran el usuario bajo el jugador y lo usan en los diálogos (antes decían «visitante»); los minijuegos ya lo usaban; prueba `tests/nombre.js`. Antes: **Nombre bajo el jugador = el usuario.** El nombre que se escribe al entrar (usuario) debe ser el que aparece bajo el personaje en todos los juegos. Revisar dónde sale otro nombre (en la finca los diálogos usan `S.name` o «visitante»; los minijuegos usan `Guardado.perfil().nombre`).
 2. ~~**Finca en PC: montañas que tiemblan.**~~ **Hecho (rama, 27 nov):** cada montaña va a distinta profundidad; prueba `tests/montes.js`. Antes: **Finca en PC: montañas que tiemblan.** Las montañas del fondo se superponen, se ven sus márgenes blancos y parpadean (probable z-fighting entre tarjetas a la misma profundidad). Separarlas en profundidad o quitar el borde donde se solapan.
 3. **Elegir personaje al crear la partida**, no en la finca. Pensar opciones distintas a «muñeco o muñeca» (por ejemplo varios personajes o apariencias sin etiqueta de género). Se guarda en la partida.
 4. **Celular: moverse con joystick** también donde hoy se toca el suelo (la finca y la exploración del taller), igual que en los minijuegos.

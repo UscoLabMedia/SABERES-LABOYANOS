@@ -48,6 +48,7 @@ body{background:var(--desk);color:var(--on-desk);font-family:var(--f-ui);overflo
 .hint{grid-column:1 / -1;grid-row:3;justify-self:start;align-self:end;background:rgba(27,18,12,.62);padding:.45rem .8rem;font-size:.92rem;color:#dccdae;max-width:100%;transition:opacity .5s}
 .hint kbd{font-family:var(--f-ui);font-weight:700;font-size:.8rem;border:1px solid #a8977a;border-bottom-width:2px;padding:0 .3rem;color:var(--paper)}
 
+.pl{position:fixed;left:0;top:0;transform:translate(-50%,6px);font-weight:700;font-size:.75rem;padding:.1rem .45rem;color:#fff;background:#c8101e;white-space:nowrap;pointer-events:none;z-index:4}
 .talk{position:fixed;left:0;top:0;transform:translate(-50%,-100%);font-family:var(--f-display);font-weight:700;font-size:1rem;background:var(--paper);color:var(--ink);border:0;cursor:pointer;
   padding:.45rem .9rem;box-shadow:0 4px 0 #b9a47a,0 10px 20px rgba(0,0,0,.4);white-space:nowrap;z-index:5}
 .talk kbd{font-family:var(--f-ui);font-size:.75rem;border:1px solid var(--ink-soft);border-bottom-width:2px;padding:0 .3rem;margin-left:.3rem}
@@ -129,6 +130,7 @@ body{background:var(--desk);color:var(--on-desk);font-family:var(--f-ui);overflo
 </div>
 
 <button class="talk" id="talk" hidden></button>
+<div class="pl" id="nombreJ" hidden></div>
 
 <section class="dialog" id="dialog" hidden aria-live="polite">
   <img id="dlgImg" alt="">
@@ -440,7 +442,8 @@ const keys=new Set(); let moveTarget=null, pendingTalk=null, walkT=0, stepT=0;
 
 /* ---------------- Diálogo ---------------- */
 const dlg={open:false,npc:null,lines:[],i:0,typing:null,shown:''};
-const fill=t=>t.replaceAll('{nombre}', S.name?.trim() || 'visitante');
+const nombreJ=()=>Guardado.perfil().nombre||'visitante';   // el usuario con que se entró
+const fill=t=>t.replaceAll('{nombre}', nombreJ());
 function talkTo(n){
   const done=collected.has(n.data.pista) || capsules.some(c=>c.pista===n.data.pista);
   dlg.open=true; dlg.npc=n; dlg.lines=done?[n.data.saludo]:n.data.dialogo; dlg.i=0; dlg.first=!done;
@@ -583,6 +586,8 @@ function frame(){
   npcs.forEach(n=>{ if (player && Math.hypot(player.x-n.x,player.z-n.z)<4) n.face=Math.atan2(player.x-n.x,player.z-n.z); turnTo(n.holder,n.face,dt); Muneco.animar(n.model,dt,false,S.motion); });
   capsules.forEach(c=>{ const k=Math.min(1,(t-c.born)*2.5); c.holder.scale.setScalar(S.motion?1:Math.max(.01,k)); c.mesh.position.y=.25+Math.sin(t*3)*.08; c.ring.material.opacity=.35+Math.sin(t*4)*.25;
     if (player && Math.hypot(c.x-player.x,c.z-player.z)<.8) collect(c); });
+  // nombre del usuario bajo el jugador
+  { const nj=$('#nombreJ'); if (player){ tmp.set(player.x,0,player.z+.35).project(camera); nj.style.left=((tmp.x+1)/2*innerWidth)+'px'; nj.style.top=((1-tmp.y)/2*innerHeight)+'px'; if (nj.textContent!==nombreJ()) nj.textContent=nombreJ(); nj.hidden=!!(finished&&storm>.9); } }
   // aviso para hablar
   const n=player && !dlg.open && $$('.scrim').every(s=>s.hidden) ? nearNPC() : null, tb=$('#talk');
   if (n){ tmp.set(n.x,1.65,n.z).project(camera); tb.style.left=((tmp.x+1)/2*innerWidth)+'px'; tb.style.top=((1-tmp.y)/2*innerHeight)+'px';
