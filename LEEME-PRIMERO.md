@@ -4,6 +4,8 @@ Entrega a la otra IA el archivo `saberes-laboyos.zip` (todo el proyecto) y píde
 
 Última actualización: 27 de noviembre de 2026.
 
+**Estado al día (qué está hecho, qué falta y reglas de trabajo): lee también `progress.md`.**
+
 ---
 
 ## 1. Qué es el proyecto

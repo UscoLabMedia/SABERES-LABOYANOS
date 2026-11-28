@@ -1,0 +1,45 @@
+# Progreso del proyecto (28 nov 2026)
+
+Léelo junto con `LEEME-PRIMERO.md`. Rama de trabajo: `ccr-2b9646ac-ks35za`. **`main` = rama hasta `4bfb732`** (todo lo de abajo ya está en `main`, salvo que se indique). Pages: https://uscolabmedia.github.io/SABERES-LABOYANOS/
+
+## Reglas de trabajo (el usuario las fijó)
+- Respuestas en español, estilo caveman (cortas). Presupuesto 0 pesos.
+- **Merge a `main` solo con permiso explícito del usuario** (`git push origin HEAD:main`, avance rápido).
+- Diseño nuevo → propuesta/boceto en PNG antes de construir. Arreglos pequeños: directo, con prueba que falle antes y pase después.
+- Datos históricos del juego: solo los verificados en `docs/nivel2-fuentes.md` (lo leen estudiantes y docentes).
+
+## Hecho
+- **Libro y mesa:** libro realista (fases 1–4: mesa de madera carbón, portada de cuero, páginas curvas con costura, luz de lámpara, polvo, viñeta). Sombras ajustadas por rendimiento.
+- **Cuentas y partidas** con Supabase real (sin recuperación de contraseña, avisado).
+- **Nivel 1 (café)** completo: finca, cosecha, oleadas, trivia.
+- **Orden de niveles:** 1 Café · 2 Alfarería · 3 Caballos · 4 Música y Danza (festival, baile y reinado al final). Atuendos por etapa en `muneco.js`.
+- **Nivel 2 (alfarería)** completo: `finca.html?nivel=2` (taller, 3 pistas con datos verificados, nombra a Cecilia Vargas Muñoz), `alfareria.html` (fabricación en cadena, 1–4 jugadores), `carrera.html` (diseña tu chiva y corre «La Ruta de la Chiva»), `trivia.html?nivel=2` (15 preguntas con fuente). El taller se abre en el libro al superar El Café.
+- **Controles:** botón único de Acción (tocar = tomar; mantener = usar) y Soltar; sin atascos; mismo esquema en PC, mando y celular. Motor común `estaciones.js`.
+- **Celular:** modo compacto en horizontal, sin selección de texto al mantener, sonido que se reanuda al volver a la app, aviso «Gira el celular» en vertical.
+- **Arreglos de avisos:** montañas de la finca ya no tiemblan; el usuario aparece bajo el jugador y en los diálogos.
+- Sonido real al abrir el libro (Pixabay, `assets/libro-abrir.mp3`, con respaldo sintético). Texturas horneadas en `assets/` (`arte/texturas/`).
+
+## Pruebas (carpeta `tests/`, Playwright + Chrome del sistema)
+`node tests/<nombre>.js` — ayudas en `tests/lib.js` (servidor local, three.js local, bloquea fuentes remotas). Nombres: `orden`, `trivia_nivel`, `explora`, `cosecha_regresion`, `alfareria`, `carrera`, `mapa_nivel2`, `contenido2`, `tactil_sonido`, `oleadas_horizontal`, `montes`, `nombre`, `girar`. Variable `THREE_JS` = ruta a three.min.js r128. Todas pasaban al último commit.
+
+## Pendiente (en este orden sugerido)
+1. **Bitácora de arreglos** `docs/arreglos.md` y **prueba de usabilidad general** `tests/usabilidad.js` (todas las pantallas en celular vertical, horizontal y PC: textos encimados, controles tapados, fuera de pantalla). Idea sacada de OpenGame; no usar su generador ni Phaser.
+2. **Aviso 3:** elegir personaje al crear la partida (opciones distintas a muñeco/muñeca).
+3. **Aviso 4:** joystick en celular en la finca y el taller.
+4. **Aviso 5:** rediseñar la fabricación por **pedidos con receta** (llega un cliente, pide una figura, cada figura tiene pasos distintos, receta en pantalla, se entrega). Necesita boceto PNG antes. Datos de cada figura de fuentes verificadas.
+5. **Nivel 3 Caballos:** referencia del usuario https://youtu.be/Rvs7O4oqgGo?t=168; falta definir qué mecánica tomar.
+6. **Nivel 4 Música y Danza** (Zelda ocarina + baile de flechas/Club Penguin, reinado con corona) y **La Orquídera** (personaje 3D, `arte/personajes/orquidera/`; Opus, esfuerzo alto, empezar por la cara).
+7. Menores del revisor del Nivel 2 (en `docs/ideas.md` y abajo): cuenta 3-2-1 invisible para invitados, vuelta contada en `WP[19]` vs línea en `WP[0]`, pistas de trivia que no contienen la respuesta, trivia 2 con textos del café si `nivel2.json` falla, falta bloqueo de nivel en `trivia.html?nivel=2`/`finca.html?nivel=2`, aviso de modo en red de fabricación, condición muerta `&& false` en `carrera.html`, `cambiado()` guarda en cada carga.
+8. Pulir colores pálidos del taller y de la fabricación.
+9. **Validar contenidos con un docente de Pitalito** y abrir los enlaces oficiales (el entorno no pudo abrirlos).
+10. **No probado:** red entre celulares reales (WebRTC/PeerJS), mandos reales, rendimiento en celular real.
+
+## Decisiones abiertas para el usuario
+- Traje de la etapa 4 cambió por el reordenamiento (muñeca sin sombrero en la cabeza, con flores y mochila; muñeco con poncho): ¿está bien?
+- Un compañero sin las 3 pistas que entra por enlace de sala a fabricación/carrera vuelve a la exploración: ¿se permite entrar a jugar en grupo?
+
+## Notas técnicas
+- Three.js r128 (colores hex lineales → `.convertSRGBToLinear()`; sin `CapsuleGeometry`). Ganchos de prueba con `#prueba`: `__i` (index), `__f` (finca), `__c` (cosecha), `__a` (fabricación), `__r` (carrera), `__o` (oleadas), `__t` (trivia).
+- Estaciones nuevas: copiar el patrón de `alfareria.html` (bucle y red propios) y usar `Estaciones.entrada`, `colocarLetreros`, `botonAccion`.
+- `data/nivelN.json` y `data/triviaN.json` alimentan `finca.html?nivel=N` y `trivia.html?nivel=N`.
+- Plan y diseño del Nivel 2: `docs/superpowers/plans/` y `docs/superpowers/specs/`. Ideas y avisos de probadores: `docs/ideas.md`.
