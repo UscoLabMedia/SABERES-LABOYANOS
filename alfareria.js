@@ -86,13 +86,13 @@ const ZA=-4.3, ZM=-.8, ZB=3.3;   // filas: arriba, medio, abajo
 [-9.2,-4.6].forEach(x=>{ const g=tableMesh(1.5,1.2,.7); const wheel=new THREE.Mesh(new THREE.CylinderGeometry(.42,.42,.08,16),mat('#5a3a22')); wheel.position.y=.82; g.add(wheel); const s=station('torno',x,ZA,1,'Torno',g,.86); s.wheel=wheel; });
 station('mesa',-6.9,ZA,1,'Mesa de modelar',tableMesh(1.6,1.2,.7),.76);
 // medio arriba: 2 hornos (arrancan solos al cargar)
-[-.6,2.4].forEach(x=>{ const g=new THREE.Group(); const base=boxMesh(1.7,.5,1.5,mat('#9a6a3c')); g.add(base);
+[-.3,2.7].forEach(x=>{ const g=new THREE.Group(); const base=boxMesh(1.7,.5,1.5,mat('#9a6a3c')); g.add(base);
   const dome=new THREE.Mesh(new THREE.SphereGeometry(.9,14,8,0,Math.PI*2,0,Math.PI/2),new THREE.MeshStandardMaterial({color:'#b0582f',roughness:.9,flatShading:true})); dome.position.y=.5; dome.scale.set(1,.9,.9); dome.castShadow=true; g.add(dome);
   const door=new THREE.Mesh(new THREE.CircleGeometry(.3,12),new THREE.MeshStandardMaterial({color:'#2a140b'})); door.position.set(0,.85,.82); g.add(door);
   const fire=new THREE.Mesh(new THREE.CircleGeometry(.22,12),new THREE.MeshBasicMaterial({color:'#ff9a2a'})); fire.position.set(0,.85,.83); fire.visible=false; g.add(fire);
   const s=station('horno',x,ZA,1.1,'Horno',g); s.fire=fire; });
 // medio abajo: secadero de 3 puestos (un solo letrero, en el del centro)
-[-.6,.9,2.4].forEach((x,i)=>station('secadero',x,ZB,.6,i===1?'Secadero':'',tableMesh(1.3,1.2,.5,'#9a6a3a'),.62));
+[-.3,1.2,2.7].forEach((x,i)=>station('secadero',x,ZB,.6,i===1?'Secadero':'',tableMesh(1.3,1.2,.5,'#9a6a3a'),.62));
 // derecha arriba y medio: 2 mesas de pintura
 [ZA,ZM].forEach(z=>{ const g=tableMesh(1.5,1.1,.7); Object.values(COL).forEach((c,k)=>{ const b=new THREE.Mesh(new THREE.CylinderGeometry(.08,.07,.07,8),mat(c)); b.position.set(-.5+k*.33,.8,.3); g.add(b); }); station('pintura',8,z,1,'Pintura',g,.76); });
 // derecha abajo: mostrador (los clientes esperan a su izquierda)
@@ -203,7 +203,8 @@ function pintar(s){ const pz=s.pz, cs=pz.colores;
   s.pz=Recetas.avanza(pz); s.state='listo'; snd('pop',4); }
 // mantener Acción: amasar, modelar o pintar (un toque corto, en cambio, alterna figura o color: ver tocar)
 function use(p,dt){
-  const s=pick(p); if (!s) return; p.useT+=dt; p.useS=s; if (p.useT<R.toque) return;
+  const s=pick(p); if (p.useS && p.useS!==s && p.useS.state==='modelando') Object.assign(p.useS,{state:'vacio',prog:0});   // se alejó sin soltar
+  if (!s) return; p.useT+=dt; p.useS=s; if (p.useT<R.toque) return;
   if (s.kind==='amasado' && s.state==='amasando'){ s.prog+=dt/R.amasar; if (Math.random()<dt*3) snd('footstep'); if (s.prog>=1){ s.state='listo'; s.prog=0; s.pz=Recetas.avanza(s.pz); snd('pop',4); } }
   else if ((s.kind==='torno'||s.kind==='mesa') && esMasa(p.carry)){ const f=eleccion(s); if (!f) return; s.state='modelando'; s.prog+=dt/R.modelar; if (s.wheel) s.wheel.rotation.y+=dt*8; if (s.prog>=1){ s.state='vacio'; s.prog=0; modelar(p,s,f); } }
   else if (s.kind==='pintura' && s.state==='pintando'){ s.prog+=dt/R.pintar; if (s.prog>=1){ s.prog=0; pintar(s); } }
@@ -243,7 +244,7 @@ function step(dt){
     p.holder.position.set(p.x,0,p.z); let d=p.face-p.holder.rotation.y; d=Math.atan2(Math.sin(d),Math.cos(d)); p.holder.rotation.y+=d*Math.min(1,dt*14);
     Muneco.animar(p.model,dt,moving,S.motion);
     if (I.take) take(p); if (I.drop) tirar(p);
-    if (I.use) use(p,dt); else if (p.useT){ if (p.useT<R.toque) tocar(p,p.useS); p.useT=0; } who=null; });
+    if (I.use) use(p,dt); else if (p.useT){ const s=p.useS; if (p.useT<R.toque) tocar(p,s); if (s && s.state==='modelando') Object.assign(s,{state:'vacio',prog:0}); p.useT=0; }   /* soltar a mitad: el torno o la mesa quedan libres y la masa sigue en la mano */ who=null; });
   // estaciones
   ST.forEach(s=>{
     if (s.kind==='secadero' && s.state==='secando'){ s.prog+=dt/R.secado; if (s.prog>=1){ s.state='seco'; s.pz=Recetas.avanza(s.pz); snd('pop',5); } }
@@ -392,6 +393,6 @@ function finish(r){
     onCierre:()=>{ if (game.on){ game.on=false; showBanner('Se cerró la sala del anfitrión'); } $('#end').hidden=true; $('#start').hidden=false; },
   });
   resize(); syncStart(); renderOrders(); requestAnimationFrame(frame); $('#goBtn').focus();
-  if (location.hash==='#prueba'){ begin([yo()]); window.__a={game,players,ST,take,use,step,R,camera,setCarry,tirar,accion,nearest,pedir,reset,snapshot,applySnapshot,Recetas}; }
+  if (location.hash==='#prueba'){ begin([yo()]); window.__a={game,players,ST,take,use,step,R,camera,setCarry,tirar,accion,nearest,pedir,reset,snapshot,applySnapshot,Recetas,colliders}; }
 })();
 })();

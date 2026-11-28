@@ -25,6 +25,9 @@ async function caso(nombre,opt,celular){ const {p,c}=await T.abrir('alfareria.ht
   T.ok(!lay.k.lena&&!lay.k.palanca&&!lay.k.entrega&&lay.lluvia===undefined&&!lay.cub,'sin leña, palanca, puesto de feria ni lluvia');
   T.ok(lay.Recetas&&lay.fn,'__a expone pedir, reset, snapshot, applySnapshot y Recetas');
   const cnt=Object.fromEntries(Object.entries(lay.k).map(([a,b])=>[a,b.length])); T.ok(JSON.stringify(cnt)===JSON.stringify(Object.assign({},cnt,{barro:1,amasado:2,torno:2,mesa:1,secadero:3,horno:2,pintura:2,mostrador:1}))&&Object.keys(cnt).length===8,'estaciones del taller '+JSON.stringify(cnt));
+  const pas=await p.evaluate(()=>{ const C=__a.colliders.map(c=>c.r!==undefined?[c.x-c.r,c.x+c.r,c.x]:[c.x0,c.x1,(c.x0+c.x1)/2]), col=(a,b)=>C.filter(c=>c[2]>=a&&c[2]<b);
+    const L=col(-99,-2), M=col(-2,5), D=col(5,99); return [Math.min(...M.map(c=>c[0]))-Math.max(...L.map(c=>c[1])), Math.min(...D.map(c=>c[0]))-Math.max(...M.map(c=>c[1]))]; });
+  T.ok(pas.every(g=>g>=2),'pasillos entre columnas ≥ 2 entre colisiones '+JSON.stringify(pas.map(g=>+g.toFixed(2))));
   const X=k=>lay.k[k][0][0], Z=k=>lay.k[k][0][1];
   T.ok(X('barro')<X('secadero')&&X('secadero')<X('mostrador'),'columnas: mina a la izquierda, secadero al medio, mostrador a la derecha');
   T.ok(Z('barro')>Z('torno')&&Z('horno')<Z('secadero')&&Z('pintura')<Z('mostrador'),'filas: mina abajo y torno arriba; horno arriba del secadero; pintura arriba del mostrador');
@@ -37,6 +40,10 @@ async function caso(nombre,opt,celular){ const {p,c}=await T.abrir('alfareria.ht
   await secarHornear(); T.ok(await carry()==='matera:5','la matera sale cocida y va al mostrador');
   await en('pintura',0); await pulsar(); T.ok(await carry()==='matera:5'&&await st('pintura',0)==='vacio'&&/Esta pieza ahora va a: Mostrador/.test(await aviso()),'la matera no entra a Pintura: '+await aviso());
   let p0=await pts(); await en('mostrador'); await pulsar(); T.ok(await carry()==null&&await pts()>=p0+8&&await p.evaluate(()=>__a.game.orders.length)===0,'entrega la matera y suma ≥ 8');
+  // --- soltar Acción a mitad de modelar: el torno vuelve a vacío y la masa sigue en la mano
+  await pedidos(['matera']); await p.evaluate(()=>{ __a.R.modelar=6; __a.setCarry(__a.players[0],{type:'pieza',fig:null,i:2,q:90}); }); await en('torno'); await mantener(400);
+  { const t=await p.evaluate(()=>{ const s=__a.ST.filter(q=>q.kind==='torno')[0]; return {st:s.state,prog:s.prog}; }); T.ok(t.st==='vacio'&&t.prog===0&&await carry()==='null:2','soltar a mitad: torno vacío, avance 0 y la masa en la mano '+JSON.stringify(t)); }
+  await p.evaluate(()=>{ __a.R.modelar=.8; __a.setCarry(__a.players[0],null); });
   // --- torno sin pedido para él
   await pedidos(['frutero']); await p.evaluate(()=>__a.setCarry(__a.players[0],{type:'pieza',fig:null,i:2,q:90})); await en('torno',1); await pulsar(); T.ok(/Ningún cliente pide eso aquí/.test(await aviso())&&await carry()==='null:2','torno sin pedido: «Ningún cliente pide eso aquí»');
   // --- chiva: carrocería y carga en la Mesa, pegar, secar, hornear, pintar rojo y azul, entregar
