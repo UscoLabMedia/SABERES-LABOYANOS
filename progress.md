@@ -1,6 +1,6 @@
 # Progreso del proyecto (28 nov 2026)
 
-Léelo junto con `LEEME-PRIMERO.md`. Rama de trabajo: `ccr-2b9646ac-ks35za`. **`main` = rama hasta `870feaa`** (todo lo de abajo ya está en `main`, salvo que se indique). Pages: https://uscolabmedia.github.io/SABERES-LABOYANOS/
+Léelo junto con `LEEME-PRIMERO.md`. Rama de trabajo: `ccr-2b9646ac-ks35za`. **`main` = rama hasta `06e9b0e`** (todo lo de abajo ya está en `main`, salvo que se indique). Pages: https://uscolabmedia.github.io/SABERES-LABOYANOS/
 
 ## Reglas de trabajo (el usuario las fijó)
 - Respuestas en español, estilo caveman (cortas). Presupuesto 0 pesos.
@@ -26,7 +26,7 @@ Léelo junto con `LEEME-PRIMERO.md`. Rama de trabajo: `ccr-2b9646ac-ks35za`. **`
 ## Pendiente (en este orden sugerido)
 1. ~~Bitácora `docs/arreglos.md` y `tests/usabilidad.js`~~ **hecho** (0 problemas en pantalla inicial de las 9 páginas × 3 vistas). Falta ampliarla a pantallas en marcha (banners, diálogos, fin de partida).
 2. ~~Aviso 3~~ **hecho:** el personaje se elige al crear la partida con dos retratos sin etiqueta de género y se cambia en Mi progreso; ella empieza sin gorra. Prueba `tests/personaje.js`.
-3. ~~Aviso 4~~ **hecho (rama):** joystick en la finca y el taller, cuadros compactos en horizontal, pantalla completa en el celular (botón ⛶ y primer toque en horizontal; `Papel.pantallaCompleta()`). Prueba `tests/finca_celular.js`. Falta probar en celular real (en iPhone no hay pantalla completa). Notas del Nivel 2 (28 nov, solo anotadas, ver `docs/ideas.md` 4b): pantalla completa no se activa en horizontal; los cuadros de El Taller tapan mucho en horizontal; sin joystick (= este aviso).
+3. ~~Aviso 4~~ **hecho:** joystick en la finca y el taller, cuadros compactos en horizontal, pantalla completa en el celular (botón ⛶ y primer toque en horizontal; `Papel.pantallaCompleta()`). Prueba `tests/finca_celular.js`. Falta probar en celular real (en iPhone no hay pantalla completa). Notas del Nivel 2 (28 nov, solo anotadas, ver `docs/ideas.md` 4b): pantalla completa no se activa en horizontal; los cuadros de El Taller tapan mucho en horizontal; sin joystick (= este aviso).
 4. ~~Aviso 5~~ **hecho (rama, no en main):** fabricación por pedidos con receta (clientes NPC, 4 figuras, taller en 3 columnas, repisa, red). Pruebas `tests/recetas.js`, `tests/alfareria.js` (tarda ~6 min), `tests/alfareria_red.js`. Las estrellas [30,60,95] son una estimación: validar en una partida real. Falta probar red en celulares reales.
 5. **Nivel 3 Caballos:** referencia del usuario https://youtu.be/Rvs7O4oqgGo?t=168; falta definir qué mecánica tomar.
 6. **Nivel 4 Música y Danza** (Zelda ocarina + baile de flechas/Club Penguin, reinado con corona) y **La Orquídera** (personaje 3D, `arte/personajes/orquidera/`; Opus, esfuerzo alto, empezar por la cara).
