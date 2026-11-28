@@ -16,8 +16,8 @@ const saveProg=()=>{ Guardado.guardar(PROG); };
 const R = {
   duracion:180, calidadBase:90, especial:80,
   amasar:1.6, modelar:1.8, secado:10, quema:14, ventana:10, pintar:1.6, pasadaPorSeg:.8, toque:.25,   // toque: menos que esto es tocar (alternar), no mantener
-  pedidoCada:22, pedidoDura:100, maxPedidos:3, pts:{perdido:-5},
-  estrellas:[30,60,100],
+  clienteCada:22, bono:5, qPorPunto:4, repisa:2, pts:{perdido:-5},   // bono: puntos extra por rapidez; qPorPunto: calidad perdida por quemado que resta 1 punto
+  estrellas:[30,60,95],
 };
 
 /* ---------------- Escena: el taller por dentro ---------------- */
@@ -117,7 +117,7 @@ function setCarry(p,it){ p.carry=it; p.carryKey=it?JSON.stringify(it):''; p.hand
 /* ---------------- Entrada (motor común en estaciones.js) ---------------- */
 let E=null;   // se crea tras definir `game` (ver más abajo)
 /* ---------------- Estado del juego ---------------- */
-const game={on:false,paused:false,mode:'reloj',t:0,score:0,orders:[],nextOrder:0,stats:{piezas:0,especial:0,perdidos:0}};
+const game={on:false,paused:false,mode:'reloj',t:0,score:0,orders:[],repisa:[],nextOrder:0,stats:{piezas:0,especial:0,perdidos:0}};
 E=Estaciones.entrada({canvas,camera,game,togglePause:()=>togglePause(),ST,players,mySlot:()=>mySlot(),accion:(p,x)=>accion(p,x),reachOf:x=>reachOf(x),touch,lob:()=>lob});
 const { readInput, remote, down, pressed, mouse } = E;
 let banTimer, who=null; const evq=[];
@@ -130,13 +130,16 @@ function showFloat(txt,x,y,z){ const el=document.createElement('div'); el.classN
   const v=new THREE.Vector3(x,y,z).project(camera); el.style.left=((v.x+1)/2*innerWidth)+'px'; el.style.top=((1-v.y)/2*innerHeight)+'px';
   requestAnimationFrame(()=>{ el.style.transform='translate(-50%,-260%)'; el.style.opacity='0'; }); setTimeout(()=>el.remove(),1100); }
 /* ---------------- Pedidos ---------------- */
-// Un cliente es por ahora una entrada en game.orders: {id, fig, colores, left, total}. La pieza se ata a la figura, no al cliente.
-function pedir(fig,colores){ game.orders.push({id:Math.random(),fig,colores:Recetas.datos.figuras[fig].colores?(colores||Recetas.coloresAzar()):undefined,left:R.pedidoDura,total:R.pedidoDura}); renderOrders(); }
+// Un cliente: {id, fig, colores, left, total, tipo, npc}. La pieza se ata a la figura, no al cliente. Los terminados sin cliente esperan en game.repisa.
+const TIPOS=['caficultor','recolectora','catadora','alfarero','pintora','aprendiz'];
+const mismos=(a,b)=>String([...(a||[])].sort())===String([...(b||[])].sort());
+function pedir(fig,colores){ const t=Recetas.paciencia(players.length), o={id:Math.random(),fig,colores:Recetas.datos.figuras[fig].colores?(colores||Recetas.coloresAzar()):null,left:t,total:t,tipo:TIPOS[Math.floor(Math.random()*TIPOS.length)]};
+  game.orders.push(o); const k=game.repisa.findIndex(z=>z.fig===fig&&(!o.colores||mismos(z.colores,o.colores))); if (k>=0) entregar(game.repisa.splice(k,1)[0],o); renderOrders(); }
 function addOrder(){ const f=Object.keys(Recetas.datos.figuras); pedir(f[Math.floor(Math.random()*f.length)]); }
 function renderOrders(){ $('#orders').innerHTML=game.orders.map(o=>`<li class="order ${o.fig==='chiva'?'especial':''}${game.mode==='reloj'&&o.left<20?' hurry':''}" data-id="${o.id}"><b>${figNom(o.fig)}</b><span>${o.colores?'Pintada de '+o.colores.join(' y '):Recetas.datos.figuras[o.fig].pasos.length+' pasos'}</span>${game.mode==='reloj'?`<div class="bar"><i style="width:${o.left/o.total*100}%"></i></div>`:''}</li>`).join('')
   || '<li class="order"><b>Sin pedidos</b><span>Ya viene otro cliente</span></li>'; }
-// cliente de esa figura con menos paciencia (si la pieza ya tiene colores, primero el que pidió esos)
-function pedidoDe(fig,c){ const l=game.orders.filter(o=>o.fig===fig).sort((a,b)=>a.left-b.left); return (c&&c.colores&&l.find(o=>String(o.colores)===String(c.colores)))||l[0]; }
+// cliente de esa figura con menos paciencia; una pieza con colores (chiva) solo va a un cliente de esos mismos colores
+function pedidoDe(fig,c){ return game.orders.filter(o=>o.fig===fig&&(!c||!c.colores||mismos(o.colores,c.colores))).sort((a,b)=>a.left-b.left)[0]; }
 
 function nearest(p){ let best=null, bd=1e9; ST.forEach(s=>{ const d=Math.hypot(s.x-p.x,s.z-p.z)-s.r; if (d<reachOf(s)+.05 && d<bd){ bd=d; best=s; } }); return best; }
 const reachOf=s=>s.kind==='mostrador'?1.3:.95;
@@ -159,7 +162,7 @@ function accion(p,s=nearest(p)){ const c=p.carry; if (!s) return {t:'Acción'};
     case 'secadero': if (s.state==='vacio') return {t:c&&Recetas.acepta('secadero',c)?'Poner a secar':'Secadero'}; if (s.state==='seco') return c?lleno:{t:'Recoger seca'}; return {t:'Secando…'};
     case 'horno': if (s.state==='vacio') return {t:c&&Recetas.acepta('horno',c)?'Cargar pieza':'Horno'}; if (sacable(s)) return c?lleno:{t:'Sacar pieza'}; return {t:'Horneando…'};
     case 'pintura': if (s.state==='pintando') return {t:s.pz.colores?'Pintar '+Recetas.datos.colores[s.color]:'Pintar',hold:true,prog:s.prog}; if (s.state==='listo') return c?lleno:{t:'Recoger'}; return {t:c&&Recetas.acepta('pintura',c)?'Poner pieza':'Pintura'};
-    case 'mostrador': return {t:'Entregar'};
+    case 'mostrador': return {t:c?'Entregar':game.repisa.length?'Tomar de la repisa':'Entregar'};
   } return {t:'Acción'}; }
 function take(p){
   const s=pick(p), c=p.carry; if (!s) return;
@@ -179,17 +182,21 @@ function take(p){
       if (!esMasa(c)){ if (c) noVa(); else banner('Trae barro amasado'); return; }
       banner(eleccion(s)?'Mantén pulsado para modelar':'Ningún cliente pide eso aquí'); return;
     case 'mostrador':
-      if (!c){ banner('Trae una pieza terminada'); return; }
+      if (!c){ if (game.repisa.length){ setCarry(p,game.repisa.pop()); snd('pop',3); } else banner('Trae una pieza terminada'); return; }
       if (Recetas.paso(c)!=='entregar'){ noVa(); return; }
       deliver(p,c); return;
   } }
-function addPieza(pz){ const n=ST.find(s=>s.kind==='mostrador').load; const m=pieceMesh(pz); m.scale.setScalar(.7); const i=n.children.length%8; m.position.set(-1.3+i*.37,0,0); n.add(m); }
+function renderRepisa(){ const n=ST.find(s=>s.kind==='mostrador').load, k=JSON.stringify(game.repisa); if (n.userData.k===k) return; n.userData.k=k; n.clear();
+  game.repisa.forEach((pz,i)=>{ const m=pieceMesh(pz); m.scale.setScalar(.7); m.position.set(-.5+i*.9,0,0); n.add(m); }); }
+function entregar(c,o){
+  const pts=Math.max(0,Recetas.datos.figuras[c.fig].puntos+Math.round(R.bono*Math.max(0,o.left)/o.total)-Math.round(Math.max(0,R.calidadBase-c.q)/R.qPorPunto)), q=Math.round(c.q), m=ST.find(s=>s.kind==='mostrador');
+  game.orders.splice(game.orders.indexOf(o),1); game.score+=pts; game.stats.piezas++; if (q>=R.especial) game.stats.especial++;
+  snd('chime'); floatText('+'+pts,m.x,2.4,m.z); banner(`${figNom(c.fig)} entregada · calidad ${q}`); }
 function deliver(p,c){
-  const o=pedidoDe(c.fig,c); if (!o){ banner(`Ningún cliente pide ${figNom(c.fig).toLowerCase()} por ahora`); return; }
-  const q=Math.round(c.q), esp=q>=R.especial, pts=Recetas.datos.figuras[c.fig].puntos, m=ST.find(s=>s.kind==='mostrador');
-  game.orders.splice(game.orders.indexOf(o),1); game.score+=pts; game.stats.piezas++; if (esp) game.stats.especial++;
-  setCarry(p,null); snd('chime'); floatText('+'+pts,m.x,2.4,m.z); banner(`${figNom(c.fig)} entregada · calidad ${q}`);
-  addPieza(c); renderOrders(); }
+  const o=pedidoDe(c.fig,c);
+  if (o){ setCarry(p,null); entregar(c,o); renderOrders(); return; }
+  if (game.repisa.length>=R.repisa){ banner('La repisa del Mostrador está llena'); return; }
+  game.repisa.push(c); setCarry(p,null); snd('pop',2); banner(`Nadie pide ${figNom(c.fig).toLowerCase()} ahora: queda en la repisa`); }
 // terminar de modelar en el torno o la mesa
 function modelar(p,s,f){ const c=p.carry; snd('pop',4);
   if (f!=='chiva'){ setCarry(p,{type:'pieza',fig:f,i:3,q:c.q}); return; }
@@ -215,7 +222,15 @@ function tocar(p,s){ if (!s) return;
   else if (s.kind==='amasado' && s.state==='amasando') banner('Mantén pulsado para amasar'); }
 
 /* ---------------- Vistas de las estaciones (las usan el anfitrión y los invitados) ---------------- */
+const NPC=new Map(), SLOT_X=[5.6,4.5,3.4], NPC_Z=4.7;   // clientes: esperan a la izquierda del Mostrador, entran y salen por la derecha
+function vistaClientes(dt){
+  game.orders.forEach((o,i)=>{ let e=NPC.get(o.id); if (!e){ const m=Muneco.npc(o.tipo||TIPOS[0]), h=new THREE.Group(); h.add(m); h.position.set(AW+1.5,0,NPC_Z); h.rotation.y=-Math.PI/2; scene.add(h); e={h,m}; NPC.set(o.id,e); } e.tx=SLOT_X[i%3]; e.out=false; o.npc=e.h; });
+  NPC.forEach((e,id)=>{ if (!game.orders.some(o=>o.id===id)){ e.tx=AW+1.5; e.out=true; }
+    const dx=e.tx-e.h.position.x, mov=Math.abs(dx)>.05; if (mov) e.h.position.x+=Math.sign(dx)*Math.min(Math.abs(dx),2.6*dt);
+    let d=(mov?Math.sign(dx)*Math.PI/2:Math.PI/2)-e.h.rotation.y; d=Math.atan2(Math.sin(d),Math.cos(d)); e.h.rotation.y+=d*Math.min(1,dt*10);
+    Muneco.animar(e.m,dt,mov,S.motion); if (e.out && !mov){ scene.remove(e.h); NPC.delete(id); } }); }
 function vistas(dt){
+  vistaClientes(dt); renderRepisa();
   ST.forEach(s=>{
     if (s.slot){ const pz=(s.kind==='torno'||s.kind==='mesa')?(s.state==='modelando'?{fig:null,i:2}:s.espera?{fig:'chiva',i:3,parte:s.espera}:null):s.pz, k=pz?JSON.stringify(pz):'';
       if (s.slot.userData.k!==k){ s.slot.clear(); if (pz){ const m=pieceMesh(pz); m.scale.setScalar(pz.fig==='chiva'?.9:1); s.slot.add(m); } s.slot.userData.k=k; } }
@@ -237,7 +252,7 @@ function step(dt){
   // pedidos
   if (game.mode==='reloj'){ game.orders.forEach(o=>o.left-=dt); const lost=game.orders.filter(o=>o.left<=0);
     if (lost.length){ lost.forEach(o=>{ game.orders.splice(game.orders.indexOf(o),1); game.score+=R.pts.perdido; game.stats.perdidos++; }); banner('Se fue un cliente: pedido perdido'); renderOrders(); } }
-  game.nextOrder-=dt; if (game.nextOrder<=0 && game.orders.length<R.maxPedidos){ addOrder(); game.nextOrder=R.pedidoCada; }
+  game.nextOrder-=dt; if (game.nextOrder<=0 && game.orders.length<Recetas.maxClientes(players.length)){ addOrder(); game.nextOrder=R.clienteCada; }
   // jugadores
   players.forEach(p=>{ const I=p.inp; const l=Math.hypot(I.x,I.z), moving=l>.15; p.moving=moving; who=p.slot;
     if (moving){ const sp=4.6*Math.min(1,l)*(p.carry?.92:1); p.x+=I.x/Math.max(1,l)*sp*dt; p.z+=I.z/Math.max(1,l)*sp*dt; collide(p); p.face=Math.atan2(I.x,I.z); }
@@ -261,16 +276,15 @@ function step(dt){
 /* ---------------- Red: estado del anfitrión y vista de los invitados ---------------- */
 const r1=n=>Math.round(n*100)/100;
 function snapshot(){ return { t:r1(game.t), sc:game.score, mo:game.mode, st:game.stats,
-  o:game.orders.map(o=>[o.fig,r1(o.left),o.total,o.colores||0,o.id]),
+  o:game.orders.map(o=>[o.fig,r1(o.left),o.total,o.colores||0,o.id,o.tipo]), rp:game.repisa,
   p:players.map(p=>[r1(p.x),r1(p.z),r1(p.face),p.moving?1:0,p.carryKey]),
   s:ST.map(s=>[s.state,r1(s.t||0),r1(s.prog||0),s.pz?JSON.stringify(s.pz):'',s.espera||'',s.sel,s.color]), ev:evq.splice(0) }; }
 let ordKey='';
 function applySnapshot(d){
   game.t=d.t; game.score=d.sc; game.mode=d.mo; game.stats=d.st;
-  game.orders=d.o.map(([fig,left,total,colores,id])=>({fig,left,total,colores:colores||undefined,id})); const k=d.o.map(o=>o[4]).join(); if (k!==ordKey){ ordKey=k; renderOrders(); }
+  game.orders=d.o.map(([fig,left,total,colores,id,tipo])=>({fig,left,total,colores:colores||null,id,tipo})); game.repisa=d.rp||[]; const k=d.o.map(o=>o[4]).join(); if (k!==ordKey){ ordKey=k; renderOrders(); }
   d.p.forEach((a,i)=>{ const p=players[i]; if (!p) return; p.tx=a[0]; p.tz=a[1]; p.face=a[2]; p.moving=!!a[3]; if (a[4]!==p.carryKey) setCarry(p,a[4]?JSON.parse(a[4]):null); });
   d.s.forEach((a,i)=>{ const s=ST[i]; [s.state,s.t,s.prog,s.sel,s.color]=[a[0],a[1],a[2],a[5],a[6]]; s.espera=a[4]||null; if (a[3]!==(s.pz?JSON.stringify(s.pz):'')) s.pz=a[3]?JSON.parse(a[3]):null; });
-  const load=ST.find(s=>s.kind==='mostrador').load; while (load.children.length<Math.min(8,game.stats.piezas)) addPieza({fig:'matera',i:5});
   (d.ev||[]).forEach(e=>{ if (e.s) Sound[e.s](e.a); if (e.b!==undefined && (e.to===null||e.to===undefined||e.to===mySlot())) showBanner(e.b,e.k); if (e.f) showFloat(e.f,e.x,e.y,e.z); });
 }
 function clientFrame(dt){
@@ -346,11 +360,11 @@ function syncStart(){
   makePlayers(lob && rol!=='solo' ? lob.jugadores : [yo()]); }
 $('#optMode').addEventListener('click',e=>{ const b=e.target.closest('button'); if (!b) return; MODE=b.dataset.v; syncStart(); snd('tick'); });
 function reset(list){
-  Object.assign(game,{t:0,score:0,orders:[],nextOrder:0,stats:{piezas:0,especial:0,perdidos:0},mode:MODE});
+  Object.assign(game,{t:0,score:0,orders:[],repisa:[],nextOrder:0,stats:{piezas:0,especial:0,perdidos:0},mode:MODE});
   ST.forEach(s=>{ Object.assign(s,{state:'vacio',t:0,prog:0,pz:null,espera:null,sel:0,color:0}); if (s.load) s.load.clear(); });
-  makePlayers(list); renderOrders(); }
+  makePlayers(list); NPC.forEach(e=>scene.remove(e.h)); NPC.clear(); renderOrders(); }
 function begin(list){
-  reset(list); if (!lob || lob.rol!=='cliente'){ addOrder(); addOrder(); game.nextOrder=R.pedidoCada; }
+  reset(list); if (!lob || lob.rol!=='cliente'){ for (let i=players.length===1?2:Recetas.maxClientes(players.length);i>0;i--) addOrder(); game.nextOrder=R.clienteCada; }
   $('#start').hidden=true; $('#end').hidden=true; game.on=true; game.paused=false; $('#touch').hidden=false; $('#touch').classList.toggle('pc',!touch); if (!touch) $('#tDrop').innerHTML='Soltar<br><kbd>G</kbd>';
   Sound.init(); Sound.apply(); Sound.fast=true; Sound.startMusic(); showBanner(game.mode==='reloj'?'¡A trabajar el barro! Tienen 3 minutos':'Modo tranquilo: sin reloj'); canvas.focus(); }
 $('#goBtn').addEventListener('click',()=>{
@@ -393,6 +407,6 @@ function finish(r){
     onCierre:()=>{ if (game.on){ game.on=false; showBanner('Se cerró la sala del anfitrión'); } $('#end').hidden=true; $('#start').hidden=false; },
   });
   resize(); syncStart(); renderOrders(); requestAnimationFrame(frame); $('#goBtn').focus();
-  if (location.hash==='#prueba'){ begin([yo()]); window.__a={game,players,ST,take,use,step,R,camera,setCarry,tirar,accion,nearest,pedir,reset,snapshot,applySnapshot,Recetas,colliders}; }
+  if (location.hash==='#prueba'){ begin([yo()]); window.__a={game,players,ST,take,use,step,R,camera,setCarry,tirar,accion,nearest,pedir,begin,reset,snapshot,applySnapshot,Recetas,colliders}; }
 })();
 })();

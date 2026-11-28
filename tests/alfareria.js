@@ -70,6 +70,30 @@ async function caso(nombre,opt,celular){ const {p,c}=await T.abrir('alfareria.ht
   // --- letreros
   let peor=[]; for (const [x,z] of [[-2.6,0],[4.6,0],[-6,1.6],[1,0],[8,1.6],[-2.6,-3]]){ await p.evaluate(([x,z])=>{ const m=__a.players[0]; m.x=x; m.z=z; },[x,z]); await p.waitForTimeout(600); const o=await solapes(p); if (o.length>peor.length) peor=o; }
   T.ok(peor.length===0,'letreros y HUD sin encimarse '+JSON.stringify(peor));
+  // --- clientes: paciencia, llegada, entrega, repisa
+  const L=n=>p.evaluate(n=>{ const l=Array.from({length:n},(_,i)=>({slot:i,nombre:'J'+i,avatar:'muneco',etapa:0})); __a.reset(l); __a.game.mode='tranquilo'; __a.game.nextOrder=1e9; },n);
+  const ord=()=>p.evaluate(()=>__a.game.orders.map(o=>o.fig+':'+Math.round(o.left)+':'+(o.colores||[]).join('+')));
+  const repisa=()=>p.evaluate(()=>(__a.game.repisa||[]).map(z=>z.fig).join());
+  const pieza=(fig,col)=>p.evaluate(([fig,col])=>{ const pa=__a.Recetas.datos.figuras[fig].pasos; __a.setCarry(__a.players[0],{type:'pieza',fig,i:pa.indexOf('entregar'),q:90,colores:col,pintados:col}); },[fig,col]);
+  const tot=await p.evaluate(()=>{ const r=[]; [1,2,3].forEach(n=>{ __a.reset(Array.from({length:n},(_,i)=>({slot:i,nombre:'J'+i,avatar:'muneco',etapa:0}))); __a.game.nextOrder=1e9; __a.pedir('jarron'); r.push(__a.game.orders[0].total); }); return r; });
+  T.ok(JSON.stringify(tot)==='[120,90,70]','paciencia 120/90/70 con 1/2/3 jugadores '+JSON.stringify(tot));
+  const lleg=await p.evaluate(()=>{ const r=[]; [1,2,3].forEach(n=>{ __a.reset(Array.from({length:n},(_,i)=>({slot:i,nombre:'J'+i,avatar:'muneco',etapa:0}))); __a.game.mode='tranquilo'; __a.game.nextOrder=0; for (let k=0;k<12;k++){ __a.step(.1); __a.game.nextOrder=0; } r.push(__a.game.orders.length); }); return r; });
+  T.ok(JSON.stringify(lleg)==='[2,3,3]','llegan hasta 2/3/3 clientes a la vez '+JSON.stringify(lleg));
+  const ini=await p.evaluate(()=>{ const r=[]; [1,2].forEach(n=>{ __a.begin(Array.from({length:n},(_,i)=>({slot:i,nombre:'J'+i,avatar:'muneco',etapa:0}))); r.push(__a.game.orders.length+':'+__a.game.orders[0].total); }); return r; });
+  T.ok(JSON.stringify(ini)==='["2:120","3:90"]','al empezar llegan 2 (solo) o el máximo '+JSON.stringify(ini));
+  await L(1); await p.evaluate(()=>{ __a.pedir('jarron'); __a.pedir('jarron'); __a.game.orders[0].left=80; __a.game.orders[1].left=30; });
+  await pieza('jarron'); await en('mostrador'); await pulsar(); T.ok((await ord()).join()==='jarron:80:'&&await carry()==null,'el jarrón va al cliente con menos paciencia '+await ord());
+  await L(1); await p.evaluate(()=>{ __a.pedir('chiva',['rojo','azul']); __a.pedir('chiva',['verde','amarillo']); });
+  await pieza('chiva',['amarillo','verde']); await en('mostrador'); await pulsar(); T.ok((await ord()).join()==='chiva:120:azul+rojo'.replace('azul+rojo','rojo+azul')&&await carry()==null,'la chiva va al cliente de sus colores '+await ord());
+  await pieza('chiva',['rojo','verde']); await pulsar(); T.ok((await ord()).length===1&&await repisa()==='chiva'&&await carry()==null,'chiva de otros colores no va a ese cliente: queda en la repisa '+await ord()+' '+await repisa());
+  await L(1); { const r=await p.evaluate(()=>{ __a.game.mode='reloj'; __a.pedir('jarron'); __a.game.orders[0].left=.05; const s0=__a.game.score; __a.step(.2); return [__a.game.orders.length,__a.game.score-s0,document.querySelector('#banner').textContent]; }); T.ok(r[0]===0&&r[1]===-5&&/Se fue/.test(r[2]),'cliente que se va: −5 y aviso '+JSON.stringify(r)); }
+  await p.evaluate(()=>{ __a.game.mode='tranquilo'; __a.pedir('jarron'); __a.setCarry(__a.players[0],{type:'pieza',fig:'jarron',i:__a.Recetas.datos.figuras.jarron.pasos.indexOf('entregar'),q:90}); });
+  { const s0=await pts(); await en('mostrador'); await pulsar(); T.ok((await ord()).length===0&&await pts()>=s0+10,'la pieza que traía el cliente que se fue sirve al siguiente de esa figura'); }
+  await L(1); await pieza('matera'); await en('mostrador'); await pulsar(); T.ok(await repisa()==='matera'&&await carry()==null,'pieza sin cliente queda en la repisa');
+  { const s0=await pts(); await p.evaluate(()=>__a.pedir('matera')); T.ok(await repisa()===''&&(await ord()).length===0&&await pts()>=s0+8,'la pieza de la repisa se entrega sola al llegar el cliente'); }
+  await pieza('matera'); await pulsar(); await pieza('matera'); await pulsar(); await pieza('matera'); await pulsar(); T.ok(await repisa()==='matera,matera'&&await carry()==='matera:5'&&/repisa.*llena/i.test(await aviso()),'repisa llena (2 puestos): aviso y la pieza sigue en la mano');
+  await L(1); await p.evaluate(()=>__a.pedir('matera')); await p.waitForTimeout(2500);
+  T.ok(await p.evaluate(()=>{ const n=__a.game.orders[0].npc; return !!n&&n.position.x<__a.game.orders[0].npc.position.x+1&&n.position.x<12&&n.position.x>3; }),'el cliente es un muñeco que camina hacia la fila del mostrador');
   T.ok(p.errs.length===0,'sin errores '+JSON.stringify(p.errs)); await c.close(); }
 (async()=>{ await caso('celular horizontal',{viewport:{width:844,height:390},hasTouch:true,isMobile:true,deviceScaleFactor:1},true); await caso('pc',{viewport:{width:1280,height:760}},false); await caso('celular',{viewport:{width:390,height:844},hasTouch:true,isMobile:true,deviceScaleFactor:1},true);
   { const {p}=await T.abrir('alfareria.html?exigir#prueba'); await p.waitForURL(/finca\.html\?nivel=2/,{timeout:15000}).catch(()=>{}); T.ok(/finca\.html\?nivel=2/.test(p.url()),'sin las pistas del taller, vuelve a la exploración: '+p.url()); }
