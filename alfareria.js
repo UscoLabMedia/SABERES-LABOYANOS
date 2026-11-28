@@ -141,16 +141,17 @@ function avance(fig){ let b=null; [...players.map(p=>p.carry),...ST.map(s=>s.pz)
 function datosTarjeta(o){ const F=Recetas.datos.figuras[o.fig], b=avance(o.fig), k=b?Recetas.paso(b):null, i=b?Math.min(b.i,F.pasos.length-1):0;
   return {n:i+1,N:F.pasos.length,sig:b&&k?Recetas.datos.pasos[k]:Recetas.datos.pasos.barro,i}; }
 function renderOrders(){ $('#clientes').innerHTML=game.orders.map(o=>`<button type="button" class="cli ${o.fig==='chiva'?'especial':''}" data-id="${o.id}"><span class="t"><b>${figNom(o.fig)}</b><span class="n"></span></span><span class="sig"></span>${game.mode==='reloj'?'<div class="bar"><i></i></div>':''}</button>`).join(''); pintaClientes(); }
+const pon=(el,k,v)=>{ if (k==='innerHTML'){ if (el._h!==v){ el._h=v; el.innerHTML=v; } } else if (el[k]!==v) el[k]=v; };   // escribir solo si cambia (no romper la seleccion ni el foco)
 function pintaClientes(){ game.orders.forEach(o=>{ const el=$('#clientes').querySelector(`[data-id="${o.id}"]`); if (!el) return; const d=datosTarjeta(o), f=o.left/o.total;
-  el.querySelector('.n').textContent=d.n+'/'+d.N; el.querySelector('.sig').textContent=d.sig;
-  el.setAttribute('aria-label',`${figNom(o.fig)}${o.colores?' pintada de '+o.colores.join(' y '):''}, paso ${d.n} de ${d.N}, sigue ${d.sig}. Ver receta`);
+  pon(el.querySelector('.n'),'textContent',d.n+'/'+d.N); pon(el.querySelector('.sig'),'textContent',d.sig);
+  const al=`${figNom(o.fig)}${o.colores?' pintada de '+o.colores.join(' y '):''}, paso ${d.n} de ${d.N}, sigue ${d.sig}. Ver receta`; if (el.getAttribute('aria-label')!==al) el.setAttribute('aria-label',al);
   const i=el.querySelector('.bar i'); if (i) i.style.width=Math.max(0,f)*100+'%'; el.classList.toggle('mid',game.mode==='reloj'&&f<.5&&f>=.25); el.classList.toggle('low',game.mode==='reloj'&&f<.25); }); }
 /* ---------------- Receta completa ---------------- */
 let recId=null, recFig=null, recPausa=false;
 function pintaReceta(){ if (!recFig) return; const F=Recetas.datos.figuras[recFig.fig], b=avance(recFig.fig), cur=b?Math.min(b.i,F.pasos.length-1):0, o=game.orders.find(q=>q.id===recId), col=(o&&o.colores)||recFig.colores;
-  $('#rTitle').textContent=F.nombre+' · receta';
-  $('#rPasos').innerHTML=F.pasos.map((k,i)=>`<li class="${i<cur?'hecho':i===cur?'actual':''}"${i===cur?' aria-current="step"':''}>${i<cur?'✓ ':(i+1)+'. '}${k==='pintar'&&col?'Pintar: '+col.join(' y '):Recetas.datos.pasos[k]}</li>`).join('');
-  $('#rNota').textContent=[F.fuente==='juego'?'Receta del juego':'',players.length===1?'en modo solo el tiempo se detiene':''].filter(Boolean).join(' · '); }
+  pon($('#rTitle'),'textContent',F.nombre+' · receta');
+  pon($('#rPasos'),'innerHTML',F.pasos.map((k,i)=>`<li class="${i<cur?'hecho':i===cur?'actual':''}"${i===cur?' aria-current="step"':''}>${i<cur?'✓ ':(i+1)+'. '}${k==='pintar'&&col?'Pintar: '+col.join(' y '):Recetas.datos.pasos[k]}</li>`).join(''));
+  pon($('#rNota'),'textContent',[F.fuente==='juego'?'Receta del juego':'',players.length===1?'en modo solo el tiempo se detiene':''].filter(Boolean).join(' · ')); }
 function abrirReceta(o){ if (!game.on) return; recId=o.id; recFig={fig:o.fig,colores:o.colores}; pintaReceta(); $('#receta').hidden=false;
   if (players.length===1 && !game.paused){ game.paused=true; recPausa=true; } $('#rCerrar').focus(); }
 function cerrarReceta(){ if (recId===null) return; recId=null; recFig=null; $('#receta').hidden=true; if (recPausa){ game.paused=false; recPausa=false; } }
@@ -356,7 +357,7 @@ function frame(now){
   const dt=Math.min((now-last)/1000,1/20); last=now;
   const rol=lob?lob.rol:'solo';
   if (game.on && rol==='cliente'){ readInput(); clientFrame(dt); }
-  else if (game.on && !(game.paused && rol==='solo')){ readInput(); step(dt);
+  else if (game.on && !(game.paused && (rol==='solo'||players.length===1))){ readInput(); step(dt);
     if (rol==='host' && now-lastSend>66){ lastSend=now; lob.difundir({t:'estado',s:snapshot()}); } }
   else players.forEach(p=>Muneco.animar(p.model,dt,false,S.motion));
   if (game.on){ pintaClientes(); if (recId!==null) pintaReceta(); }
@@ -426,6 +427,6 @@ function finish(r){
     onCierre:()=>{ if (game.on){ game.on=false; showBanner('Se cerró la sala del anfitrión'); } $('#end').hidden=true; $('#start').hidden=false; },
   });
   resize(); syncStart(); renderOrders(); requestAnimationFrame(frame); $('#goBtn').focus();
-  if (location.hash==='#prueba'){ begin([yo()]); window.__a={game,players,ST,take,use,step,R,camera,setCarry,tirar,accion,nearest,pedir,begin,reset,snapshot,applySnapshot,Recetas,colliders}; }
+  if (location.hash==='#prueba'){ begin([yo()]); window.__a={setLob:v=>{lob=v;},game,players,ST,take,use,step,R,camera,setCarry,tirar,accion,nearest,pedir,begin,reset,snapshot,applySnapshot,Recetas,colliders}; }
 })();
 })();

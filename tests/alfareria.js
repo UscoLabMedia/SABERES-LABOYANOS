@@ -123,6 +123,16 @@ async function caso(nombre,opt,celular){ const {p,c}=await T.abrir('alfareria.ht
   await abrir(0); { const r=await rec(); T.ok(/^✓/.test(r.li[0])&&/^✓/.test(r.li[2])&&/^4\. Secar/.test(r.li[3]),'receta: hechos con ✓ y el actual resaltado '+JSON.stringify(r.li)); } await p.keyboard.press('Escape'); await p.waitForTimeout(200);
   await p.evaluate(()=>{ __a.setCarry(__a.players[0],null); });
   { await L(2); await p.evaluate(()=>{ __a.game.mode='tranquilo'; __a.game.nextOrder=1e9; __a.pedir('matera'); }); await p.waitForTimeout(300); await abrir(0); const t0=await p.evaluate(()=>__a.game.t); await p.waitForTimeout(600); T.ok(await p.evaluate(t=>__a.game.t>t,t0)&&!(await p.evaluate(()=>__a.game.paused)),'con 2 jugadores el tiempo sigue con la receta abierta'); await p.keyboard.press('Escape'); await p.waitForTimeout(200); await L(1); }
+  // --- la ventana no se reescribe cada cuadro; pausa con 1 jugador aunque haya sala (anfitrión solo)
+  await p.evaluate(()=>{ __a.game.mode='tranquilo'; __a.game.paused=false; __a.game.nextOrder=1e9; __a.game.orders.length=0; __a.pedir('matera'); }); await p.waitForTimeout(200); await abrir(0);
+  { await p.evaluate(()=>{ const ol=document.querySelector('#rPasos'); ol._m=ol.firstElementChild; ol._m.dataset.marca='1'; document.querySelector('#clientes .cli').focus(); }); await p.waitForTimeout(500);
+    T.ok(await p.evaluate(()=>{ const ol=document.querySelector('#rPasos'); return ol.firstElementChild===ol._m&&ol._m.dataset.marca==='1'; }),'la receta abierta no se reescribe cada cuadro');
+    T.ok(await p.evaluate(()=>{ const c=document.querySelector('#clientes .cli'); c._m=1; return true; })&&await p.evaluate(()=>new Promise(r=>setTimeout(()=>{ const c=document.querySelector('#clientes .cli'); r(c._m===1); },500))),'las tarjetas no se reconstruyen cada cuadro'); }
+  await p.keyboard.press('Escape'); await p.waitForTimeout(200);
+  await p.evaluate(()=>{ document.querySelector('#clientes .cli').focus(); }); await p.waitForTimeout(500); T.ok(await p.evaluate(()=>document.activeElement===document.querySelector('#clientes .cli')),'la tarjeta enfocada conserva el foco');
+  await p.evaluate(()=>{ __a.setLob({rol:'host',slot:0,jugadores:[{slot:0}],difundir(){},ir(){}}); }); await abrir(0);
+  { const t0=await p.evaluate(()=>__a.game.t); await p.waitForTimeout(600); const t1=await p.evaluate(()=>__a.game.t); T.ok(t1===t0,'anfitrión solo en sala: con la receta abierta el tiempo no avanza '+t0+' '+t1); }
+  await p.keyboard.press('Escape'); await p.waitForTimeout(200); await p.evaluate(()=>{ __a.setLob(null); __a.game.paused=false; });
   // --- letrero del jugador
   await p.evaluate(()=>{ __a.game.orders.length=0; __a.setCarry(__a.players[0],null); __a.game.paused=false; }); await en('barro'); await pulsar(); await p.waitForTimeout(300);
   T.ok(/sigue Amasar/.test(await p.evaluate(()=>__a.players[0].el.textContent)),'el letrero del jugador dice «sigue Amasar» tras tomar barro: '+await p.evaluate(()=>__a.players[0].el.textContent));
