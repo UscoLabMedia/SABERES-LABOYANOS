@@ -3,7 +3,7 @@ addEventListener('contextmenu',e=>{ if (e.target.closest&&e.target.closest('.tou
 'use strict';
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 function fail(m){ document.body.insertAdjacentHTML('beforeend',`<div class="fallback">${m}</div>`); }
-if (typeof THREE==='undefined' || !window.Papel || !window.Muneco){ fail('No se pudo cargar el motor 3D. Revisa la conexión y recarga la página.'); return; }
+if (typeof THREE==='undefined' || !window.Papel || !window.Muneco || !window.Recetas){ fail('No se pudo cargar el motor 3D. Revisa la conexión y recarga la página.'); return; }
 const { S, save, Sound, cutout, D, texFrom, paperMat, boxMesh, hipRoof, tileTex, mk } = Papel;
 document.documentElement.classList.toggle('big-text', S.text==='grande');
 const touch=matchMedia('(pointer: coarse)').matches;
@@ -15,92 +15,89 @@ const saveProg=()=>{ Guardado.guardar(PROG); };
 /* ---------------- Reglas (fáciles de ajustar) ---------------- */
 const R = {
   duracion:180, calidadBase:90, especial:80,
-  amasar:1.6, modelar:1.8, secado:16, quema:14, ventana:10, pintar:1.6, pasadaPorSeg:.8, lluviaPorSeg:1.2, rajadura:28,
-  pedidoCada:22, pedidoDura:100, maxPedidos:3, pts:{vasija:10, chiva:22, suelta:4, perdido:-5, especial:6},
-  lluvias:[[52,72],[122,142]], estrellas:[30,60,100],
+  amasar:1.6, modelar:1.8, secado:10, quema:14, ventana:10, pintar:1.6, pasadaPorSeg:.8, toque:.25,   // toque: menos que esto es tocar (alternar), no mantener
+  pedidoCada:22, pedidoDura:100, maxPedidos:3, pts:{perdido:-5},
+  estrellas:[30,60,100],
 };
-const FORMAS={vasija:'Vasija', chiva:'Chiva'};
 
-/* ---------------- Escena ---------------- */
+/* ---------------- Escena: el taller por dentro ---------------- */
 const canvas=$('#scene'); let renderer;
 try { renderer=new THREE.WebGLRenderer({canvas,antialias:true}); } catch(e){ fail('Este navegador no puede mostrar gráficos 3D (WebGL).'); return; }
 renderer.outputEncoding=THREE.sRGBEncoding; renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.05;
 renderer.shadowMap.enabled=true; renderer.shadowMap.type=S.quality==='alta'?THREE.PCFSoftShadowMap:THREE.BasicShadowMap;
-const scene=new THREE.Scene(); const SKY=new THREE.Color('#2a1d14'), STORM=new THREE.Color('#121a22'); scene.background=SKY.clone();
+const scene=new THREE.Scene(); scene.background=new THREE.Color('#2a1d14');
 const camera=new THREE.PerspectiveCamera(38,1,.1,200);
-const hemi=new THREE.HemisphereLight('#fff1d6','#4a3320',.65); scene.add(hemi);
-const sun=new THREE.DirectionalLight('#ffdcaa',1.25); sun.position.set(-8,16,8); sun.castShadow=true; sun.shadow.mapSize.set(2048,2048); sun.shadow.radius=4; sun.shadow.bias=-.0006;
+const hemi=new THREE.HemisphereLight('#fff1d6','#4a3320',.7); scene.add(hemi);
+const sun=new THREE.DirectionalLight('#ffdcaa',1.15); sun.position.set(-6,16,6); sun.castShadow=true; sun.shadow.mapSize.set(2048,2048); sun.shadow.radius=4; sun.shadow.bias=-.0006;
 Object.assign(sun.shadow.camera,{left:-14,right:14,top:12,bottom:-12,near:1,far:50}); scene.add(sun);
-const front=new THREE.DirectionalLight('#ffe8cc',.3); front.position.set(0,6,14); scene.add(front);
-const AW=11.5, AD=7.5;
-{ const desk=new THREE.Mesh(new THREE.PlaneGeometry(120,120), new THREE.MeshStandardMaterial({color:'#3a2416',roughness:.85})); desk.rotation.x=-Math.PI/2; desk.position.y=-.3; scene.add(desk);
-  const c=mk(1024,680), g=c.getContext('2d'); g.fillStyle='#b9c48a'; g.fillRect(0,0,1024,680);
-  for(let i=0;i<60;i++){ const x=Math.random()*1024,y=Math.random()*680,r=30+Math.random()*90,gr=g.createRadialGradient(x,y,0,x,y,r); gr.addColorStop(0,'rgba(120,150,80,.3)'); gr.addColorStop(1,'rgba(0,0,0,0)'); g.fillStyle=gr; g.fillRect(x-r,y-r,2*r,2*r); }
-  const px=(x,z)=>[(x+AW)/(2*AW)*1024,(z+AD)/(2*AD)*680];
-  g.fillStyle='#a96a3c'; { const [a,b]=px(-11.2,-4.2),[c2,d]=px(-8.2,.4); g.fillRect(a,b,c2-a,d-b); }   // mina de arcilla
-  g.fillStyle='#dcc29a'; { const [a,b]=px(-8,-7),[c2,d]=px(11,2.2); g.fillRect(a,b,c2-a,d-b); }          // patio del taller
-  g.fillStyle='#c9a77c'; { const [a,b]=px(-1,3.8),[c2,d]=px(2,7.1); g.fillRect(a,b,c2-a,d-b); }
-  g.globalAlpha=.9; g.fillStyle=g.createPattern(Papel.FIBER,'repeat'); g.fillRect(0,0,1024,680); g.globalAlpha=1;
-  const ground=new THREE.Mesh(new THREE.BoxGeometry(AW*2,.3,AD*2), [paperMat('#e9dcc0'),paperMat('#e9dcc0'),new THREE.MeshStandardMaterial({map:texFrom(c),roughness:.95}),paperMat('#e9dcc0'),paperMat('#e9dcc0'),paperMat('#e9dcc0')]);
-  ground.position.y=-.15; ground.receiveShadow=true; scene.add(ground); }
-const tiles=tileTex();
-
-/* ---------------- Estaciones ---------------- */
-// cada pieza viaja: barro → masa (amasado) → cruda (torno/mesa de chivas) → seca → cocida (horno) → pintada → entrega
-const ST=[], colliders=[];
-function station(kind,x,z,r,name,mesh){ const s={kind,x,z,r,name,state:'vacio',t:0,q:0,prog:0,forma:'',aire:false,mesh}; ST.push(s); colliders.push({x,z,r}); if (mesh){ mesh.position.set(x,0,z); scene.add(mesh); }
-  if (name){ s.el=document.createElement('div'); s.el.className='st'; $('#labels').appendChild(s.el); } return s; }
+const front=new THREE.DirectionalLight('#ffe8cc',.35); front.position.set(0,6,14); scene.add(front);
+const AW=11, AD=6.2;   // medio ancho y media profundidad del taller (sin pared delantera)
 const mat=(c,m)=>paperMat(c,m);
-const TERRA='#b5652f', CLAY='#a96a3c', WOOD='#8a5a32';
-const tableMesh=(w,d,h=.7,col=WOOD)=>{ const g=new THREE.Group(); const top=boxMesh(w,.12,d,mat(col)); top.position.y=h; g.add(top); [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sz])=>{ const l=boxMesh(.1,h,.1,mat('#6b4224')); l.position.set(sx*(w/2-.1),0,sz*(d/2-.1)); g.add(l); }); return g; };
+const TERRA='#b5652f', CLAY='#a96a3c', WOOD='#8a5a32', BEAM='#6b4224', WALL='#ead7b8';
+{ const desk=new THREE.Mesh(new THREE.PlaneGeometry(120,120), new THREE.MeshStandardMaterial({color:'#3a2416',roughness:.85})); desk.rotation.x=-Math.PI/2; desk.position.y=-.3; scene.add(desk);
+  const tiles=tileTex(); tiles.repeat.set(AW*.45,AD*.45); const side=paperMat('#7a3a22');
+  const floor=new THREE.Mesh(new THREE.BoxGeometry(AW*2,.3,AD*2),[side,side,new THREE.MeshStandardMaterial({map:tiles,roughness:.9}),side,side,side]); floor.position.y=-.15; floor.receiveShadow=true; scene.add(floor);
+  const back=boxMesh(AW*2+.6,3.2,.3,mat(WALL)); back.position.set(0,0,-AD-.15); scene.add(back);   // pared del fondo
+  [-7.5,-2.6,2.6,7.5].forEach(x=>{ const f=boxMesh(2,1.3,.08,mat(BEAM)); f.position.set(x,1.1,-AD+.02); scene.add(f); const v=boxMesh(1.7,1.05,.1,mat('#9cc7d8')); v.position.set(x,1.22,-AD+.03); scene.add(v);   // ventanas
+    const c=boxMesh(.08,1.05,.12,mat(BEAM)); c.position.set(x,1.22,-AD+.04); scene.add(c); });
+  for (let x=-AW;x<=AW+.01;x+=AW/2.5){ const b=boxMesh(.28,3.2,.34,mat(BEAM)); b.position.set(x,0,-AD); scene.add(b); }   // vigas
+  { const b=boxMesh(AW*2+.6,.3,.4,mat(BEAM)); b.position.set(0,2.9,-AD); scene.add(b); }
+  [-1,1].forEach(sx=>{ const w=boxMesh(.3,1,AD*2,mat(WALL)); w.position.set(sx*(AW+.15),0,0); scene.add(w); const t=boxMesh(.4,.12,AD*2,mat(BEAM)); t.position.set(sx*(AW+.15),1,0); scene.add(t); });   // paredes laterales bajas
+}
+
+/* ---------------- Figuras y piezas ---------------- */
+// Una pieza es {type:'pieza', fig, i, q, colores?, pintados?, parte?}: fig = figura (null mientras es barro), i = próximo paso de su receta.
+const COL={rojo:'#c0262c',amarillo:'#f2c94c',azul:'#2f6b8a',verde:'#2f8a5a'};
+const ETCOL={barro:CLAY, masa:'#c98a58', cruda:'#7a4a2a', seca:'#c98a58', cocida:'#b5652f', pintada:'#f4efe3'};
+function etapa(pz){ if (!pz.fig) return pz.i>=2?'masa':'barro'; const L=Recetas.datos.figuras[pz.fig].pasos, hecho=k=>{ const n=L.indexOf(k); return n>=0&&n<pz.i; };
+  return hecho('pintar')?'pintada':hecho('hornear')?'cocida':hecho('secar')?'seca':'cruda'; }
 const lump=(col,r=.28)=>{ const m=new THREE.Mesh(new THREE.IcosahedronGeometry(r,1),new THREE.MeshStandardMaterial({color:col,roughness:.9,flatShading:true})); m.castShadow=true; return m; };
-const potMesh=(col,r=.2,h=.36)=>{ const m=new THREE.Mesh(new THREE.CylinderGeometry(r*.8,r,h,10),new THREE.MeshStandardMaterial({color:col,roughness:.85,flatShading:true})); m.castShadow=true; return m; };
-const chivaMesh=(col)=>{ const g=new THREE.Group(); const b=boxMesh(.55,.28,.26,mat(col)); b.position.y=.2; g.add(b); const h=boxMesh(.18,.2,.24,mat('#2f6b8a')); h.position.set(.36,.16,0); g.add(h);
-  const rk=boxMesh(.5,.06,.24,mat('#f2c94c')); rk.position.y=.38; g.add(rk); [[-.2,.14],[.2,.14],[-.2,-.14],[.2,-.14]].forEach(([x,z])=>{ const w=new THREE.Mesh(new THREE.CylinderGeometry(.07,.07,.05,8),mat('#2a1c11')); w.rotation.x=Math.PI/2; w.position.set(x,.08,z); g.add(w); }); g.traverse(o=>{ if (o.isMesh) o.castShadow=true; }); return g; };
-const pieceMesh=(forma,col)=> forma==='chiva'?chivaMesh(col):potMesh(col);
-// mina de arcilla
-{ const g=new THREE.Group(); [[0,0,.5],[.5,.2,.38],[-.5,.1,.42],[.1,-.5,.34]].forEach(([x,z,r])=>{ const m=lump(CLAY,r); m.position.set(x,r*.6,z); g.add(m); }); station('barro',-9.7,-2,1,'Mina de arcilla',g); }
-// pila de leña
-{ const g=new THREE.Group(); for (let i=0;i<7;i++){ const l=new THREE.Mesh(new THREE.CylinderGeometry(.09,.09,1,6),mat('#6b4224')); l.rotation.z=Math.PI/2; l.position.set(0,.12+Math.floor(i/3)*.18,(i%3-1)*.2+(i>=3?.1:0)); g.add(l); } station('lena',-9.7,3.4,.8,'Leña',g); }
-// mesas de amasado
-[-4.9,-1.4].forEach((z,i)=>{ const g=tableMesh(1.5,1,.7); const m=lump('#c98a58',.26); m.position.y=1; m.visible=false; g.add(m); const s=station('amasado',-6.4,z,1,`Amasado ${i+1}`,g); s.lump=m; });
-// torno y mesa de chivas
-{ const g=tableMesh(1.5,1.2,.7); const wheel=new THREE.Mesh(new THREE.CylinderGeometry(.42,.42,.08,16),mat('#5a3a22')); wheel.position.y=.82; g.add(wheel); const p=potMesh(TERRA,.2,.4); p.position.y=1.06; p.visible=false; g.add(p); const s=station('torno',-3,-5,1.1,'Torno',g); s.wheel=wheel; s.item=p; }
-{ const g=tableMesh(1.5,1.2,.7); const p=chivaMesh(TERRA); p.position.y=.76; p.visible=false; g.add(p); const s=station('mesaChiva',-3,-1.6,1.1,'Mesa de chivas',g); s.item=p; }
-// secadero: 3 estantes bajo toldo
-const estantes=[];
-[-5.2,-2.6,0].forEach((z,i)=>{ const g=tableMesh(1.9,1.3,.5,'#9a6a3a'); const slot=new THREE.Group(); slot.position.y=.62; slot.visible=false; g.add(slot); const s=station('secadero',1.8,z,1.1,`Secadero ${i+1}`,g); s.slot=slot; estantes.push(s); });
-const toldoG=new THREE.PlaneGeometry(3.4,7.2); toldoG.rotateX(-Math.PI/2);
-const toldo=new THREE.Mesh(toldoG,new THREE.MeshStandardMaterial({color:'#e8e2d2',transparent:true,opacity:.0,side:THREE.DoubleSide,roughness:.8,depthWrite:false})); toldo.position.set(1.8,1.7,-2.6); scene.add(toldo); let cubierto=false;   // false = al sol
-[[0,-5.8],[3.6,-5.8],[0,.6],[3.6,.6]].forEach(([x,z])=>{ const p=boxMesh(.12,1.7,.12,mat('#6b4224')); p.position.set(x,0,z); scene.add(p); });
-// palanca del toldo
-{ const g=new THREE.Group(); const post=boxMesh(.2,.9,.2,mat('#6b4224')); g.add(post); const arm=new THREE.Group(); arm.position.y=.85; const stick=boxMesh(.08,.6,.08,mat('#c8101e')); arm.add(stick); arm.rotation.z=.6; g.add(arm);
-  const s=station('palanca',4.6,2.3,.4,'Toldo',g); s.arm=arm; }
-// hornos de leña
-[-4.8,-1.6].forEach((z,i)=>{ const g=new THREE.Group(); const base=boxMesh(1.7,.5,1.5,mat('#9a6a3c')); g.add(base);
+const lathe=(pts,col)=>{ const m=new THREE.Mesh(new THREE.LatheGeometry(pts.map(([x,y])=>new THREE.Vector2(x,y)),12),new THREE.MeshStandardMaterial({color:col,roughness:.85,flatShading:true,side:THREE.DoubleSide})); m.castShadow=true; return m; };
+const PERFIL={ matera:[[0,0],[.2,0],[.27,.26],[.3,.28],[.3,.31]], jarron:[[0,0],[.13,0],[.21,.14],[.16,.32],[.08,.42],[.11,.5]], frutero:[[0,0],[.12,0],[.06,.07],[.06,.12],[.26,.2],[.32,.3]] };
+function chivaMesh(col,parte,cs=[]){ const g=new THREE.Group();
+  if (parte!=='carga'){ const b=boxMesh(.55,.28,.26,mat(cs[0]?COL[cs[0]]:col)); b.position.y=.2; g.add(b); const h=boxMesh(.18,.2,.24,mat('#2f6b8a')); h.position.set(.36,.16,0); g.add(h);
+    [[-.2,.14],[.2,.14],[-.2,-.14],[.2,-.14]].forEach(([x,z])=>{ const w=new THREE.Mesh(new THREE.CylinderGeometry(.07,.07,.05,8),mat('#2a1c11')); w.rotation.x=Math.PI/2; w.position.set(x,.08,z); g.add(w); }); }
+  if (parte!=='carroceria'){ const rk=boxMesh(.5,.06,.24,mat(cs[1]?COL[cs[1]]:parte==='carga'?col:'#f2c94c')); rk.position.y=parte==='carga'?0:.38; g.add(rk);
+    [-.14,.06].forEach(x=>{ const c=boxMesh(.14,.12,.16,mat(col)); c.position.set(x,(parte==='carga'?.06:.44),0); g.add(c); }); }
+  g.traverse(o=>{ if (o.isMesh) o.castShadow=true; }); return g; }
+function pieceMesh(pz){ const e=etapa(pz), col=ETCOL[e]; if (!pz.fig) return lump(col,.22);
+  if (pz.fig==='chiva') return chivaMesh(col,pz.parte,e==='pintada'?pz.colores:(pz.pintados||[]));
+  const m=lathe(PERFIL[pz.fig],col); if (e==='pintada'){ const b=new THREE.Mesh(new THREE.CylinderGeometry(.2,.2,.05,12),mat('#c0262c')); b.position.y=.16; m.add(b); } return m; }
+function itemMesh(it){ const g=new THREE.Group(), m=pieceMesh(it); m.scale.setScalar(it.fig==='chiva'?.7:.8); m.position.y=it.fig?0:.12; g.add(m); return g; }
+const NAMES={barro:'Mina', amasado:'Amasado', torno:'Torno', mesa:'Mesa de modelar', secadero:'Secadero', horno:'Horno', pintura:'Pintura', mostrador:'Mostrador'};
+const figNom=f=>Recetas.datos.figuras[f].nombre;
+const esMasa=c=>!!c&&!c.fig&&c.i===2;
+const pasoNom=pz=>{ const k=Recetas.paso(pz); return k?Recetas.datos.pasos[k]:'Modelar'; };   // la masa (sin figura) sigue en el torno o la mesa
+const destino=pz=>{ const k=Recetas.paso(pz); return k?NAMES[Recetas.estacion(k)]:'Torno o Mesa de modelar'; };
+const nom=it=> it.fig ? figNom(it.fig)+(it.parte?` (${Recetas.datos.pasos[it.parte].toLowerCase()})`:'') : (it.i>=2?'Barro amasado':'Barro');
+
+/* ---------------- Estaciones (3 columnas: izquierda barro→modelar, medio secar/hornear, derecha pintar/entregar) ---------------- */
+const ST=[], colliders=[];
+function station(kind,x,z,r,name,mesh,slotY){ const s={kind,x,z,r,name,state:'vacio',t:0,prog:0,pz:null,espera:null,sel:0,color:0,mesh}; ST.push(s); colliders.push({x,z,r}); if (mesh){ mesh.position.set(x,0,z); scene.add(mesh);
+    if (slotY!=null){ s.slot=new THREE.Group(); s.slot.position.y=slotY; mesh.add(s.slot); } }
+  if (name){ s.el=document.createElement('div'); s.el.className='st'; $('#labels').appendChild(s.el); } return s; }
+const tableMesh=(w,d,h=.7,col=WOOD)=>{ const g=new THREE.Group(); const top=boxMesh(w,.12,d,mat(col)); top.position.y=h; g.add(top); [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sz])=>{ const l=boxMesh(.1,h,.1,mat(BEAM)); l.position.set(sx*(w/2-.1),0,sz*(d/2-.1)); g.add(l); }); return g; };
+const ZA=-4.3, ZM=-.8, ZB=3.3;   // filas: arriba, medio, abajo
+// izquierda abajo: mina de arcilla
+{ const g=new THREE.Group(); [[0,0,.5],[.5,.2,.38],[-.5,.1,.42],[.1,-.5,.34]].forEach(([x,z,r])=>{ const m=lump(CLAY,r); m.position.set(x,r*.6,z); g.add(m); }); station('barro',-7,ZB,1,'Mina',g); }
+// izquierda medio: 2 mesas de amasado
+[-8.6,-5.4].forEach(x=>station('amasado',x,ZM,1,'Amasado',tableMesh(1.5,1,.7),.95));
+// izquierda arriba: torno · mesa de modelar · torno
+[-9.2,-4.6].forEach(x=>{ const g=tableMesh(1.5,1.2,.7); const wheel=new THREE.Mesh(new THREE.CylinderGeometry(.42,.42,.08,16),mat('#5a3a22')); wheel.position.y=.82; g.add(wheel); const s=station('torno',x,ZA,1,'Torno',g,.86); s.wheel=wheel; });
+station('mesa',-6.9,ZA,1,'Mesa de modelar',tableMesh(1.6,1.2,.7),.76);
+// medio arriba: 2 hornos (arrancan solos al cargar)
+[-.6,2.4].forEach(x=>{ const g=new THREE.Group(); const base=boxMesh(1.7,.5,1.5,mat('#9a6a3c')); g.add(base);
   const dome=new THREE.Mesh(new THREE.SphereGeometry(.9,14,8,0,Math.PI*2,0,Math.PI/2),new THREE.MeshStandardMaterial({color:'#b0582f',roughness:.9,flatShading:true})); dome.position.y=.5; dome.scale.set(1,.9,.9); dome.castShadow=true; g.add(dome);
   const door=new THREE.Mesh(new THREE.CircleGeometry(.3,12),new THREE.MeshStandardMaterial({color:'#2a140b'})); door.position.set(0,.85,.82); g.add(door);
   const fire=new THREE.Mesh(new THREE.CircleGeometry(.22,12),new THREE.MeshBasicMaterial({color:'#ff9a2a'})); fire.position.set(0,.85,.83); fire.visible=false; g.add(fire);
-  const s=station('horno',6.2,z,1.1,`Horno ${i+1}`,g); s.fire=fire; });
-// mesas de pintura
-[-4.8,-1.6].forEach((z,i)=>{ const g=tableMesh(1.5,1.1,.7); ['#c0262c','#f2c94c','#2f6b8a','#2f8a5a'].forEach((c,k)=>{ const b=new THREE.Mesh(new THREE.CylinderGeometry(.08,.07,.07,8),mat(c)); b.position.set(-.5+k*.33,.8,.3); g.add(b); });
-  const p=chivaMesh('#f4efe3'); p.position.y=.76; p.visible=false; g.add(p); const s=station('pintura',9.5,z,1,`Pintura ${i+1}`,g); s.item=p; s.holder=g; });
-// puesto de entrega (feria)
-{ const g=new THREE.Group(); const top=boxMesh(3.2,.2,1.1,mat('#8a5a32')); top.position.y=.75; g.add(top); const front=boxMesh(3.2,.75,.12,mat('#c0262c')); front.position.set(0,0,.5); g.add(front);
-  [-1.5,1.5].forEach(x=>{ const p=boxMesh(.1,1.8,.1,mat('#6b4224')); p.position.set(x,0,-.4); g.add(p); }); const aw=boxMesh(3.5,.08,1.5,mat('#f2c94c')); aw.position.set(0,1.8,.05); g.add(aw);
-  const load=new THREE.Group(); load.position.set(0,.85,0); g.add(load); const s=station('entrega',-.5,5.6,1.6,'Puesto de la feria',g); s.load=load; colliders.pop(); colliders.push({x0:-2.2,x1:1.2,z0:4.9,z1:6.3}); }
-
-/* ---------------- Objetos que se cargan ---------------- */
-function itemMesh(it){ const g=new THREE.Group();
-  if (it.type==='barro'){ const m=lump(CLAY,.2); m.position.y=.12; g.add(m); }
-  else if (it.type==='masa'){ const m=lump('#c98a58',.2); m.position.y=.12; g.add(m); }
-  else if (it.type==='lena'){ for (let i=0;i<3;i++){ const l=new THREE.Mesh(new THREE.CylinderGeometry(.05,.05,.4,6),mat('#6b4224')); l.rotation.z=Math.PI/2; l.position.set(0,.06+i*.09,(i-1)*.08); g.add(l); } }
-  else { const col={cruda:'#7a4a2a',seca:'#c98a58',cocida:'#b5652f',pintada:'#f4efe3'}[it.type]; const m=pieceMesh(it.forma,col); m.scale.setScalar(it.forma==='chiva'?.7:.8); g.add(m);
-    if (it.type==='pintada'&&it.forma==='vasija'){ const b=new THREE.Mesh(new THREE.CylinderGeometry(.17,.17,.06,10),mat('#c0262c')); b.position.y=.03; m.add(b); } }
-  return g; }
-const NAMES={barro:'Barro', masa:'Barro amasado', lena:'Leña', cruda:'Pieza cruda', seca:'Pieza seca', cocida:'Pieza cocida', pintada:'Pieza pintada'};
-const qual=it=> Math.round(it.q||0);
-const nom=it=> NAMES[it.type]+(it.forma?` (${FORMAS[it.forma].toLowerCase()})`:'');
+  const s=station('horno',x,ZA,1.1,'Horno',g); s.fire=fire; });
+// medio abajo: secadero de 3 puestos (un solo letrero, en el del centro)
+[-.6,.9,2.4].forEach((x,i)=>station('secadero',x,ZB,.6,i===1?'Secadero':'',tableMesh(1.3,1.2,.5,'#9a6a3a'),.62));
+// derecha arriba y medio: 2 mesas de pintura
+[ZA,ZM].forEach(z=>{ const g=tableMesh(1.5,1.1,.7); Object.values(COL).forEach((c,k)=>{ const b=new THREE.Mesh(new THREE.CylinderGeometry(.08,.07,.07,8),mat(c)); b.position.set(-.5+k*.33,.8,.3); g.add(b); }); station('pintura',8,z,1,'Pintura',g,.76); });
+// derecha abajo: mostrador (los clientes esperan a su izquierda)
+{ const g=new THREE.Group(); const top=boxMesh(3.2,.2,1.1,mat('#8a5a32')); top.position.y=.75; g.add(top); const fr=boxMesh(3.2,.75,.12,mat('#6b3e22')); fr.position.set(0,0,.5); g.add(fr);
+  const load=new THREE.Group(); load.position.set(0,.95,-.1); g.add(load); const s=station('mostrador',8.2,3.6,1.6,'Mostrador',g); s.load=load; colliders.pop(); colliders.push({x0:6.6,x1:9.8,z0:3.05,z1:4.15}); }
 
 /* ---------------- Jugadores ---------------- */
 const PCOL=['#c8101e','#2f6b8a','#d9ae55','#2f8a5a'];
@@ -111,16 +108,16 @@ function makePlayers(list){
     const holder=new THREE.Group(); const model=Muneco.jugador(j.slot===mySlot()?(PROG.etapa||0):(j.etapa||0), j.avatar==='muneca'); holder.add(model);
     const ring=new THREE.Mesh(new THREE.RingGeometry(.38,.5,24), new THREE.MeshBasicMaterial({color:PCOL[j.slot%4],transparent:true,opacity:.85})); ring.rotation.x=-Math.PI/2; ring.position.y=.02; holder.add(ring);
     const hand=new THREE.Group(); hand.position.set(0,.62,.32); holder.add(hand);
-    const x=-2+i*1.3, z=1.2; holder.position.set(x,0,z); holder.scale.setScalar(1.3); scene.add(holder);
+    const x=-.6+i*1.2, z=1.2; holder.position.set(x,0,z); holder.scale.setScalar(1.3); scene.add(holder);
     const el=document.createElement('div'); el.className='pl'; el.style.background=PCOL[j.slot%4]; $('#labels').appendChild(el);
-    players.push({i,slot:j.slot,nombre:j.nombre||('J'+(j.slot+1)),holder,model,hand,x,z,tx:x,tz:z,face:Math.PI,carry:null,carryKey:'',el,moving:false,inp:{x:0,z:0,take:false,use:false,drop:false,useEdge:false}});
+    players.push({i,slot:j.slot,nombre:j.nombre||('J'+(j.slot+1)),holder,model,hand,x,z,tx:x,tz:z,face:Math.PI,carry:null,carryKey:'',el,moving:false,useT:0,useS:null,inp:{x:0,z:0,take:false,use:false,drop:false,useEdge:false}});
   }); }
 function setCarry(p,it){ p.carry=it; p.carryKey=it?JSON.stringify(it):''; p.hand.clear(); if (it) p.hand.add(itemMesh(it)); p.model.userData.carry=!!it; }
 
 /* ---------------- Entrada (motor común en estaciones.js) ---------------- */
 let E=null;   // se crea tras definir `game` (ver más abajo)
 /* ---------------- Estado del juego ---------------- */
-const game={on:false,paused:false,mode:'reloj',t:0,score:0,orders:[],nextOrder:0,stats:{piezas:0,especial:0,perdidos:0},raining:false,rainWarned:{}};
+const game={on:false,paused:false,mode:'reloj',t:0,score:0,orders:[],nextOrder:0,stats:{piezas:0,especial:0,perdidos:0}};
 E=Estaciones.entrada({canvas,camera,game,togglePause:()=>togglePause(),ST,players,mySlot:()=>mySlot(),accion:(p,x)=>accion(p,x),reachOf:x=>reachOf(x),touch,lob:()=>lob});
 const { readInput, remote, down, pressed, mouse } = E;
 let banTimer, who=null; const evq=[];
@@ -133,91 +130,97 @@ function showFloat(txt,x,y,z){ const el=document.createElement('div'); el.classN
   const v=new THREE.Vector3(x,y,z).project(camera); el.style.left=((v.x+1)/2*innerWidth)+'px'; el.style.top=((1-v.y)/2*innerHeight)+'px';
   requestAnimationFrame(()=>{ el.style.transform='translate(-50%,-260%)'; el.style.opacity='0'; }); setTimeout(()=>el.remove(),1100); }
 /* ---------------- Pedidos ---------------- */
-function addOrder(){ const forma=Math.random()<.5?'chiva':'vasija'; game.orders.push({id:Math.random(),type:forma,left:R.pedidoDura,total:R.pedidoDura}); renderOrders(); }
-function renderOrders(){ $('#orders').innerHTML=game.orders.map(o=>`<li class="order ${o.type==='chiva'?'especial':''}${game.mode==='reloj'&&o.left<20?' hurry':''}" data-id="${o.id}"><b>${o.type==='chiva'?'Una chiva':'Una vasija'}</b><span>${o.type==='chiva'?'Chiva de barro pintada':'Vasija de barro pintada'}</span>${game.mode==='reloj'?`<div class="bar"><i style="width:${o.left/o.total*100}%"></i></div>`:''}</li>`).join('')
-  || '<li class="order"><b>Sin pedidos</b><span>Ya viene otro comprador</span></li>'; }
+// Un cliente es por ahora una entrada en game.orders: {id, fig, colores, left, total}. La pieza se ata a la figura, no al cliente.
+function pedir(fig,colores){ game.orders.push({id:Math.random(),fig,colores:Recetas.datos.figuras[fig].colores?(colores||Recetas.coloresAzar()):undefined,left:R.pedidoDura,total:R.pedidoDura}); renderOrders(); }
+function addOrder(){ const f=Object.keys(Recetas.datos.figuras); pedir(f[Math.floor(Math.random()*f.length)]); }
+function renderOrders(){ $('#orders').innerHTML=game.orders.map(o=>`<li class="order ${o.fig==='chiva'?'especial':''}${game.mode==='reloj'&&o.left<20?' hurry':''}" data-id="${o.id}"><b>${figNom(o.fig)}</b><span>${o.colores?'Pintada de '+o.colores.join(' y '):Recetas.datos.figuras[o.fig].pasos.length+' pasos'}</span>${game.mode==='reloj'?`<div class="bar"><i style="width:${o.left/o.total*100}%"></i></div>`:''}</li>`).join('')
+  || '<li class="order"><b>Sin pedidos</b><span>Ya viene otro cliente</span></li>'; }
+// cliente de esa figura con menos paciencia (si la pieza ya tiene colores, primero el que pidió esos)
+function pedidoDe(fig,c){ const l=game.orders.filter(o=>o.fig===fig).sort((a,b)=>a.left-b.left); return (c&&c.colores&&l.find(o=>String(o.colores)===String(c.colores)))||l[0]; }
 
-function nearest(p){ let best=null, bd=1e9; ST.forEach(s=>{ const d=Math.hypot(s.x-p.x,s.z-p.z)-s.r; const reach=s.kind==='entrega'?1.4:.95; if (d<reach && d<bd){ bd=d; best=s; } }); return best; }
-const reachOf=s=>s.kind==='entrega'?1.3:.95;
+function nearest(p){ let best=null, bd=1e9; ST.forEach(s=>{ const d=Math.hypot(s.x-p.x,s.z-p.z)-s.r; if (d<reachOf(s)+.05 && d<bd){ bd=d; best=s; } }); return best; }
+const reachOf=s=>s.kind==='mostrador'?1.3:.95;
 function pick(p){ const s=p.inp.si!=null?ST[p.inp.si]:null; if (s && Math.hypot(s.x-p.x,s.z-p.z)-s.r<reachOf(s)) return s; return nearest(p); }
 // Soltar lo que llevas en las manos: se pierde (no se puede recuperar)
 function tirar(p){ if (!p.carry){ banner('No llevas nada que soltar'); return; } const n=nom(p.carry); setCarry(p,null); snd('tick'); banner(`Soltaste: ${n} (se perdió)`); }
-const esBarro=c=>c&&(c.type==='masa'||c.type==='barro');
+const eleccion=s=>{ const o=Recetas.figurasPara(s.kind,game.orders); return o.length?o[s.sel%o.length]:null; };   // figura que se va a modelar en el torno o la mesa
+// estaciones que reciben una pieza, la trabajan y la devuelven con el paso hecho
+const TRABAJO={amasado:['amasando','listo','Aquí se amasa el barro de la mina'], secadero:['secando','seco','Aquí se secan las piezas modeladas'], horno:['quemando','lista','Aquí se hornean las piezas secas'], pintura:['pintando','listo','Aquí se pintan las piezas cocidas']};
+const sacable=s=>s.state===TRABAJO[s.kind][1]||s.state==='pasada';
 function accion(p,s=nearest(p)){ const c=p.carry; if (!s) return {t:'Acción'};
+  const lleno={t:'Manos llenas'};
   switch(s.kind){
     case 'barro': return {t:c?'Manos llenas':'Tomar barro'};
-    case 'lena': return {t:c?'Manos llenas':'Tomar leña'};
-    case 'amasado': if (s.state==='amasando') return {t:'Amasar',hold:true,prog:s.prog}; if (s.state==='listo') return {t:c?'Manos llenas':'Sacar masa'}; return {t:c&&c.type==='barro'?'Echar barro':'Amasado'};
-    case 'torno': case 'mesaChiva': if (s.state==='modelando') return {t:'Modelar',hold:true,prog:s.prog}; if (s.state==='listo') return {t:c?'Manos llenas':'Sacar pieza'};
-      return {t:esBarro(c)?'Poner barro':(s.kind==='torno'?'Torno':'Mesa de chivas')};
-    case 'secadero': if (s.state==='vacio') return {t:c&&c.type==='cruda'?'Poner a secar':'Secadero'}; if (s.state==='seco') return {t:c?'Manos llenas':'Recoger seca'}; return {t:'Secando…'};
-    case 'horno': if (s.state==='vacio') return {t:c&&c.type==='seca'?'Cargar pieza':'Horno'}; if (s.state==='cargado') return {t:c&&c.type==='lena'?'Encender':'Falta leña'};
-      if (s.state==='lista'||s.state==='pasada') return {t:c?'Manos llenas':'Sacar pieza'}; return {t:'Quemando…'};
-    case 'pintura': if (s.state==='pintando') return {t:'Pintar',hold:true,prog:s.prog}; if (s.state==='listo') return {t:c?'Manos llenas':'Recoger'}; return {t:c&&c.type==='cocida'?'Poner pieza':'Pintura'};
-    case 'palanca': return {t:cubierto?'Destapar':'Cubrir'};
-    case 'entrega': return {t:'Entregar'};
+    case 'amasado': if (s.state==='amasando') return {t:'Amasar',hold:true,prog:s.prog}; if (s.state==='listo') return c?lleno:{t:'Sacar masa'}; return {t:c&&Recetas.acepta('amasado',c)?'Echar barro':'Amasado'};
+    case 'torno': case 'mesa': {
+      if (s.kind==='mesa' && c&&c.parte) return {t:!s.espera?'Dejar parte':s.espera!==c.parte?'Pegar':'Mesa ocupada'};
+      if (!esMasa(c)) return {t:NAMES[s.kind]};
+      const f=eleccion(s); return f?{t:'Hacer: '+figNom(f),hold:true,prog:s.prog}:{t:'Nadie lo pide'}; }
+    case 'secadero': if (s.state==='vacio') return {t:c&&Recetas.acepta('secadero',c)?'Poner a secar':'Secadero'}; if (s.state==='seco') return c?lleno:{t:'Recoger seca'}; return {t:'Secando…'};
+    case 'horno': if (s.state==='vacio') return {t:c&&Recetas.acepta('horno',c)?'Cargar pieza':'Horno'}; if (sacable(s)) return c?lleno:{t:'Sacar pieza'}; return {t:'Horneando…'};
+    case 'pintura': if (s.state==='pintando') return {t:s.pz.colores?'Pintar '+Recetas.datos.colores[s.color]:'Pintar',hold:true,prog:s.prog}; if (s.state==='listo') return c?lleno:{t:'Recoger'}; return {t:c&&Recetas.acepta('pintura',c)?'Poner pieza':'Pintura'};
+    case 'mostrador': return {t:'Entregar'};
   } return {t:'Acción'}; }
 function take(p){
   const s=pick(p), c=p.carry; if (!s) return;
+  const noVa=()=>banner('Esta pieza ahora va a: '+destino(c));
   switch(s.kind){
-    case 'barro': if (c){ banner('Tienes las manos ocupadas'); return; } setCarry(p,{type:'barro',q:R.calidadBase,aire:true}); snd('pop',2); return;
-    case 'lena': if (c){ banner('Tienes las manos ocupadas'); return; } setCarry(p,{type:'lena'}); snd('pop',2); return;
-    case 'amasado':
-      if (s.state==='vacio' && c?.type==='barro'){ s.state='amasando'; s.prog=0; s.q=c.q; setCarry(p,null); snd('pop',1); return; }
-      if (s.state==='listo' && !c){ setCarry(p,{type:'masa',q:s.q,aire:false}); s.state='vacio'; snd('pop',3); return; }
-      banner(s.state==='amasando'?'Mantén pulsado para amasar':s.state==='listo'?'Tienes las manos ocupadas':'Aquí va el barro de la mina'); return;
-    case 'torno': case 'mesaChiva':
-      if (s.state==='vacio' && esBarro(c)){ s.state='modelando'; s.prog=0; s.q=c.q; s.aire=!!c.aire; s.forma=s.kind==='torno'?'vasija':'chiva'; setCarry(p,null); snd('pop',1); if (s.aire) banner('Ese barro no se amasó: puede rajarse en el horno'); return; }
-      if (s.state==='listo' && !c){ setCarry(p,{type:'cruda',forma:s.forma,q:s.q,aire:s.aire}); s.state='vacio'; snd('pop',3); return; }
-      banner(s.state==='modelando'?'Mantén pulsado para modelar':s.state==='listo'?'Tienes las manos ocupadas':'Trae barro (mejor amasado)'); return;
-    case 'secadero':
-      if (s.state==='vacio' && c?.type==='cruda'){ s.state='secando'; s.prog=0; s.q=c.q; s.forma=c.forma; s.aire=!!c.aire; setCarry(p,null); snd('pop',1); return; }
-      if (s.state==='seco' && !c){ setCarry(p,{type:'seca',forma:s.forma,q:s.q,aire:s.aire}); s.state='vacio'; snd('pop',3); return; }
-      banner(s.state==='secando'?'Se está secando':'Aquí va la pieza cruda'); return;
-    case 'horno':
-      if (s.state==='vacio' && c?.type==='seca'){ s.state='cargado'; s.t=0; s.q=c.q; s.forma=c.forma; s.aire=!!c.aire; s.rajada=false; setCarry(p,null); snd('pop',1); banner('Falta la leña para encender el horno'); return; }
-      if (s.state==='cargado' && c?.type==='lena'){ s.state='quemando'; s.t=0; setCarry(p,null); snd('pop',5); return; }
-      if ((s.state==='lista'||s.state==='pasada') && !c){ setCarry(p,{type:'cocida',forma:s.forma,q:s.q}); s.state='vacio'; s.rajada=false; snd('pop',3); return; }
-      banner(s.state==='cargado'?'Trae leña':s.state==='quemando'?'Todavía se quema':'Aquí va la pieza seca'); return;
-    case 'pintura':
-      if (s.state==='vacio' && c?.type==='cocida'){ s.state='pintando'; s.prog=0; s.q=c.q; s.forma=c.forma; setCarry(p,null); snd('pop',1); return; }
-      if (s.state==='listo' && !c){ setCarry(p,{type:'pintada',forma:s.forma,q:s.q}); s.state='vacio'; snd('pop',3); return; }
-      banner(s.state==='pintando'?'Mantén pulsado para pintar':s.state==='listo'?'Tienes las manos ocupadas':'Aquí va la pieza cocida'); return;
-    case 'palanca': toggleToldo(); return;
-    case 'entrega':
-      if (c?.type!=='pintada'){ banner('El puesto solo recibe piezas pintadas'); return; }
+    case 'barro': if (c){ banner('Tienes las manos ocupadas'); return; } setCarry(p,{type:'pieza',fig:null,i:1,q:R.calidadBase}); snd('pop',2); return;
+    case 'amasado': case 'secadero': case 'horno': case 'pintura': { const [trabajando,,vacio]=TRABAJO[s.kind];
+      if (sacable(s) && !c){ setCarry(p,s.pz); Object.assign(s,{pz:null,state:'vacio',t:0,prog:0}); snd('pop',3); return; }
+      if (s.state==='vacio' && c){ if (!Recetas.acepta(s.kind,c)){ noVa(); return; } Object.assign(s,{pz:c,state:trabajando,t:0,prog:0,color:0}); setCarry(p,null); snd('pop',1); return; }
+      banner(s.state==='vacio'?vacio:sacable(s)?'Tienes las manos ocupadas':{amasando:'Mantén pulsado para amasar',secando:'Se está secando',quemando:'Todavía se hornea',pintando:'Mantén pulsado para pintar'}[s.state]); return; }
+    case 'torno': case 'mesa':
+      if (s.kind==='mesa' && c&&c.parte){
+        if (!s.espera){ s.espera=c.parte; setCarry(p,null); snd('pop',1); banner(`La ${nom(c).toLowerCase()} queda esperando en la Mesa`); return; }
+        if (s.espera===c.parte){ banner('Ya hay una parte igual esperando en la Mesa'); return; }
+        const o=pedidoDe('chiva'); s.espera=null; snd('pop',4); banner('¡Chiva armada! Ahora va al Secadero');
+        setCarry(p,{type:'pieza',fig:'chiva',i:Recetas.datos.figuras.chiva.pasos.indexOf('secar'),q:c.q,colores:(o&&o.colores)||Recetas.coloresAzar(),pintados:[]}); return; }
+      if (!esMasa(c)){ if (c) noVa(); else banner('Trae barro amasado'); return; }
+      banner(eleccion(s)?'Mantén pulsado para modelar':'Ningún cliente pide eso aquí'); return;
+    case 'mostrador':
+      if (!c){ banner('Trae una pieza terminada'); return; }
+      if (Recetas.paso(c)!=='entregar'){ noVa(); return; }
       deliver(p,c); return;
   } }
-function toggleToldo(){ cubierto=!cubierto; snd('tick'); banner(cubierto?'Toldo cubierto: las piezas se secan más despacio':'Toldo abierto: secado al sol'); }
-function addPieza(forma){ const n=ST.find(s=>s.kind==='entrega').load; const m=pieceMesh(forma,forma==='chiva'?'#f4efe3':'#c0262c'); m.scale.setScalar(.8); const i=n.children.length; m.position.set(-1.3+(i%8)*.36,0,(i>=8?.2:-.15)); n.add(m); }
+function addPieza(pz){ const n=ST.find(s=>s.kind==='mostrador').load; const m=pieceMesh(pz); m.scale.setScalar(.7); const i=n.children.length%8; m.position.set(-1.3+i*.37,0,0); n.add(m); }
 function deliver(p,c){
-  const q=Math.round(c.q), esp=q>=R.especial; let o=game.orders.find(x=>x.type===c.forma);
-  let pts; if (o){ pts=R.pts[c.forma]+(game.mode==='reloj'?Math.ceil(o.left/15):0)+(esp?R.pts.especial:0); game.orders.splice(game.orders.indexOf(o),1); }
-  else pts=R.pts.suelta;
-  game.score+=pts; game.stats.piezas++; if (esp) game.stats.especial++;
-  setCarry(p,null); snd('chime'); floatText('+'+pts,-.5,2.6,5.6); banner(esp?`¡Pieza especial! Calidad ${q}`:`Pieza entregada · calidad ${q}`);
-  addPieza(c.forma); renderOrders(); }
-
+  const o=pedidoDe(c.fig,c); if (!o){ banner(`Ningún cliente pide ${figNom(c.fig).toLowerCase()} por ahora`); return; }
+  const q=Math.round(c.q), esp=q>=R.especial, pts=Recetas.datos.figuras[c.fig].puntos, m=ST.find(s=>s.kind==='mostrador');
+  game.orders.splice(game.orders.indexOf(o),1); game.score+=pts; game.stats.piezas++; if (esp) game.stats.especial++;
+  setCarry(p,null); snd('chime'); floatText('+'+pts,m.x,2.4,m.z); banner(`${figNom(c.fig)} entregada · calidad ${q}`);
+  addPieza(c); renderOrders(); }
+// terminar de modelar en el torno o la mesa
+function modelar(p,s,f){ const c=p.carry; snd('pop',4);
+  if (f!=='chiva'){ setCarry(p,{type:'pieza',fig:f,i:3,q:c.q}); return; }
+  const parte=(!s.espera||s.espera==='carga')?'carroceria':'carga';
+  if (!s.espera){ s.espera=parte; setCarry(p,null); banner('La carrocería queda esperando en la Mesa: trae barro amasado para la carga'); return; }
+  setCarry(p,{type:'pieza',fig:'chiva',i:Recetas.datos.figuras.chiva.pasos.indexOf(parte)+1,parte,q:c.q}); banner('Toca Acción para pegar las dos partes'); }
+function pintar(s){ const pz=s.pz, cs=pz.colores;
+  if (cs){ const col=Recetas.datos.colores[s.color];
+    if (!cs.includes(col)){ banner(`El cliente pidió ${cs.join(' y ')}`); snd('tick'); return; }
+    pz.pintados=(pz.pintados||[]).filter(x=>x!==col).concat(col); if (!cs.every(x=>pz.pintados.includes(x))){ snd('pop',2); banner(`Listo el ${col}: falta ${cs.filter(x=>!pz.pintados.includes(x)).join(' y ')}`); return; } }
+  s.pz=Recetas.avanza(pz); s.state='listo'; snd('pop',4); }
+// mantener Acción: amasar, modelar o pintar (un toque corto, en cambio, alterna figura o color: ver tocar)
 function use(p,dt){
-  const s=pick(p); if (!s) return;
-  if (s.kind==='amasado' && s.state==='amasando'){ s.prog+=dt/R.amasar; if (Math.random()<dt*3) snd('footstep'); if (s.prog>=1){ s.state='listo'; s.prog=0; snd('pop',4); } }
-  else if ((s.kind==='torno'||s.kind==='mesaChiva') && s.state==='modelando'){ s.prog+=dt/R.modelar; if (s.wheel) s.wheel.rotation.y+=dt*8; if (s.prog>=1){ s.state='listo'; s.prog=0; snd('pop',4); } }
-  else if (s.kind==='pintura' && s.state==='pintando'){ s.prog+=dt/R.pintar; if (s.prog>=1){ s.state='listo'; s.prog=0; snd('pop',4); } }
-  else if (s.kind==='palanca' && p.inp.useEdge) toggleToldo();
+  const s=pick(p); if (!s) return; p.useT+=dt; p.useS=s; if (p.useT<R.toque) return;
+  if (s.kind==='amasado' && s.state==='amasando'){ s.prog+=dt/R.amasar; if (Math.random()<dt*3) snd('footstep'); if (s.prog>=1){ s.state='listo'; s.prog=0; s.pz=Recetas.avanza(s.pz); snd('pop',4); } }
+  else if ((s.kind==='torno'||s.kind==='mesa') && esMasa(p.carry)){ const f=eleccion(s); if (!f) return; s.state='modelando'; s.prog+=dt/R.modelar; if (s.wheel) s.wheel.rotation.y+=dt*8; if (s.prog>=1){ s.state='vacio'; s.prog=0; modelar(p,s,f); } }
+  else if (s.kind==='pintura' && s.state==='pintando'){ s.prog+=dt/R.pintar; if (s.prog>=1){ s.prog=0; pintar(s); } }
 }
+function tocar(p,s){ if (!s) return;
+  if ((s.kind==='torno'||s.kind==='mesa') && esMasa(p.carry)){ const o=Recetas.figurasPara(s.kind,game.orders); if (o.length>1){ s.sel=(s.sel+1)%o.length; s.prog=0; s.state='vacio'; snd('tick'); } else if (o.length) banner('Mantén pulsado para modelar'); }
+  else if (s.kind==='pintura' && s.state==='pintando'){ if (s.pz.colores){ s.color=(s.color+1)%Recetas.datos.colores.length; snd('tick'); } else banner('Mantén pulsado para pintar'); }
+  else if (s.kind==='amasado' && s.state==='amasando') banner('Mantén pulsado para amasar'); }
 
 /* ---------------- Vistas de las estaciones (las usan el anfitrión y los invitados) ---------------- */
 function vistas(dt){
   ST.forEach(s=>{
-    if (s.kind==='amasado') s.lump.visible=s.state!=='vacio';
-    if (s.kind==='torno'||s.kind==='mesaChiva'){ s.item.visible=s.state!=='vacio'; if (s.state==='modelando'&&s.wheel) s.wheel.rotation.y+=dt*3; }
-    if (s.kind==='secadero'){ s.slot.visible=s.state!=='vacio'; if (s.state!=='vacio'){ if (s.slot.userData.f!==s.forma){ s.slot.clear(); s.slot.add(pieceMesh(s.forma||'vasija','#b5652f')); s.slot.userData.f=s.forma; }
-      const m=s.slot.children[0]; if (m){ const k=s.state==='seco'?1:Math.min(1,s.prog); const col=new THREE.Color('#6a3a1e').lerp(new THREE.Color('#d6a273'),k); m.traverse(o=>{ if (o.isMesh&&o.material.color&&!o.userData.fijo) o.material.color.copy(col); }); } } }
-    if (s.kind==='horno') s.fire.visible=s.state==='quemando'||s.state==='lista'||s.state==='pasada';
-    if (s.kind==='pintura') s.item.visible=s.state!=='vacio';
-    if (s.kind==='palanca') s.arm.rotation.z += ((cubierto?-.6:.6)-s.arm.rotation.z)*.2;
+    if (s.slot){ const pz=(s.kind==='torno'||s.kind==='mesa')?(s.state==='modelando'?{fig:null,i:2}:s.espera?{fig:'chiva',i:3,parte:s.espera}:null):s.pz, k=pz?JSON.stringify(pz):'';
+      if (s.slot.userData.k!==k){ s.slot.clear(); if (pz){ const m=pieceMesh(pz); m.scale.setScalar(pz.fig==='chiva'?.9:1); s.slot.add(m); } s.slot.userData.k=k; } }
+    if (s.kind==='torno' && s.state==='modelando') s.wheel.rotation.y+=dt*3;
+    if (s.kind==='horno') s.fire.visible=s.state!=='vacio';
   });
-  toldo.material.opacity += ((cubierto?.55:0)-toldo.material.opacity)*.15;
 }
 
 /* ---------------- Simulación ---------------- */
@@ -227,35 +230,27 @@ function collide(p){
     if (c.r!==undefined){ const dx=p.x-c.x, dz=p.z-c.z, d=Math.hypot(dx,dz), m=c.r+PR; if (d<m && d>1e-4){ p.x=c.x+dx/d*m; p.z=c.z+dz/d*m; } }
     else if (p.x>c.x0-PR && p.x<c.x1+PR && p.z>c.z0-PR && p.z<c.z1+PR){ const o=[[p.x-(c.x0-PR),'x',c.x0-PR],[(c.x1+PR)-p.x,'x',c.x1+PR],[p.z-(c.z0-PR),'z',c.z0-PR],[(c.z1+PR)-p.z,'z',c.z1+PR]].sort((a,b)=>a[0]-b[0]); p[o[0][1]]=o[0][2]; } }
   players.forEach(q=>{ if (q===p) return; const dx=p.x-q.x, dz=p.z-q.z, d=Math.hypot(dx,dz); if (d<.6 && d>1e-4){ p.x=q.x+dx/d*.6; p.z=q.z+dz/d*.6; } });
-  p.x=Math.max(-AW+.4,Math.min(AW-.4,p.x)); p.z=Math.max(-AD+.4,Math.min(AD-.4,p.z)); }
+  p.x=Math.max(-AW+.4,Math.min(AW-.4,p.x)); p.z=Math.max(-AD+.5,Math.min(AD-.4,p.z)); }
 function step(dt){
   game.t+=dt; const T=game.t;
-  // lluvia
-  const sched = game.mode==='reloj' ? R.lluvias : [[60,75],[150,165],[240,255]];
-  const rain = sched.some(([a,b])=>T>=a&&T<b);
-  sched.forEach(([a])=>{ if (T>=a-6 && T<a && !game.rainWarned[a]){ game.rainWarned[a]=true; banner('¡Viene aguacero! Cubran las piezas con el toldo','rain'); } });
-  if (rain!==game.raining){ game.raining=rain; $('#storm').classList.toggle('on',rain); rainMesh.visible=rain; if (!rain) banner('Escampó: destapen el toldo'); }
   // pedidos
   if (game.mode==='reloj'){ game.orders.forEach(o=>o.left-=dt); const lost=game.orders.filter(o=>o.left<=0);
-    if (lost.length){ lost.forEach(o=>{ game.orders.splice(game.orders.indexOf(o),1); game.score+=R.pts.perdido; game.stats.perdidos++; }); banner('Se fue un comprador: pedido perdido'); } }
+    if (lost.length){ lost.forEach(o=>{ game.orders.splice(game.orders.indexOf(o),1); game.score+=R.pts.perdido; game.stats.perdidos++; }); banner('Se fue un cliente: pedido perdido'); renderOrders(); } }
   game.nextOrder-=dt; if (game.nextOrder<=0 && game.orders.length<R.maxPedidos){ addOrder(); game.nextOrder=R.pedidoCada; }
   // jugadores
   players.forEach(p=>{ const I=p.inp; const l=Math.hypot(I.x,I.z), moving=l>.15; p.moving=moving; who=p.slot;
     if (moving){ const sp=4.6*Math.min(1,l)*(p.carry?.92:1); p.x+=I.x/Math.max(1,l)*sp*dt; p.z+=I.z/Math.max(1,l)*sp*dt; collide(p); p.face=Math.atan2(I.x,I.z); }
     p.holder.position.set(p.x,0,p.z); let d=p.face-p.holder.rotation.y; d=Math.atan2(Math.sin(d),Math.cos(d)); p.holder.rotation.y+=d*Math.min(1,dt*14);
     Muneco.animar(p.model,dt,moving,S.motion);
-    if (I.take) take(p); if (I.drop) tirar(p); if (I.use) use(p,dt); who=null; });
+    if (I.take) take(p); if (I.drop) tirar(p);
+    if (I.use) use(p,dt); else if (p.useT){ if (p.useT<R.toque) tocar(p,p.useS); p.useT=0; } who=null; });
   // estaciones
   ST.forEach(s=>{
-    if (s.kind==='secadero' && s.state==='secando'){
-      if (game.raining && !cubierto){ s.q=Math.max(0,s.q-R.lluviaPorSeg*dt); }
-      else s.prog+=dt/R.secado*(cubierto?.5:1);
-      if (s.prog>=1){ s.state='seco'; snd('pop',5); } }
+    if (s.kind==='secadero' && s.state==='secando'){ s.prog+=dt/R.secado; if (s.prog>=1){ s.state='seco'; s.pz=Recetas.avanza(s.pz); snd('pop',5); } }
     if (s.kind==='horno'){
-      if (s.state==='quemando'){ s.t+=dt; if (s.t>=R.quema){ s.state='lista'; s.t=0; snd('pop',5);
-        if (s.aire && !s.rajada){ s.rajada=true; s.q=Math.max(0,s.q-R.rajadura); banner('¡Se rajó una pieza! Faltó amasar el barro'); } } }
-      else if (s.state==='lista'){ s.t+=dt; if (s.t>=R.ventana){ s.state='pasada'; banner(`¡Se está quemando la pieza del ${s.name.toLowerCase()}!`); } }
-      else if (s.state==='pasada'){ s.q=Math.max(0,s.q-R.pasadaPorSeg*dt); } }
+      if (s.state==='quemando'){ s.t+=dt; if (s.t>=R.quema){ s.state='lista'; s.t=0; s.pz=Recetas.avanza(s.pz); snd('pop',5); } }
+      else if (s.state==='lista'){ s.t+=dt; if (s.t>=R.ventana){ s.state='pasada'; banner('¡Se está quemando una pieza en el horno!'); } }
+      else if (s.state==='pasada'){ s.pz.q=Math.max(0,s.pz.q-R.pasadaPorSeg*dt); } }
   });
   vistas(dt);
   // fin
@@ -264,19 +259,17 @@ function step(dt){
 
 /* ---------------- Red: estado del anfitrión y vista de los invitados ---------------- */
 const r1=n=>Math.round(n*100)/100;
-function snapshot(){ return { t:r1(game.t), sc:game.score, mo:game.mode, r:game.raining?1:0, m:cubierto?1:0, st:game.stats,
-  o:game.orders.map(o=>[o.type,r1(o.left),o.total]),
+function snapshot(){ return { t:r1(game.t), sc:game.score, mo:game.mode, st:game.stats,
+  o:game.orders.map(o=>[o.fig,r1(o.left),o.total,o.colores||0,o.id]),
   p:players.map(p=>[r1(p.x),r1(p.z),r1(p.face),p.moving?1:0,p.carryKey]),
-  s:ST.map(s=>[s.state,r1(s.t||0),r1(s.prog||0),r1(s.q||0),s.forma||'',s.aire?1:0,s.rajada?1:0]), ev:evq.splice(0) }; }
+  s:ST.map(s=>[s.state,r1(s.t||0),r1(s.prog||0),s.pz?JSON.stringify(s.pz):'',s.espera||'',s.sel,s.color]), ev:evq.splice(0) }; }
 let ordKey='';
 function applySnapshot(d){
   game.t=d.t; game.score=d.sc; game.mode=d.mo; game.stats=d.st;
-  if (!!d.r!==game.raining){ game.raining=!!d.r; $('#storm').classList.toggle('on',game.raining); rainMesh.visible=game.raining; }
-  cubierto=!!d.m;
-  game.orders=d.o.map(([type,left,total])=>({type,left,total})); const k=d.o.map(o=>o[0]).join(); if (k!==ordKey){ ordKey=k; renderOrders(); }
+  game.orders=d.o.map(([fig,left,total,colores,id])=>({fig,left,total,colores:colores||undefined,id})); const k=d.o.map(o=>o[4]).join(); if (k!==ordKey){ ordKey=k; renderOrders(); }
   d.p.forEach((a,i)=>{ const p=players[i]; if (!p) return; p.tx=a[0]; p.tz=a[1]; p.face=a[2]; p.moving=!!a[3]; if (a[4]!==p.carryKey) setCarry(p,a[4]?JSON.parse(a[4]):null); });
-  d.s.forEach((a,i)=>{ const s=ST[i]; [s.state,s.t,s.prog,s.q,s.forma,s.aire,s.rajada]=[a[0],a[1],a[2],a[3],a[4],!!a[5],!!a[6]]; });
-  const load=ST.find(s=>s.kind==='entrega').load; while (load.children.length<game.stats.piezas) addPieza(load.children.length%2?'chiva':'vasija');
+  d.s.forEach((a,i)=>{ const s=ST[i]; [s.state,s.t,s.prog,s.sel,s.color]=[a[0],a[1],a[2],a[5],a[6]]; s.espera=a[4]||null; if (a[3]!==(s.pz?JSON.stringify(s.pz):'')) s.pz=a[3]?JSON.parse(a[3]):null; });
+  const load=ST.find(s=>s.kind==='mostrador').load; while (load.children.length<Math.min(8,game.stats.piezas)) addPieza({fig:'matera',i:5});
   (d.ev||[]).forEach(e=>{ if (e.s) Sound[e.s](e.a); if (e.b!==undefined && (e.to===null||e.to===undefined||e.to===mySlot())) showBanner(e.b,e.k); if (e.f) showFloat(e.f,e.x,e.y,e.z); });
 }
 function clientFrame(dt){
@@ -288,23 +281,25 @@ function clientFrame(dt){
 /* ---------------- Etiquetas ---------------- */
 const v3=new THREE.Vector3();
 function project(x,y,z){ v3.set(x,y,z).project(camera); return [(v3.x+1)/2*innerWidth,(1-v3.y)/2*innerHeight]; }
-const LABEL_Y={barro:1.3,lena:1.2,amasado:1.6,torno:1.7,mesaChiva:1.6,secadero:1.3,palanca:1.5,horno:2.0,pintura:1.6,entrega:2.6};
+const LABEL_Y={barro:1.3,amasado:1.5,torno:1.6,mesa:1.6,secadero:1.4,horno:2.0,pintura:1.5,mostrador:1.9};
 function labels(){
   const chica=innerWidth<700||innerHeight<520, yo_=players.find(q=>q.slot===mySlot()), cerca=yo_?nearest(yo_):null;
   ST.forEach(s=>{ if (!s.el) return; let txt='', bar=null, cls='';
-    if (s.kind==='barro') txt='Toma barro'; if (s.kind==='lena') txt='Toma leña';
-    if (s.kind==='amasado'){ txt={vacio:'Trae barro',amasando:'Mantén pulsado para amasar',listo:'¡Masa lista!'}[s.state]; if (s.state==='amasando') bar=s.prog; if (s.state==='listo') cls='ok'; }
-    if (s.kind==='torno'||s.kind==='mesaChiva'){ txt={vacio:'Trae barro amasado',modelando:'Mantén pulsado para modelar',listo:'¡Pieza lista!'}[s.state]; if (s.state==='modelando') bar=s.prog; if (s.state==='listo') cls='ok'; }
-    if (s.kind==='secadero'){ txt={vacio:'Vacío',secando:'Secando',seco:'¡Seca! Recógela'}[s.state]; if (s.state==='secando'){ bar=s.prog; if (game.raining&&!cubierto){ txt='¡Se moja!'; cls='bad'; } } if (s.state==='seco') cls='ok'; if (s.state!=='vacio') txt+=` · ${Math.round(s.q)}`; }
-    if (s.kind==='horno'){ txt={vacio:'Vacío',cargado:'Falta leña',quemando:'Quemando',lista:'¡Lista! Sácala',pasada:'¡Se quema! Sácala ya'}[s.state]; if (s.state==='quemando') bar=s.t/R.quema; if (s.state==='lista'){ bar=1-s.t/R.ventana; cls='ok'; } if (s.state==='pasada') cls='bad'; if (s.state==='cargado') cls='warn'; if (s.rajada){ txt+=' · rajada'; cls='bad'; } if (s.state!=='vacio') txt+=` · ${Math.round(s.q)}`; }
-    if (s.kind==='pintura'){ txt={vacio:'Trae una pieza cocida',pintando:'Mantén pulsado para pintar',listo:'¡Pintada! Recógela'}[s.state]; if (s.state==='pintando') bar=s.prog; if (s.state==='listo') cls='ok'; }
-    if (s.kind==='palanca'){ txt=cubierto?'Cubierto':'Al sol'; if (game.raining && !cubierto) cls='bad'; }
-    if (s.kind==='entrega') txt='Entrega aquí las piezas';
-    if (chica && s!==cerca) txt='';
-    s.el.className='st '+cls+(chica&&s!==cerca?' min':''); s.el.innerHTML=`<b>${s.name}</b>${txt}${bar!==null?`<div class="bar"><i style="width:${Math.max(0,Math.min(1,bar))*100}%"></i></div>`:''}`;
+    if (s.kind==='barro') txt='Toma barro';
+    if (s.kind==='amasado'){ txt={vacio:'Trae barro',amasando:'Mantén pulsado',listo:'¡Masa lista!'}[s.state]; if (s.state==='amasando') bar=s.prog; if (s.state==='listo') cls='ok'; }
+    if (s.kind==='torno'||s.kind==='mesa'){ const f=yo_&&esMasa(yo_.carry)?eleccion(s):null; txt=f?'Hacer: '+figNom(f):'Trae barro amasado'; if (s.state==='modelando') bar=s.prog;
+      if (s.espera){ txt+=` · espera ${Recetas.datos.pasos[s.espera].toLowerCase()}`; cls='warn'; } }
+    if (s.kind==='secadero'){ const L=ST.filter(q=>q.kind==='secadero'), n=k=>L.filter(q=>q.state===k).length, sec=L.filter(q=>q.state==='secando');
+      txt=[n('secando')&&n('secando')+' secando', n('seco')&&n('seco')+' seca'+(n('seco')>1?'s':''), n('vacio')&&n('vacio')+' libre'+(n('vacio')>1?'s':'')].filter(Boolean).join(' · '); if (sec.length) bar=Math.max(...sec.map(q=>q.prog)); if (n('seco')) cls='ok'; }
+    if (s.kind==='horno'){ txt={vacio:'Vacío',quemando:'Horneando',lista:'¡Lista! Sácala',pasada:'¡Se quema! Sácala ya'}[s.state]; if (s.state==='quemando') bar=s.t/R.quema; if (s.state==='lista'){ bar=1-s.t/R.ventana; cls='ok'; } if (s.state==='pasada') cls='bad'; }
+    if (s.kind==='pintura'){ txt={vacio:'Trae una pieza cocida',pintando:'Mantén pulsado',listo:'¡Pintada! Recógela'}[s.state];
+      if (s.state==='pintando'){ bar=s.prog; if (s.pz.colores) txt=`Color: ${Recetas.datos.colores[s.color]} · pide ${s.pz.colores.join(' y ')}`; } if (s.state==='listo') cls='ok'; }
+    if (s.kind==='mostrador') txt='Entrega aquí';
+    if (chica && s!==cerca && !(s.kind==='secadero'&&cerca&&cerca.kind==='secadero')) txt='';
+    s.el.className='st '+cls+(chica&&!txt?' min':''); s.el.innerHTML=`<b>${s.name}</b>${txt}${bar!==null&&txt?`<div class="bar"><i style="width:${Math.max(0,Math.min(1,bar))*100}%"></i></div>`:''}`;
     const [x,y]=project(s.x,LABEL_Y[s.kind]||1.5,s.z); s.lx=x; s.ly=y; });
   players.forEach(p=>{ const [x,y]=project(p.x,0,p.z+.35); p.el.style.left=x+'px'; p.el.style.top=y+'px';
-    p.el.textContent=p.nombre+(p.slot===mySlot()&&players.length>1?' (tú)':'')+(p.carry?` · ${nom(p.carry)}${p.carry.q!=null?` · ${qual(p.carry)} pts`:''}`:''); });
+    p.el.textContent=p.nombre+(p.slot===mySlot()&&players.length>1?' (tú)':'')+(p.carry?` · ${nom(p.carry)} · sigue ${pasoNom(p.carry)}`:''); });
   Estaciones.colocarLetreros(ST,undefined,players.map(p=>p.el));
   Estaciones.botonAccion(players.find(q=>q.slot===mySlot()),accion,touch);
   const m=Math.max(0,game.mode==='reloj'?R.duracion-game.t:game.t), mm=Math.floor(m/60), ss=Math.floor(m%60);
@@ -312,20 +307,17 @@ function labels(){
   $('#pts').textContent=`${game.score} puntos`;
 }
 
-/* ---------------- Lluvia ---------------- */
-const rainMesh=(()=>{ const N=S.quality==='baja'?500:1300, pos=new Float32Array(N*6); for(let i=0;i<N;i++){ const x=(Math.random()-.5)*26,y=Math.random()*12,z=(Math.random()-.5)*18; pos.set([x,y,z,x-.05,y-.5,z],i*6); }
-  const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.BufferAttribute(pos,3)); const m=new THREE.LineSegments(g,new THREE.LineBasicMaterial({color:'#bcd3e0',transparent:true,opacity:.5})); m.visible=false; scene.add(m); return m; })();
-
 /* ---------------- Cámara y bucle ---------------- */
+const CAM={y:15.5,z:11.5,mira:.4};
 let camK=1, camX=0;
-function followCam(snap,dt){ const hw=Math.tan(19*Math.PI/180)*camera.aspect*Math.hypot(15.5,11.5)*camK, lim=AW>hw?AW-hw+1.2:0, p=players.find(q=>q.slot===mySlot()), tx=p?Math.max(-lim,Math.min(lim,p.x)):0;
-  camX=snap?tx:camX+(tx-camX)*Math.min(1,(dt||0)*5); camera.position.set(camX,15.5*camK,11.5*camK); camera.lookAt(camX,0,.6); }
+function followCam(snap,dt){ const hw=Math.tan(19*Math.PI/180)*camera.aspect*Math.hypot(CAM.y,CAM.z)*camK, lim=AW>hw-.6?AW-hw+1.2:0, p=players.find(q=>q.slot===mySlot()), tx=p?Math.max(-lim,Math.min(lim,p.x)):0;
+  camX=snap?tx:camX+(tx-camX)*Math.min(1,(dt||0)*5); camera.position.set(camX,CAM.y*camK,CAM.z*camK+CAM.mira); camera.lookAt(camX,0,CAM.mira); }
 function resize(){ renderer.setSize(innerWidth,innerHeight,false); camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix();
   const dpr=Math.min(devicePixelRatio||1,2); renderer.setPixelRatio(S.quality==='alta'?dpr:S.quality==='media'?Math.min(dpr,1.5):1);
   sun.castShadow=!!S.shadows && S.quality!=='baja';
   camK=Math.max(1,Math.min(1.75/camera.aspect,1.8)); followCam(true); }
 addEventListener('resize',resize);
-let last=performance.now(), stormMix=0, lastSend=0;
+let last=performance.now(), lastSend=0;
 function frame(now){
   const dt=Math.min((now-last)/1000,1/20); last=now;
   const rol=lob?lob.rol:'solo';
@@ -333,8 +325,6 @@ function frame(now){
   else if (game.on && !(game.paused && rol==='solo')){ readInput(); step(dt);
     if (rol==='host' && now-lastSend>66){ lastSend=now; lob.difundir({t:'estado',s:snapshot()}); } }
   else players.forEach(p=>Muneco.animar(p.model,dt,false,S.motion));
-  stormMix+=((game.raining?1:0)-stormMix)*Math.min(1,dt*2); scene.background.copy(SKY).lerp(STORM,stormMix); sun.intensity=1.25-stormMix*.55;
-  if (rainMesh.visible){ const a=rainMesh.geometry.attributes.position; for(let i=0;i<a.count;i+=2){ let y=a.getY(i)-dt*16; if (y<0) y+=12; a.setY(i,y); a.setY(i+1,y-.5); } a.needsUpdate=true; }
   if (game.on && game.mode==='reloj') $$('.order').forEach((el,i)=>{ const o=game.orders[i]; if (!o) return; const b=el.querySelector('.bar i'); if (b) b.style.width=(o.left/o.total*100)+'%'; el.classList.toggle('hurry',o.left<20); });
   followCam(false,dt); labels(); renderer.render(scene,camera); requestAnimationFrame(frame);
 }
@@ -355,9 +345,9 @@ function syncStart(){
   makePlayers(lob && rol!=='solo' ? lob.jugadores : [yo()]); }
 $('#optMode').addEventListener('click',e=>{ const b=e.target.closest('button'); if (!b) return; MODE=b.dataset.v; syncStart(); snd('tick'); });
 function reset(list){
-  Object.assign(game,{t:0,score:0,orders:[],nextOrder:0,stats:{piezas:0,especial:0,perdidos:0},raining:false,rainWarned:{},mode:MODE});
-  ST.forEach(s=>{ s.state='vacio'; s.t=0; s.prog=0; s.q=0; s.forma=''; s.aire=false; s.rajada=false; if (s.kind==='entrega') s.load.clear(); });
-  cubierto=false; $('#storm').classList.remove('on'); rainMesh.visible=false; makePlayers(list); }
+  Object.assign(game,{t:0,score:0,orders:[],nextOrder:0,stats:{piezas:0,especial:0,perdidos:0},mode:MODE});
+  ST.forEach(s=>{ Object.assign(s,{state:'vacio',t:0,prog:0,pz:null,espera:null,sel:0,color:0}); if (s.load) s.load.clear(); });
+  makePlayers(list); renderOrders(); }
 function begin(list){
   reset(list); if (!lob || lob.rol!=='cliente'){ addOrder(); addOrder(); game.nextOrder=R.pedidoCada; }
   $('#start').hidden=true; $('#end').hidden=true; game.on=true; game.paused=false; $('#touch').hidden=false; $('#touch').classList.toggle('pc',!touch); if (!touch) $('#tDrop').innerHTML='Soltar<br><kbd>G</kbd>';
@@ -380,13 +370,15 @@ function finish(r){
   const stars=R.estrellas.filter(x=>game.score>=x*mult).length;
   $('#stars').innerHTML=[0,1,2].map(i=>i<stars?'★':'<span class="off">★</span>').join(''); $('#stars').setAttribute('aria-label',`${stars} de 3 estrellas`);
   $('#results').innerHTML=`<div><b>${game.score}</b><span>puntos</span></div><div><b>${game.stats.piezas}</b><span>piezas entregadas</span></div><div><b>${game.stats.especial}</b><span>de calidad especial</span></div><div><b>${game.stats.perdidos}</b><span>pedidos perdidos</span></div>`;
-  $('#endText').textContent = stars===3 ? 'Feria de maestros: el puesto quedó lleno de piezas de calidad. Ganaste ventaja para la trivia.' : stars>=1 ? 'Buena feria. Amasen bien el barro y saquen las piezas del horno a tiempo para subir la calidad.' : 'Se perdieron muchas piezas. Repartan las estaciones entre todos y cuiden el secadero de la lluvia.';
+  $('#endText').textContent = stars===3 ? 'Taller de maestros: los clientes se fueron contentos con sus piezas. Ganaste ventaja para la trivia.' : stars>=1 ? 'Buen trabajo. Sigan la receta de cada pieza y saquen las piezas del horno a tiempo para subir la calidad.' : 'Se perdieron muchos pedidos. Repartan las estaciones entre todos y sigan la receta de cada pieza.';
   if (game.mode==='reloj'){ PROG.fabrica=Math.max(PROG.fabrica||0,stars); saveProg(); }
   const cli = lob && lob.rol==='cliente'; $('#again').hidden=cli; $('#nextBtn').hidden=cli; $('#waitHost').hidden=!cli;
   $('#end').hidden=false; (cli?$('#end a'):$('#again')).focus(); }
 
 /* ---------------- Arranque ---------------- */
 (async()=>{
+  try { const r=await fetch('data/recetas2.json'); if (!r.ok) throw 0; Recetas.usar(await r.json()); }
+  catch(e){ fail('No se pudieron cargar las recetas (data/recetas2.json). Si abriste el archivo con doble clic, ábrelo desde un servidor web o desde GitHub Pages.'); return; }
   await Promise.race([document.fonts.load('700 28px "Alegreya SC"').catch(()=>{}), new Promise(r=>setTimeout(r,2000))]);
   lob = Red.sala($('#sala'), { nombre:yo().nombre, avatar:yo().avatar,
     onCambio:()=>{ if (!game.on) syncStart(); },
@@ -400,6 +392,6 @@ function finish(r){
     onCierre:()=>{ if (game.on){ game.on=false; showBanner('Se cerró la sala del anfitrión'); } $('#end').hidden=true; $('#start').hidden=false; },
   });
   resize(); syncStart(); renderOrders(); requestAnimationFrame(frame); $('#goBtn').focus();
-  if (location.hash==='#prueba'){ begin([yo()]); window.__a={game,players,ST,take,use,step,R,camera,setCarry,tirar,accion,nearest,get cubierto(){return cubierto;}}; }
+  if (location.hash==='#prueba'){ begin([yo()]); window.__a={game,players,ST,take,use,step,R,camera,setCarry,tirar,accion,nearest,pedir,reset,snapshot,applySnapshot,Recetas}; }
 })();
 })();
