@@ -1,6 +1,6 @@
 # Progreso del proyecto (28 nov 2026)
 
-Léelo junto con `LEEME-PRIMERO.md`. Rama de trabajo: `ccr-2b9646ac-ks35za`. **`main` = rama hasta `4bfb732`** (todo lo de abajo ya está en `main`, salvo que se indique). Pages: https://uscolabmedia.github.io/SABERES-LABOYANOS/
+Léelo junto con `LEEME-PRIMERO.md`. Rama de trabajo: `ccr-2b9646ac-ks35za`. **`main` = rama hasta `870feaa`** (todo lo de abajo ya está en `main`, salvo que se indique). Pages: https://uscolabmedia.github.io/SABERES-LABOYANOS/
 
 ## Reglas de trabajo (el usuario las fijó)
 - Respuestas en español, estilo caveman (cortas). Presupuesto 0 pesos.
