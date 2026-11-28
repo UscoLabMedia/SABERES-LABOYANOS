@@ -20,10 +20,10 @@ Léelo junto con `LEEME-PRIMERO.md`. Rama de trabajo: `ccr-2b9646ac-ks35za`. **`
 - Sonido real al abrir el libro (Pixabay, `assets/libro-abrir.mp3`, con respaldo sintético). Texturas horneadas en `assets/` (`arte/texturas/`).
 
 ## Pruebas (carpeta `tests/`, Playwright + Chrome del sistema)
-`node tests/<nombre>.js` — ayudas en `tests/lib.js` (servidor local, three.js local, bloquea fuentes remotas). Nombres: `orden`, `trivia_nivel`, `explora`, `cosecha_regresion`, `alfareria`, `carrera`, `mapa_nivel2`, `contenido2`, `tactil_sonido`, `oleadas_horizontal`, `montes`, `nombre`, `girar`. Variable `THREE_JS` = ruta a three.min.js r128. Todas pasaban al último commit.
+`node tests/<nombre>.js` — ayudas en `tests/lib.js` (servidor local, three.js local, bloquea fuentes remotas). Nombres: `orden`, `trivia_nivel`, `explora`, `cosecha_regresion`, `alfareria`, `carrera`, `mapa_nivel2`, `contenido2`, `tactil_sonido`, `oleadas_horizontal`, `montes`, `nombre`, `girar`, `usabilidad`. Variable `THREE_JS` = ruta a three.min.js r128. Todas pasaban al último commit.
 
 ## Pendiente (en este orden sugerido)
-1. **Bitácora de arreglos** `docs/arreglos.md` y **prueba de usabilidad general** `tests/usabilidad.js` (todas las pantallas en celular vertical, horizontal y PC: textos encimados, controles tapados, fuera de pantalla). Idea sacada de OpenGame; no usar su generador ni Phaser.
+1. ~~Bitácora `docs/arreglos.md` y `tests/usabilidad.js`~~ **hecho** (0 problemas en pantalla inicial de las 9 páginas × 3 vistas). Falta ampliarla a pantallas en marcha (banners, diálogos, fin de partida).
 2. **Aviso 3:** elegir personaje al crear la partida (opciones distintas a muñeco/muñeca).
 3. **Aviso 4:** joystick en celular en la finca y el taller.
 4. **Aviso 5:** rediseñar la fabricación por **pedidos con receta** (llega un cliente, pide una figura, cada figura tiene pasos distintos, receta en pantalla, se entrega). Necesita boceto PNG antes. Datos de cada figura de fuentes verificadas.
