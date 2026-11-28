@@ -25,7 +25,7 @@ Léelo junto con `LEEME-PRIMERO.md`. Rama de trabajo: `ccr-2b9646ac-ks35za`. **`
 ## Pendiente (en este orden sugerido)
 1. ~~Bitácora `docs/arreglos.md` y `tests/usabilidad.js`~~ **hecho** (0 problemas en pantalla inicial de las 9 páginas × 3 vistas). Falta ampliarla a pantallas en marcha (banners, diálogos, fin de partida).
 2. ~~Aviso 3~~ **hecho:** el personaje se elige al crear la partida con dos retratos sin etiqueta de género y se cambia en Mi progreso; ella empieza sin gorra. Prueba `tests/personaje.js`.
-3. **Aviso 4:** joystick en celular en la finca y el taller.
+3. **Aviso 4:** joystick en celular en la finca y el taller. Notas del Nivel 2 (28 nov, solo anotadas, ver `docs/ideas.md` 4b): pantalla completa no se activa en horizontal; los cuadros de El Taller tapan mucho en horizontal; sin joystick (= este aviso).
 4. **Aviso 5:** rediseñar la fabricación por **pedidos con receta** (llega un cliente, pide una figura, cada figura tiene pasos distintos, receta en pantalla, se entrega). Necesita boceto PNG antes. Datos de cada figura de fuentes verificadas.
 5. **Nivel 3 Caballos:** referencia del usuario https://youtu.be/Rvs7O4oqgGo?t=168; falta definir qué mecánica tomar.
 6. **Nivel 4 Música y Danza** (Zelda ocarina + baile de flechas/Club Penguin, reinado con corona) y **La Orquídera** (personaje 3D, `arte/personajes/orquidera/`; Opus, esfuerzo alto, empezar por la cara).
