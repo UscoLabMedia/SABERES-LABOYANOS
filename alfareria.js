@@ -136,8 +136,27 @@ const mismos=(a,b)=>String([...(a||[])].sort())===String([...(b||[])].sort());
 function pedir(fig,colores){ const t=Recetas.paciencia(players.length), o={id:Math.random(),fig,colores:Recetas.datos.figuras[fig].colores?(colores||Recetas.coloresAzar()):null,left:t,total:t,tipo:TIPOS[Math.floor(Math.random()*TIPOS.length)]};
   game.orders.push(o); const k=game.repisa.findIndex(z=>z.fig===fig&&(!o.colores||mismos(z.colores,o.colores))); if (k>=0) entregar(game.repisa.splice(k,1)[0],o); renderOrders(); }
 function addOrder(){ const f=Object.keys(Recetas.datos.figuras); pedir(f[Math.floor(Math.random()*f.length)]); }
-function renderOrders(){ $('#orders').innerHTML=game.orders.map(o=>`<li class="order ${o.fig==='chiva'?'especial':''}${game.mode==='reloj'&&o.left<20?' hurry':''}" data-id="${o.id}"><b>${figNom(o.fig)}</b><span>${o.colores?'Pintada de '+o.colores.join(' y '):Recetas.datos.figuras[o.fig].pasos.length+' pasos'}</span>${game.mode==='reloj'?`<div class="bar"><i style="width:${o.left/o.total*100}%"></i></div>`:''}</li>`).join('')
-  || '<li class="order"><b>Sin pedidos</b><span>Ya viene otro cliente</span></li>'; }
+// Tarjetas de clientes (botones): figura, n/N, paso siguiente de la pieza mas avanzada de esa figura y barra de paciencia.
+function avance(fig){ let b=null; [...players.map(p=>p.carry),...ST.map(s=>s.pz),...game.repisa].forEach(z=>{ if (z&&z.fig===fig&&(!b||z.i>b.i)) b=z; }); return b; }
+function datosTarjeta(o){ const F=Recetas.datos.figuras[o.fig], b=avance(o.fig), k=b?Recetas.paso(b):null, i=b?Math.min(b.i,F.pasos.length-1):0;
+  return {n:i+1,N:F.pasos.length,sig:b&&k?Recetas.datos.pasos[k]:Recetas.datos.pasos.barro,i}; }
+function renderOrders(){ $('#clientes').innerHTML=game.orders.map(o=>`<button type="button" class="cli ${o.fig==='chiva'?'especial':''}" data-id="${o.id}"><span class="t"><b>${figNom(o.fig)}</b><span class="n"></span></span><span class="sig"></span>${game.mode==='reloj'?'<div class="bar"><i></i></div>':''}</button>`).join(''); pintaClientes(); }
+function pintaClientes(){ game.orders.forEach(o=>{ const el=$('#clientes').querySelector(`[data-id="${o.id}"]`); if (!el) return; const d=datosTarjeta(o), f=o.left/o.total;
+  el.querySelector('.n').textContent=d.n+'/'+d.N; el.querySelector('.sig').textContent=d.sig;
+  el.setAttribute('aria-label',`${figNom(o.fig)}${o.colores?' pintada de '+o.colores.join(' y '):''}, paso ${d.n} de ${d.N}, sigue ${d.sig}. Ver receta`);
+  const i=el.querySelector('.bar i'); if (i) i.style.width=Math.max(0,f)*100+'%'; el.classList.toggle('mid',game.mode==='reloj'&&f<.5&&f>=.25); el.classList.toggle('low',game.mode==='reloj'&&f<.25); }); }
+/* ---------------- Receta completa ---------------- */
+let recId=null, recFig=null, recPausa=false;
+function pintaReceta(){ if (!recFig) return; const F=Recetas.datos.figuras[recFig.fig], b=avance(recFig.fig), cur=b?Math.min(b.i,F.pasos.length-1):0, o=game.orders.find(q=>q.id===recId), col=(o&&o.colores)||recFig.colores;
+  $('#rTitle').textContent=F.nombre+' · receta';
+  $('#rPasos').innerHTML=F.pasos.map((k,i)=>`<li class="${i<cur?'hecho':i===cur?'actual':''}"${i===cur?' aria-current="step"':''}>${i<cur?'✓ ':(i+1)+'. '}${k==='pintar'&&col?'Pintar: '+col.join(' y '):Recetas.datos.pasos[k]}</li>`).join('');
+  $('#rNota').textContent=[F.fuente==='juego'?'Receta del juego':'',players.length===1?'en modo solo el tiempo se detiene':''].filter(Boolean).join(' · '); }
+function abrirReceta(o){ if (!game.on) return; recId=o.id; recFig={fig:o.fig,colores:o.colores}; pintaReceta(); $('#receta').hidden=false;
+  if (players.length===1 && !game.paused){ game.paused=true; recPausa=true; } $('#rCerrar').focus(); }
+function cerrarReceta(){ if (recId===null) return; recId=null; recFig=null; $('#receta').hidden=true; if (recPausa){ game.paused=false; recPausa=false; } }
+$('#clientes').addEventListener('click',e=>{ const b=e.target.closest('.cli'), o=b&&game.orders.find(q=>String(q.id)===b.dataset.id); if (o) abrirReceta(o); });
+$('#rCerrar').addEventListener('click',cerrarReceta);
+$('#receta').addEventListener('click',e=>{ if (e.target===$('#receta')) cerrarReceta(); });
 // cliente de esa figura con menos paciencia; una pieza con colores (chiva) solo va a un cliente de esos mismos colores
 function pedidoDe(fig,c){ return game.orders.filter(o=>o.fig===fig&&(!c||!c.colores||mismos(o.colores,c.colores))).sort((a,b)=>a.left-b.left)[0]; }
 
@@ -340,7 +359,7 @@ function frame(now){
   else if (game.on && !(game.paused && rol==='solo')){ readInput(); step(dt);
     if (rol==='host' && now-lastSend>66){ lastSend=now; lob.difundir({t:'estado',s:snapshot()}); } }
   else players.forEach(p=>Muneco.animar(p.model,dt,false,S.motion));
-  if (game.on && game.mode==='reloj') $$('.order').forEach((el,i)=>{ const o=game.orders[i]; if (!o) return; const b=el.querySelector('.bar i'); if (b) b.style.width=(o.left/o.total*100)+'%'; el.classList.toggle('hurry',o.left<20); });
+  if (game.on){ pintaClientes(); if (recId!==null) pintaReceta(); }
   followCam(false,dt); labels(); renderer.render(scene,camera); requestAnimationFrame(frame);
 }
 
@@ -372,7 +391,7 @@ $('#goBtn').addEventListener('click',()=>{
   else begin([yo()]); });
 $('#again').addEventListener('click',()=>{ if (lob && lob.rol==='host'){ lob.ir('alfareria.html'); return; } $('#end').hidden=true; $('#start').hidden=false; syncStart(); });
 $('#nextBtn').addEventListener('click',e=>{ if (lob && lob.rol==='host'){ e.preventDefault(); lob.ir('carrera.html'); } });
-function togglePause(){ game.paused=!game.paused; $('#pause').hidden=!game.paused; if (game.paused) $('#resume').focus(); }
+function togglePause(){ if (recId!==null){ cerrarReceta(); return; } game.paused=!game.paused; $('#pause').hidden=!game.paused; if (game.paused) $('#resume').focus(); }
 $('#pauseBtn').addEventListener('click',()=>{ if (game.on) togglePause(); });
 $('#resume').addEventListener('click',togglePause);
 $('#endNow').addEventListener('click',()=>{ $('#pause').hidden=true; game.paused=false; if (lob && lob.rol==='cliente') return; finish(); });
@@ -380,7 +399,7 @@ $('#soundBtn').addEventListener('click',()=>{ S.mute=!S.mute; save(); Sound.init
 $('#waves').style.display=S.mute?'none':'';
 function finish(r){
   if (r){ game.score=r.sc; game.stats=r.st; game.mode=r.mo; }
-  game.on=false; $('#touch').hidden=true; Sound.fast=false; const mult=1+.25*(players.length-1);
+  cerrarReceta(); game.on=false; $('#touch').hidden=true; Sound.fast=false; const mult=1+.25*(players.length-1);
   if (lob && lob.rol==='host') lob.difundir({t:'fin',r:{sc:game.score,st:game.stats,mo:game.mode}});
   const stars=R.estrellas.filter(x=>game.score>=x*mult).length;
   $('#stars').innerHTML=[0,1,2].map(i=>i<stars?'★':'<span class="off">★</span>').join(''); $('#stars').setAttribute('aria-label',`${stars} de 3 estrellas`);

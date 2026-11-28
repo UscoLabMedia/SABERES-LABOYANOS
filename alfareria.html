@@ -33,15 +33,25 @@ body{background:var(--desk);color:var(--on-desk);font-family:var(--f-ui);overflo
 .clock .time{font-family:var(--f-display);font-weight:800;font-size:2rem;line-height:1;font-variant-numeric:tabular-nums}
 .clock .time.low{color:var(--cherry)}
 .clock .pts{font-weight:700;font-size:.95rem;color:var(--ink-soft);font-variant-numeric:tabular-nums}
-.orders{grid-column:2;grid-row:1;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;list-style:none;margin:0;padding:0;align-self:start}
-.order{background:var(--paper);color:var(--ink);width:9.5rem;padding:.45rem .6rem .5rem;box-shadow:0 4px 0 #b9a47a,0 10px 18px rgba(0,0,0,.35);clip-path:polygon(0 0,100% 0,100% 88%,94% 100%,6% 100%,0 88%);transition:transform .25s}
-.order.especial{background:#f6e2a8}
-.order b{display:block;font-family:var(--f-display);font-size:1rem;line-height:1.1}
-.order span{font-size:.8rem;color:var(--ink-soft)}
-.order .bar{height:6px;background:rgba(42,28,17,.15);margin-top:.35rem}
-.order .bar i{display:block;height:100%;background:var(--leaf)}
-.order.hurry .bar i{background:var(--cherry)}
-.order.done{transform:translateY(-120%)}
+.clientes{grid-column:2;grid-row:1;display:flex;gap:8px;justify-content:center;align-self:start;pointer-events:none;min-width:0}
+.cli{pointer-events:auto;font:inherit;text-align:left;border:0;cursor:pointer;background:var(--paper);color:var(--ink);width:9.5rem;padding:.4rem .55rem .45rem;box-shadow:0 4px 0 #b9a47a,0 10px 18px rgba(0,0,0,.35);clip-path:polygon(0 0,100% 0,100% 88%,94% 100%,6% 100%,0 88%);transition:transform .25s}
+.cli.especial{background:#f6e2a8}
+.cli .t{display:flex;justify-content:space-between;gap:.3rem;align-items:baseline}
+.cli b{font-family:var(--f-display);font-size:1rem;line-height:1.1}
+.cli .n{font-size:.78rem;font-weight:700;font-variant-numeric:tabular-nums}
+.cli .sig{display:block;font-size:.8rem;color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cli .bar{height:6px;background:rgba(42,28,17,.15);margin-top:.3rem}
+.cli .bar i{display:block;height:100%;background:var(--leaf)}
+.cli.mid .bar i{background:#c98a12}
+.cli.low .bar i{background:var(--cherry)}
+#receta .sheet{width:min(24rem,100%)}
+#receta ol{list-style:none;margin:.5rem 0;padding:0}
+#receta li{padding:.15rem .4rem;font-size:1.05rem}
+#receta li.hecho{color:#256b3f}
+#receta li.actual{background:#f2c94c;font-weight:700}
+#receta .nota{font-size:.85rem;color:var(--ink-soft);margin:.4rem 0 0}
+#receta .sheet{max-height:calc(100dvh - 16px);overflow:auto}
+@media (max-height:520px){#receta .sheet{padding:.6rem 1rem}#receta h2{font-size:1.15rem;margin:0}#receta ol{margin:.3rem 0}#receta li{font-size:.88rem;padding:.02rem .4rem}#receta .actions{margin:.3rem 0 0}#receta .nota{margin:.25rem 0 0;font-size:.78rem}}
 .tools{grid-column:3;grid-row:1;display:flex;gap:8px;align-self:start}
 .icon-btn{width:44px;height:44px;border-radius:50%;border:1px solid rgba(242,231,208,.25);background:rgba(27,18,12,.65);color:var(--on-desk);display:grid;place-items:center;cursor:pointer;text-decoration:none}
 .icon-btn svg{width:20px;height:20px}
@@ -106,12 +116,11 @@ kbd{font-family:var(--f-ui);font-weight:700;font-size:.78rem;border:1px solid va
 .fallback{position:fixed;inset:0;display:grid;place-items:center;padding:24px;text-align:center;font-family:var(--f-body);font-size:1.1rem;z-index:40;background:var(--desk)}
 @media (max-width:700px), (max-height:520px){
   .hud{grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto 1fr auto}
-  .orders{grid-column:1 / -1;grid-row:2;justify-content:flex-start}
-  .orders{flex-wrap:nowrap;overflow:hidden;gap:6px}
-  .order{width:auto;flex:1 1 0;min-width:0;max-width:8rem;padding:.3rem .45rem .35rem}
-  .order b{font-size:.8rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .order span{display:none}
-  .order .bar{margin-top:.2rem}
+  .clientes{grid-column:1 / -1;grid-row:2;justify-content:flex-start;gap:6px}
+  .cli{width:auto;flex:1 1 0;min-width:0;max-width:8rem;padding:.3rem .45rem .35rem}
+  .cli b{font-size:.8rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cli .n,.cli .sig{font-size:.7rem}
+  .cli .bar{margin-top:.2rem}
   .st{font-size:.68rem;min-width:0;max-width:9rem;padding:.15rem .35rem .2rem}
   .st.min{font-size:.56rem;padding:.05rem .25rem;box-shadow:0 2px 5px rgba(0,0,0,.25)}
   .st.min b{display:inline;font-size:.6rem}
@@ -123,7 +132,9 @@ kbd{font-family:var(--f-ui);font-weight:700;font-size:.78rem;border:1px solid va
 }
 @media (min-width:701px) and (max-height:520px){   /* celular horizontal: pedidos arriba, sobre la pared del fondo, sin tapar los tornos */
   .hud{grid-template-columns:auto minmax(0,1fr) auto}
-  .orders{grid-column:2;grid-row:1;justify-content:flex-end;padding-left:4.5rem}
+  .clientes{grid-column:2;grid-row:1;justify-content:flex-end;gap:4px}
+  .cli{width:5.3rem;flex:0 0 5.3rem;max-width:none;padding:.25rem .35rem .3rem}
+  .cli b{font-size:.74rem}
   .tools{grid-column:3}
   .banner{margin-bottom:4px;max-width:calc(100% - 340px)}   /* abajo, entre la palanca y los botones */
 }
@@ -139,7 +150,7 @@ kbd{font-family:var(--f-ui);font-weight:700;font-size:.78rem;border:1px solid va
 
 <div class="hud">
   <div class="clock" aria-live="off"><div class="time" id="time">3:00</div><div class="pts" id="pts">0 puntos</div></div>
-  <ul class="orders" id="orders" aria-label="Pedidos de la feria"></ul>
+  <div class="clientes" id="clientes" role="group" aria-label="Clientes de la feria"></div>
   <div class="tools">
     <button class="icon-btn" id="pauseBtn" aria-label="Pausar" title="Pausar">
       <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/></svg>
@@ -175,6 +186,15 @@ kbd{font-family:var(--f-ui);font-weight:700;font-size:.78rem;border:1px solid va
     </div>
     <p class="keys" id="keysHelp"></p>
     <div class="actions"><a class="btn" href="finca.html?nivel=2" id="exitBtn">Volver al taller</a><button class="btn solid" id="goBtn">Empezar</button></div>
+  </section>
+</div>
+
+<div class="scrim" id="receta" hidden>
+  <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="rTitle">
+    <h2 id="rTitle"></h2>
+    <ol id="rPasos"></ol>
+    <div class="actions"><button class="btn solid" id="rCerrar">Cerrar ✕</button></div>
+    <p class="nota" id="rNota"></p>
   </section>
 </div>
 

@@ -1,7 +1,11 @@
 // Fabricación de artesanías (alfareria.html): taller por dentro en tres columnas, piezas que siguen su receta (Recetas), pedidos y letreros.
 const T=require('./lib');
-const solapes=p=>p.evaluate(()=>{ const B=[...document.querySelectorAll('#labels .st,#labels .pl,.clock,.order,.tools')].filter(e=>e.offsetWidth).map(e=>[e.className+(e.querySelector('b')?e.querySelector('b').textContent:''),e.getBoundingClientRect()]); const o=[];
-  for (let i=0;i<B.length;i++) for (let j=i+1;j<B.length;j++){ const a=B[i][1],b=B[j][1]; const ox=Math.min(a.right,b.right)-Math.max(a.left,b.left), oy=Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top); if (ox>3&&oy>3&&!(/clock|order|tools/.test(B[i][0])&&/clock|order|tools/.test(B[j][0]))) o.push(B[i][0]+'×'+B[j][0]); } return o; });
+const solapes=p=>p.evaluate(()=>{ const B=[...document.querySelectorAll('#labels .st,#labels .pl,.clock,.cli,.tools,#fsBtn')].filter(e=>e.offsetWidth).map(e=>[e.className+(e.querySelector('b')?e.querySelector('b').textContent:''),e.getBoundingClientRect()]); const o=[];
+  for (let i=0;i<B.length;i++) for (let j=i+1;j<B.length;j++){ const a=B[i][1],b=B[j][1]; const ox=Math.min(a.right,b.right)-Math.max(a.left,b.left), oy=Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top); if (ox>3&&oy>3&&!(/clock|cli|tools|fsBtn/.test(B[i][0])&&/clock|cli|tools|fsBtn/.test(B[j][0]))) o.push(B[i][0]+'×'+B[j][0]); } return o; });
+const tarjetas=p=>p.evaluate(()=>{ const C=[...document.querySelectorAll('#clientes .cli')].filter(e=>e.offsetWidth).map(e=>e.getBoundingClientRect()), H=['.clock','.tools','#fsBtn'].map(q=>document.querySelector(q)).filter(e=>e&&e.offsetWidth).map(e=>[e.className||e.id,e.getBoundingClientRect()]), o=[];
+  const cruz=(a,b)=>Math.min(a.right,b.right)-Math.max(a.left,b.left)>1&&Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top)>1;
+  C.forEach((a,i)=>{ C.forEach((b,j)=>{ if (j>i&&cruz(a,b)) o.push('cli'+i+'×cli'+j); }); H.forEach(([n,b])=>{ if (cruz(a,b)) o.push('cli'+i+'×'+n); }); if (a.left<0||a.right>innerWidth||a.top<0||a.bottom>innerHeight) o.push('cli'+i+' fuera'); });
+  return {n:C.length,o,w:Math.max(0,...C.map(r=>r.width))}; });
 async function caso(nombre,opt,celular){ const {p,c}=await T.abrir('alfareria.html#prueba',opt); await p.waitForFunction(()=>window.__a&&__a.game.on,null,{timeout:30000}); console.log('== '+nombre);
   const cdp=celular?await c.newCDPSession(p):null;
   await p.evaluate(()=>{ __a.game.mode='tranquilo'; __a.game.nextOrder=1e9; Object.assign(__a.R,{amasar:.8,modelar:.8,pintar:.8}); });
@@ -94,6 +98,34 @@ async function caso(nombre,opt,celular){ const {p,c}=await T.abrir('alfareria.ht
   await pieza('matera'); await pulsar(); await pieza('matera'); await pulsar(); await pieza('matera'); await pulsar(); T.ok(await repisa()==='matera,matera'&&await carry()==='matera:5'&&/repisa.*llena/i.test(await aviso()),'repisa llena (2 puestos): aviso y la pieza sigue en la mano');
   await L(1); await p.evaluate(()=>__a.pedir('matera')); await p.waitForTimeout(2500);
   T.ok(await p.evaluate(()=>{ const n=__a.game.orders[0].npc; return !!n&&n.position.x<__a.game.orders[0].npc.position.x+1&&n.position.x<12&&n.position.x>3; }),'el cliente es un muñeco que camina hacia la fila del mostrador');
+  // --- tarjetas de clientes y receta completa
+  await L(1); await p.evaluate(()=>{ __a.game.mode='reloj'; __a.game.orders.length=0; __a.pedir('matera'); __a.pedir('chiva',['rojo','azul']); __a.pedir('jarron'); });
+  { await p.waitForTimeout(500); const t=await tarjetas(p); T.ok(t.n===3&&t.o.length===0,'3 tarjetas visibles, sin encimarse con nada del HUD '+JSON.stringify(t)); T.ok(!(p.viewportSize().width>700&&p.viewportSize().height<=520)||t.w<=124,'tarjetas compactas (≤ 124 px) en horizontal '+t.w);
+    const x=await p.evaluate(()=>[...document.querySelectorAll('#clientes .cli')].map(e=>e.tagName+':'+(e.getAttribute('aria-label')||'').length+':'+e.querySelector('.n').textContent+':'+e.querySelector('.sig').textContent)); T.ok(x.every(q=>/^BUTTON:[1-9]\d+:1\/\d:Barro$/.test(q)),'tarjetas son botones con nombre accesible, n/N y «Barro» '+JSON.stringify(x));
+    T.ok(await p.evaluate(()=>{ const e=document.querySelector('#clientes .cli'); e.focus(); return document.activeElement===e; }),'la tarjeta se alcanza con el teclado'); }
+  { const col=await p.evaluate(()=>{ const o=__a.game.orders, b=i=>document.querySelectorAll('#clientes .cli')[i]; o[0].left=o[0].total*.7; o[1].left=o[1].total*.4; o[2].left=o[2].total*.1; return new Promise(r=>setTimeout(()=>r([0,1,2].map(i=>b(i).className.replace(/cli|especial|\s/g,''))),300)); }); T.ok(JSON.stringify(col)==='["","mid","low"]','barra de paciencia: verde, ámbar < 50 %, rojo < 25 % '+JSON.stringify(col)); }
+  const tarj=i=>p.locator('#clientes .cli').nth(i);
+  const abrir=async i=>{ if (celular) await tarj(i).tap(); else await tarj(i).click(); await p.waitForTimeout(300); };
+  const rec=()=>p.evaluate(()=>({vis:!document.querySelector('#receta').hidden,t:document.querySelector('#rTitle').textContent,li:[...document.querySelectorAll('#rPasos li')].map(e=>e.textContent),nota:document.querySelector('#rNota').textContent,act:[...document.querySelectorAll('#rPasos li.actual')].length}));
+  await p.evaluate(()=>{ __a.game.mode='tranquilo'; });
+  await abrir(0); { const r=await rec(); T.ok(r.vis&&/Matera/.test(r.t)&&r.li.length===6&&/Receta del juego/.test(r.nota)&&r.act===1,'receta de matera: 6 pasos y «Receta del juego» '+JSON.stringify(r));
+    const bb=await p.evaluate(()=>{ const r=document.querySelector('#receta .sheet').getBoundingClientRect(); return [r.top,r.bottom,innerHeight]; }); T.ok(bb[0]>=0&&bb[1]<=bb[2]+1,'la ventana de receta cabe en pantalla '+JSON.stringify(bb)); }
+  { const t0=await p.evaluate(()=>__a.game.t); await p.waitForTimeout(600); const t1=await p.evaluate(()=>__a.game.t); T.ok(t1===t0,'en solo el tiempo no avanza con la receta abierta '+t0+' '+t1); }
+  await p.evaluate(()=>{ __a.game.orders.forEach(o=>o.left=1); }); await p.waitForTimeout(300);
+  await p.keyboard.press('Escape'); await p.waitForTimeout(300); T.ok(!(await rec()).vis&&await p.evaluate(()=>!__a.game.paused&&document.querySelector('#pause').hidden),'Escape cierra la receta (y no abre la pausa) y el juego sigue');
+  { const t0=await p.evaluate(()=>__a.game.t); await p.waitForTimeout(500); T.ok(await p.evaluate(t=>__a.game.t>t,t0),'al cerrar, el tiempo vuelve a correr'); }
+  await abrir(1); { const r=await rec(); T.ok(r.vis&&/Chiva/.test(r.t)&&!/Receta del juego/.test(r.nota)&&r.li.some(l=>/Pintar: rojo y azul/.test(l))&&r.li.length===9,'receta de chiva: sin «Receta del juego» y con sus 2 colores '+JSON.stringify(r)); }
+  await p.locator('#rCerrar').click(); await p.waitForTimeout(250); T.ok(!(await rec()).vis&&await p.evaluate(()=>!__a.game.paused),'«Cerrar» cierra');
+  await abrir(0); await p.evaluate(()=>{ __a.game.orders.length=0; __a.pedir('matera'); }); await p.waitForTimeout(300); T.ok((await rec()).vis&&await p.evaluate(()=>__a.game.on),'si el cliente se va o llega otro con la receta abierta, la ventana no rompe el juego');
+  await p.mouse.click(3,3); await p.waitForTimeout(250); T.ok(!(await rec()).vis,'tocar fuera cierra');
+  await p.evaluate(()=>{ __a.setCarry(__a.players[0],{type:'pieza',fig:'matera',i:3,q:90}); }); await p.waitForTimeout(300);
+  T.ok(await p.evaluate(()=>document.querySelector('#clientes .cli .sig').textContent)==='Secar'&&await p.evaluate(()=>document.querySelector('#clientes .cli .n').textContent)==='4/6','la tarjeta muestra el paso siguiente de la pieza más avanzada (Secar, 4/6)');
+  await abrir(0); { const r=await rec(); T.ok(/^✓/.test(r.li[0])&&/^✓/.test(r.li[2])&&/^4\. Secar/.test(r.li[3]),'receta: hechos con ✓ y el actual resaltado '+JSON.stringify(r.li)); } await p.keyboard.press('Escape'); await p.waitForTimeout(200);
+  await p.evaluate(()=>{ __a.setCarry(__a.players[0],null); });
+  { await L(2); await p.evaluate(()=>{ __a.game.mode='tranquilo'; __a.game.nextOrder=1e9; __a.pedir('matera'); }); await p.waitForTimeout(300); await abrir(0); const t0=await p.evaluate(()=>__a.game.t); await p.waitForTimeout(600); T.ok(await p.evaluate(t=>__a.game.t>t,t0)&&!(await p.evaluate(()=>__a.game.paused)),'con 2 jugadores el tiempo sigue con la receta abierta'); await p.keyboard.press('Escape'); await p.waitForTimeout(200); await L(1); }
+  // --- letrero del jugador
+  await p.evaluate(()=>{ __a.game.orders.length=0; __a.setCarry(__a.players[0],null); __a.game.paused=false; }); await en('barro'); await pulsar(); await p.waitForTimeout(300);
+  T.ok(/sigue Amasar/.test(await p.evaluate(()=>__a.players[0].el.textContent)),'el letrero del jugador dice «sigue Amasar» tras tomar barro: '+await p.evaluate(()=>__a.players[0].el.textContent));
   T.ok(p.errs.length===0,'sin errores '+JSON.stringify(p.errs)); await c.close(); }
 (async()=>{ await caso('celular horizontal',{viewport:{width:844,height:390},hasTouch:true,isMobile:true,deviceScaleFactor:1},true); await caso('pc',{viewport:{width:1280,height:760}},false); await caso('celular',{viewport:{width:390,height:844},hasTouch:true,isMobile:true,deviceScaleFactor:1},true);
   { const {p}=await T.abrir('alfareria.html?exigir#prueba'); await p.waitForURL(/finca\.html\?nivel=2/,{timeout:15000}).catch(()=>{}); T.ok(/finca\.html\?nivel=2/.test(p.url()),'sin las pistas del taller, vuelve a la exploración: '+p.url()); }
