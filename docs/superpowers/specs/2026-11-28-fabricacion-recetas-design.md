@@ -62,6 +62,14 @@ Leña (estación, ítem y textos), lluvia, toldo y palanca, el camino de la mina
 ## Qué deja al constructor
 Medidas exactas del taller y la cámara, mallas de las figuras (matera, jarrón, frutero; la chiva ya existe), tiempos de cada paso (partir de `R` actual: amasar 1.6 s, modelar 1.8 s, pintar 1.6 s; secado ~10 s, quema ~14 s, ventana 10 s), puntos exactos, sonidos, textos de ayuda e intro.
 
+## Decisiones tomadas tras la revisión (mías; corregibles)
+1. **La pieza se ata a la figura, no al cliente.** Se entrega a cualquier cliente que pida esa figura (si hay dos, al de menos paciencia). Si el cliente se va, la pieza sirve para el siguiente que pida esa figura. Así no quedan piezas huérfanas y el estado en red es más simple.
+2. **Capacidad:** cada estación trabaja una pieza a la vez; el Secadero tiene 3 puestos. El jugador carga **un objeto** a la vez. Del Secadero solo se saca cuando está seca. Del Horno se saca cuando está lista; si se deja, se va quemando (**como hoy**: sigue sirviendo pero da menos puntos).
+3. **Chiva:** carrocería y carga se modelan por separado en la Mesa (cualquier jugador, cualquier orden). La primera parte queda **esperando en la Mesa**; cuando se lleva la otra parte, Acción las **pega**. La Mesa guarda como máximo una parte esperando.
+4. **Pieza sin cliente:** se puede dejar en el Mostrador (repisa de 2 puestos) hasta que llegue un cliente que la pida; sin castigo. El ritmo de llegada parte del actual (`pedidoCada` 22 s) y lo ajusta el constructor con la paciencia.
+5. **Estrellas:** se recalibran a los nuevos puntos (el constructor prueba una partida tipo en solo); `PROG.fabrica` sigue guardando 0–3 estrellas.
+6. **Bocetos:** están en este mismo directorio. El pasillo se mide en unidades del mundo: al menos 2 de ancho (cabe el jugador con holgura en red).
+
 ## Pruebas
 - `tests/alfareria.js` reescrita: cada receta de principio a fin con `__a`; estación rechaza paso equivocado; chiva exige carga y colores; paciencia 120/90/70 s según jugadores; receta abierta detiene el tiempo solo en modo solo; sin leña, lluvia ni toldo.
 - `tests/contenido2.js`: textos de recetas no-chiva dicen «Receta del juego».
