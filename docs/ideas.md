@@ -73,6 +73,11 @@ No están hechos; cada uno necesita confirmar el alcance antes de programarse.
 2. ~~**Finca en PC: montañas que tiemblan.**~~ **Hecho (rama, 27 nov):** cada montaña va a distinta profundidad; prueba `tests/montes.js`. Antes: **Finca en PC: montañas que tiemblan.** Las montañas del fondo se superponen, se ven sus márgenes blancos y parpadean (probable z-fighting entre tarjetas a la misma profundidad). Separarlas en profundidad o quitar el borde donde se solapan.
 3. ~~**Elegir personaje al crear la partida**~~ **Hecho (28 nov):** dos retratos sin etiqueta de género en «Nueva partida» y en Mi progreso; ella sin gorra al inicio. Prueba `tests/personaje.js`. Antes: **Elegir personaje al crear la partida**, no en la finca. Pensar opciones distintas a «muñeco o muñeca» (por ejemplo varios personajes o apariencias sin etiqueta de género). Se guarda en la partida.
 4. **Celular: moverse con joystick** también donde hoy se toca el suelo (la finca y la exploración del taller), igual que en los minijuegos.
+5b. **Notas del usuario sobre la fabricación (28 nov, solo anotadas; refuerzan el punto 5):**
+   - **Proceso demasiado largo:** reducir pasos. Ejemplo: **quitar la leña** (que el horno no la pida).
+   - **Poco espacio para pasar** entre estaciones: ampliar el taller o separar las estaciones.
+   - **No se sabe qué figura fabricar:** llega un **cliente que pide la figura**; luego aparece una **receta** (pasos en orden) para saber cómo hacerla. Es el rediseño por pedidos del punto 5.
+   - Antes de construir: boceto PNG y datos de cada figura de `docs/nivel2-fuentes.md`.
 4b. **Notas del Nivel 2 (28 nov, solo anotadas, sin tocar código):**
    - **a. Pantalla completa en horizontal:** al girar el celular a horizontal no se activa la pantalla completa. Esperado: que se active sola o con un botón visible.
    - **b. Los cuadros de El Taller tapan demasiado en horizontal:** los diálogos/paneles de `finca.html?nivel=2` cubren gran parte de la pantalla. Compactarlos (como en los minijuegos).
