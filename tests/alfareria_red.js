@@ -1,0 +1,20 @@
+// Red: el estado que el anfitrión envía (snapshot) y el invitado aplica (applySnapshot) deja tarjetas, repisa, estaciones y piezas en mano iguales.
+const T=require('./lib');
+(async()=>{ const {p}=await T.abrir('alfareria.html#prueba',{viewport:{width:1280,height:760}}); await p.waitForFunction(()=>window.__a&&__a.game.on,null,{timeout:30000});
+  const r=await p.evaluate(()=>{ const A=__a, g=A.game, m=A.players[0]; g.mode='tranquilo'; g.nextOrder=1e9; g.orders.length=0; g.repisa.length=0;
+    A.pedir('chiva',['rojo','azul']); A.pedir('jarron');
+    g.repisa.push({type:'pieza',fig:'matera',i:5,q:.9});
+    const mesa=A.ST.find(s=>s.kind==='mesa'); mesa.espera='carroceria';
+    const sec=A.ST.find(s=>s.kind==='secadero'); sec.state='secando'; sec.prog=.4; sec.pz={type:'pieza',fig:'frutero',i:3,q:.8};
+    const pin=A.ST.find(s=>s.kind==='pintura'); pin.state='pintando'; pin.prog=.3; pin.color='azul'; pin.pz={type:'pieza',fig:'chiva',i:7,q:.8,colores:['rojo','azul'],pintados:['rojo']};
+    A.setCarry(m,{type:'pieza',fig:'chiva',i:6,q:.7,colores:['rojo','azul'],pintados:['rojo']});
+    const canon=v=>JSON.stringify(v,(k,x)=>x&&typeof x==='object'&&!Array.isArray(x)?Object.keys(x).sort().reduce((a,q)=>(a[q]=x[q],a),{}):x);
+    const est=()=>canon({o:g.orders,rp:g.repisa,c:m.carry,s:A.ST.map(s=>[s.state,s.espera||null,s.sel||null,s.color||null,s.pz||null])});
+    const antes=est(), snap=A.snapshot(); const campos=Object.keys(snap);
+    m.carry=null; m.carryKey=''; g.orders=[]; g.repisa=[]; mesa.espera=null; sec.pz=null; sec.state='vacio'; pin.pz=null; pin.state='vacio';
+    A.applySnapshot(JSON.parse(JSON.stringify(snap)));
+    return {antes,despues:est(),campos,n:g.orders.length,tipo:g.orders.every(o=>o.tipo!==undefined)}; });
+  T.ok(r.antes===r.despues,'ida y vuelta: tarjetas, repisa, estaciones y pieza en mano iguales'); if (r.antes!==r.despues) console.log(r.antes,'\n',r.despues);
+  T.ok(r.n===2&&r.tipo,'los 2 clientes llegan con su tipo de muñeco');
+  T.ok(!r.campos.includes('r')&&!r.campos.includes('m'),'sin campos de lluvia ni toldo: '+r.campos.join());
+  T.ok(p.errs.length===0,'sin errores '+JSON.stringify(p.errs)); await T.fin(); })();
