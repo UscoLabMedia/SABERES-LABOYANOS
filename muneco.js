@@ -128,7 +128,7 @@ function buildMuneco(stage, fem=false){
   if (!fem){ Object.assign(o,{ torso: mus?'#f6f1e4':'#2f8a7a', shortSleeve: stage===0, cap: stage<3?RED:null, hatOn: cab });
     if (alf) o.legMat=mat('#efe8d8'); }
   else { Object.assign(o,{ torso: mus?'#f6f1e4':'#7b4fb0', torsoW:[.112,.128], shortSleeve: stage===0, lashes:true, earrings:true,
-      hairStyle: mus?'braid':'ponytail', cap: stage<2?'#f2c94c':null, hatOn: false, flowers: alf });
+      hairStyle: mus?'braid':'ponytail', cap: null, hatOn: false, flowers: alf });
     if (!mus){ o.skirt='short'; o.legMat=mat('#2a2a30'); }
     else { o.skirt='sanjuanera'; o.collar=true; o.puff=true; o.legMat=mat(SKIN); } }
   const m=base(o), body=m.userData.body;
@@ -191,5 +191,19 @@ function retrato(build){
     const m=build(); m.rotation.y=-.25; pr.sc.add(m); pr.r.clear(); pr.r.render(pr.sc,pr.cam); const url=pr.c.toDataURL(); pr.sc.remove(m); return url;
   } catch(e){ return ''; }
 }
-window.Muneco={ jugador:buildMuneco, npc:buildNPC, animar, retrato };
+/* Dos retratos para elegir personaje, sin etiqueta de género. alCambiar(v) con v = 'muneco' | 'muneca'. */
+const PJ=[['muneco',false,'Pelo corto con gorra'],['muneca',true,'Cola de caballo con aretes']], PJ_IMG={};
+function selector(el, valor, alCambiar){
+  if (!document.getElementById('pjCss')){ const st=document.createElement('style'); st.id='pjCss'; st.textContent=`.pj{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin:.3rem 0 .2rem}
+.pj button{display:flex;flex-direction:column;align-items:center;padding:.4rem;border:2px solid rgba(60,40,20,.35);border-radius:10px;background:#fbf7ee;cursor:pointer}
+.pj button[aria-pressed=true]{border:3px solid #3a2414;background:#fff;box-shadow:0 0 0 4px #e9c46a}
+.pj button:focus-visible{outline:3px solid #1d4f8c;outline-offset:3px}
+.pj img{width:100%;max-width:150px;aspect-ratio:1}
+.pj .ok{visibility:hidden;font-weight:700;font-size:1.3rem;line-height:1;color:#3a2414}.pj [aria-pressed=true] .ok{visibility:visible}`; document.head.appendChild(st); }
+  PJ.forEach(([v,fem])=>{ if (!PJ_IMG[v]) PJ_IMG[v]=retrato(()=>{ const g=new THREE.Group(), m=buildMuneco(0,fem); m.rotation.y=-.35; g.add(m); return g; }); });
+  el.innerHTML='<div class="pj" role="group">'+PJ.map(([v,,alt])=>`<button type="button" data-pj="${v}" aria-pressed="${v===valor}"><img src="${PJ_IMG[v]||''}" alt="${alt}"><span class="ok" aria-hidden="true">✓</span></button>`).join('')+'</div>';
+  el.querySelectorAll('[data-pj]').forEach(b=>b.addEventListener('click',()=>{ valor=b.dataset.pj; el.querySelectorAll('[data-pj]').forEach(x=>x.setAttribute('aria-pressed',x===b)); if (alCambiar) alCambiar(valor); }));
+  return { valor:()=>valor };
+}
+window.Muneco={ jugador:buildMuneco, npc:buildNPC, animar, retrato, selector };
 })();
