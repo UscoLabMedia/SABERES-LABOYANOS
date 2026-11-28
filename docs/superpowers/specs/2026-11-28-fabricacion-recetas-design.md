@@ -10,7 +10,7 @@ Hoy la fabricación (`alfareria.html`) es una cadena larga e igual para todo (mi
 - Cada figura tiene su **receta**; la **chiva es la más complicada**, las demás más sencillas o con variaciones.
 - La chiva se pinta **con los colores que pide el cliente**.
 - Proceso más corto: **sin leña**, **sin lluvia, sin toldo ni palanca** (todo bajo techo).
-- Escenario: **taller por dentro**, estaciones **en orden de izquierda a derecha** empezando por el **barro a la izquierda**, con **pasillo ancho**.
+- Escenario: **taller por dentro** en **tres columnas** con ruta en zigzag (ver Taller); la mina abajo a la izquierda.
 - Paciencia de los clientes según jugadores: **solo 120 s (2 clientes a la vez) · 2 jugadores 90 s (3) · 3–4 jugadores 70 s (3)**.
 - Regla fija: en celular horizontal, pantalla completa y **nada encimado** (`tests/usabilidad.js`).
 
@@ -39,9 +39,15 @@ Hoy la fabricación (`alfareria.html`) es una cadena larga e igual para todo (mi
 Las recetas viven en `data/recetas2.json` (editable por docentes, como `data/trivia2.json`): por figura, nombre, pasos (lista de ids de paso), puntos, si lleva colores y la nota de fuente.
 
 ## Taller (escena)
-Interior visto de frente-arriba, sin pared delantera; piso de baldosa, pared del fondo con ventanas y vigas. Estaciones en fila de izquierda a derecha:
-1 **Barro** (montón de arcilla) · 2 **Amasado** · 3 **Torno** y **Mesa de modelar** (a mano; ahí se hacen carrocería, carga y frutero) · 4 **Secadero** (estantes, sin toldo) · 5 **Horno** (arranca solo al cargar; si no se saca a tiempo, la pieza se quema — se mantiene) · 6 **Pintura** · 7 **Mostrador** (abajo a la derecha; los clientes esperan delante).
-Pasillo ancho libre en el centro. Con 3–4 jugadores puede haber 2 amasados, 2 hornos y 2 pinturas (decisión del constructor, cuidando el pasillo).
+Interior visto de frente-arriba, sin pared delantera; piso de baldosa, pared del fondo con ventanas y vigas. **Tres columnas con pasillos entre ellas; la ruta va en zigzag** (pedido del usuario: «que hayan columnas», la ruta en fila era muy básica):
+
+```
+          IZQUIERDA                  MEDIO            DERECHA
+ARRIBA    Torno · Mesa de modelar · Torno   Horno · Horno    Pintura
+MEDIO     Amasado · Amasado          (pasillo)        Pintura
+ABAJO     Mina (barro)               Secadero         Mostrador ← clientes
+```
+Ruta: mina → amasado → torno/mesa (sube por la izquierda) → secadero (baja por el medio) → horno (sube) → pintura (cruza a la derecha) → mostrador (baja). El **Horno** arranca solo al cargar; si no se saca a tiempo la pieza se va quemando (se mantiene). Secadero con 3 puestos, sin toldo. Los clientes esperan a la izquierda del mostrador, dentro del taller. Pasillos entre columnas de al menos 2 unidades del mundo. Mesa de modelar junto a los tornos y 2 mesas de pintura: **decisión mía** (el usuario dijo «como creas que es mejor»).
 
 ## Cómo se juega
 - Llega un cliente (muñeco NPC con `Muneco.npc`), se pone frente al mostrador y su pedido aparece como **tarjeta compacta** arriba a la derecha: figura, «paso n de N», nombre del paso actual y **barra de paciencia**. Tarjetas en fila, sin encimarse.
@@ -68,7 +74,7 @@ Medidas exactas del taller y la cámara, mallas de las figuras (matera, jarrón,
 3. **Chiva:** carrocería y carga se modelan por separado en la Mesa (cualquier jugador, cualquier orden). La primera parte queda **esperando en la Mesa**; cuando se lleva la otra parte, Acción las **pega**. La Mesa guarda como máximo una parte esperando.
 4. **Pieza sin cliente:** se puede dejar en el Mostrador (repisa de 2 puestos) hasta que llegue un cliente que la pida; sin castigo. El ritmo de llegada parte del actual (`pedidoCada` 22 s) y lo ajusta el constructor con la paciencia.
 5. **Estrellas:** se recalibran a los nuevos puntos (el constructor prueba una partida tipo en solo); `PROG.fabrica` sigue guardando 0–3 estrellas.
-6. **Bocetos:** están en este mismo directorio. El pasillo se mide en unidades del mundo: al menos 2 de ancho (cabe el jugador con holgura en red).
+6. **Bocetos:** están en este mismo directorio.
 
 ## Pruebas
 - `tests/alfareria.js` reescrita: cada receta de principio a fin con `__a`; estación rechaza paso equivocado; chiva exige carga y colores; paciencia 120/90/70 s según jugadores; receta abierta detiene el tiempo solo en modo solo; sin leña, lluvia ni toldo.
