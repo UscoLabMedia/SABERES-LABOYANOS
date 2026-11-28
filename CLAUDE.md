@@ -15,6 +15,12 @@ Si los skills de superpowers están disponibles, úsalos según el tamaño de la
 - **Cambio pequeño** (texto, color, un parámetro, un dato en JSON): no hace falta ningún skill ni plan escrito. Hazlo directo.
 Si superpowers no está disponible, aplica igual estas tres prácticas a mano.
 
+### Celular horizontal: pantalla completa y nada encimado (regla del usuario, 28 nov 2026)
+Antes de decir «listo» en cualquier cambio de interfaz o de pantalla, comprueba en **celular horizontal (844×390)**, vertical y PC que:
+1. En horizontal se ofrece la pantalla completa (botón `#fsBtn` y primer toque, `Papel.pantallaCompleta()`). Toda pantalla nueva debe llamarla.
+2. Ningún texto, botón ni recuadro se superpone con otro ni queda tapado o fuera de pantalla.
+Corre `node tests/usabilidad.js` (ya exige ambas cosas en las 9 pantallas) y, si el cambio es en una pantalla concreta, también su prueba propia. Si el cambio muestra cuadros que solo salen en el juego (diálogos, avisos, fin de partida), mídelos además con una prueba o captura recortada, porque `usabilidad.js` solo mira la pantalla inicial.
+
 ### Elegir modelo y esfuerzo
 Yo no puedo cambiar mi propio modelo. Lo que sí hago:
 1. Al empezar una tarea, si no coincide con el modelo actual, digo en una línea qué modelo y esfuerzo conviene (según la tabla de abajo) y le pido al usuario que cambie con `/model`.

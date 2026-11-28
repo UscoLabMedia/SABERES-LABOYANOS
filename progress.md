@@ -6,6 +6,7 @@ Léelo junto con `LEEME-PRIMERO.md`. Rama de trabajo: `ccr-2b9646ac-ks35za`. **`
 - Respuestas en español, estilo caveman (cortas). Presupuesto 0 pesos.
 - **Merge a `main` solo con permiso explícito del usuario** (`git push origin HEAD:main`, avance rápido).
 - Diseño nuevo → propuesta/boceto en PNG antes de construir. Arreglos pequeños: directo, con prueba que falle antes y pase después.
+- **Siempre, en horizontal:** pantalla completa disponible y nada encimado. Ver `CLAUDE.md`. `tests/usabilidad.js` lo exige.
 - Datos históricos del juego: solo los verificados en `docs/nivel2-fuentes.md` (lo leen estudiantes y docentes).
 
 ## Hecho

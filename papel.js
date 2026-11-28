@@ -290,10 +290,11 @@ function avisoGirar(){
 
 /* Pantalla completa en el celular: botón ⛶ y, en horizontal, el primer toque la pide sola (el navegador solo la concede tras un toque).
    No hay en PC, ni donde el navegador no la permite (p. ej. iPhone). Si el usuario sale de la pantalla completa, no se vuelve a pedir sola. */
-function pantallaCompleta(){
+function pantallaCompleta(pos){   // pos 'abajo' = esquina inferior derecha (para pantallas con algo arriba); por omisión, arriba al centro
   const raiz=document.documentElement;
   if (!matchMedia('(pointer: coarse)').matches || document.getElementById('fsBtn') || !raiz.requestFullscreen) return;
   const st=document.createElement('style'); st.textContent='#fsBtn{position:fixed;left:50%;top:max(6px,env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:55;width:44px;height:36px;border-radius:10px;border:1px solid rgba(242,231,208,.3);background:rgba(27,18,12,.6);color:#f2e7d0;display:grid;place-items:center;cursor:pointer;padding:0}#fsBtn svg{width:20px;height:20px}#fsBtn[hidden]{display:none}';
+  if (pos==='abajo') st.textContent+='#fsBtn{left:auto;right:max(10px,env(safe-area-inset-right,0px));top:auto;bottom:max(10px,env(safe-area-inset-bottom,0px));transform:none}';
   document.head.appendChild(st);
   const b=document.createElement('button'); b.id='fsBtn'; b.type='button'; b.setAttribute('aria-label','Pantalla completa'); b.hidden=true;
   b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>'; document.body.appendChild(b);

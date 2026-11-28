@@ -38,6 +38,8 @@ function revisar(ignorar){
     for (const [vn,opt] of VISTAS){
       const {p}=await T.abrir(ruta,opt); await p.waitForTimeout(2500);   // deja cargar la escena y los datos
       const pb=await p.evaluate(revisar,IGNORAR); total+=pb.length;
+      if (vn==='horizontal') T.ok(await p.evaluate(()=>{ const b=document.getElementById('fsBtn'); return !!b&&!b.hidden&&b.getBoundingClientRect().width>0; }),`${nombre} (${vn}): botón de pantalla completa visible`);
+      if (vn!=='PC') T.ok(await p.evaluate(()=>!!document.getElementById('fsBtn')||innerHeight>innerWidth),`${nombre} (${vn}): tiene pantalla completa`);
       T.ok(p.errs.length===0,`${nombre} (${vn}): sin errores de JS ${JSON.stringify(p.errs)}`);
       T.ok(pb.length===0,`${nombre} (${vn}): sin problemas de interfaz`+(pb.length?'\n      - '+pb.join('\n      - '):''));
       await p.context().close(); } }
