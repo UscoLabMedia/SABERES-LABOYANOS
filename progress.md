@@ -35,6 +35,13 @@ Léelo junto con `LEEME-PRIMERO.md`. Rama de trabajo: `ccr-2b9646ac-ks35za`. **`
 9. **Validar contenidos con un docente de Pitalito** y abrir los enlaces oficiales (el entorno no pudo abrirlos).
 10. **No probado:** red entre celulares reales (WebRTC/PeerJS), mandos reales, rendimiento en celular real.
 
+## Pendientes menores de la fabricación por recetas (revisiones del 28 nov)
+- Devolver el foco a la tarjeta al cerrar la receta; atrapar el foco dentro de la ventana.
+- Texto de las tarjetas ~11 px en horizontal (nombres largos con «…»); en PC las tarjetas van centradas.
+- Clientes (muñecos) pequeños, sin colisión; `finish()` no los limpia ni libera sus mallas.
+- Pruebas faltantes: soltar a medias en la Mesa; repisa → devolver pieza con manos vacías; chiva sin cliente en Pintura; chiva a medio pintar conserva colores; «Receta del juego» en jarrón y frutero.
+- Prueba de red con una sola página (no con un invitado real). Estrellas [30,60,95] estimadas: validar en partida real.
+
 ## Decisiones abiertas para el usuario
 - Traje de la etapa 4 cambió por el reordenamiento (muñeca sin sombrero en la cabeza, con flores y mochila; muñeco con poncho): ¿está bien?
 - Un compañero sin las 3 pistas que entra por enlace de sala a fabricación/carrera vuelve a la exploración: ¿se permite entrar a jugar en grupo?
