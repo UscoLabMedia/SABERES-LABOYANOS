@@ -55,7 +55,6 @@ async function caso(nombre,opt,celular){ const {p,c}=await T.abrir('alfareria.ht
   await masa(); await en('mesa'); await mantener(1000); let m=await est('mesa'); T.ok(m.espera==='carroceria'&&await carry()==null,'la carrocería queda esperando en la Mesa');
   await masa(); await en('mesa'); await mantener(1000); T.ok(await carry()==='chiva:4','modela la carga');
   T.ok(await p.evaluate(()=>__a.accion(__a.players[0]).t)==='Pegar','la Mesa ofrece «Pegar»'); await pulsar(); T.ok(await carry()==='chiva:5'&&(await est('mesa')).espera===null,'pega carrocería y carga');
-  T.ok(JSON.stringify(await p.evaluate(()=>__a.players[0].carry.colores))==='["rojo","azul"]','la chiva sabe sus colores');
   await secarHornear(); T.ok(await carry()==='chiva:7','la chiva sale cocida y va a Pintura');
   await en('pintura',1); await pulsar(); T.ok(await st('pintura',1)==='pintando','pone la chiva en Pintura');
   await mantener(1000); T.ok(JSON.stringify(await p.evaluate(()=>__a.ST.filter(q=>q.kind==='pintura')[1].pz.pintados))==='["rojo"]','pinta rojo');
@@ -90,6 +89,12 @@ async function caso(nombre,opt,celular){ const {p,c}=await T.abrir('alfareria.ht
   await L(1); await p.evaluate(()=>{ __a.pedir('chiva',['rojo','azul']); __a.pedir('chiva',['verde','amarillo']); });
   await pieza('chiva',['amarillo','verde']); await en('mostrador'); await pulsar(); T.ok((await ord()).join()==='chiva:120:azul+rojo'.replace('azul+rojo','rojo+azul')&&await carry()==null,'la chiva va al cliente de sus colores '+await ord());
   await pieza('chiva',['rojo','verde']); await pulsar(); T.ok((await ord()).length===1&&await repisa()==='chiva'&&await carry()==null,'chiva de otros colores no va a ese cliente: queda en la repisa '+await ord()+' '+await repisa());
+  // --- la chiva toma los colores del cliente al pintarla: el cliente A se fue y llegó B con otros colores
+  await L(1); await p.evaluate(()=>{ __a.game.orders.length=0; __a.pedir('chiva',['rojo','azul']); const pa=__a.Recetas.datos.figuras.chiva.pasos; __a.setCarry(__a.players[0],{type:'pieza',fig:'chiva',i:pa.indexOf('pintar'),q:90,colores:['rojo','azul'],pintados:[]}); __a.game.orders.length=0; __a.pedir('chiva',['verde','amarillo']); });
+  await en('pintura',1); await pulsar(); T.ok(await st('pintura',1)==='pintando'&&JSON.stringify(await p.evaluate(()=>__a.ST.filter(q=>q.kind==='pintura')[1].pz.colores))==='["verde","amarillo"]','la chiva toma los colores del cliente actual al entrar a Pintura');
+  for (const col of ['verde','amarillo']){ await p.evaluate(col=>{ __a.ST.filter(q=>q.kind==='pintura')[1].color=__a.Recetas.datos.colores.indexOf(col); },col); await mantener(1000); }
+  T.ok(await st('pintura',1)==='listo','pinta verde y amarillo: queda lista'); await pulsar(); T.ok(await carry()==='chiva:8','recoge la chiva pintada');
+  { const p1=await pts(); await en('mostrador'); await pulsar(); T.ok(await carry()==null&&await pts()>=p1+25,'entrega la chiva al cliente B y suma ≥ 25'); }
   await L(1); { const r=await p.evaluate(()=>{ __a.game.mode='reloj'; __a.pedir('jarron'); __a.game.orders[0].left=.05; const s0=__a.game.score; __a.step(.2); return [__a.game.orders.length,__a.game.score-s0,document.querySelector('#banner').textContent]; }); T.ok(r[0]===0&&r[1]===-5&&/Se fue/.test(r[2]),'cliente que se va: −5 y aviso '+JSON.stringify(r)); }
   await p.evaluate(()=>{ __a.game.mode='tranquilo'; __a.pedir('jarron'); __a.setCarry(__a.players[0],{type:'pieza',fig:'jarron',i:__a.Recetas.datos.figuras.jarron.pasos.indexOf('entregar'),q:90}); });
   { const s0=await pts(); await en('mostrador'); await pulsar(); T.ok((await ord()).length===0&&await pts()>=s0+10,'la pieza que traía el cliente que se fue sirve al siguiente de esa figura'); }

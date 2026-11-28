@@ -191,14 +191,16 @@ function take(p){
     case 'barro': if (c){ banner('Tienes las manos ocupadas'); return; } setCarry(p,{type:'pieza',fig:null,i:1,q:R.calidadBase}); snd('pop',2); return;
     case 'amasado': case 'secadero': case 'horno': case 'pintura': { const [trabajando,,vacio]=TRABAJO[s.kind];
       if (sacable(s) && !c){ setCarry(p,s.pz); Object.assign(s,{pz:null,state:'vacio',t:0,prog:0}); snd('pop',3); return; }
-      if (s.state==='vacio' && c){ if (!Recetas.acepta(s.kind,c)){ noVa(); return; } Object.assign(s,{pz:c,state:trabajando,t:0,prog:0,color:0}); setCarry(p,null); snd('pop',1); return; }
+      if (s.state==='vacio' && c){ if (!Recetas.acepta(s.kind,c)){ noVa(); return; }
+        if (s.kind==='pintura' && c.fig==='chiva' && !(c.pintados||[]).length){ const o=pedidoDe('chiva'); if (!o){ banner('Ahora nadie pide una chiva: espera un cliente para pintarla'); return; } c.colores=o.colores.slice(); }
+        Object.assign(s,{pz:c,state:trabajando,t:0,prog:0,color:0}); setCarry(p,null); snd('pop',1); return; }
       banner(s.state==='vacio'?vacio:sacable(s)?'Tienes las manos ocupadas':{amasando:'Mantén pulsado para amasar',secando:'Se está secando',quemando:'Todavía se hornea',pintando:'Mantén pulsado para pintar'}[s.state]); return; }
     case 'torno': case 'mesa':
       if (s.kind==='mesa' && c&&c.parte){
         if (!s.espera){ s.espera=c.parte; setCarry(p,null); snd('pop',1); banner(`La ${nom(c).toLowerCase()} queda esperando en la Mesa`); return; }
         if (s.espera===c.parte){ banner('Ya hay una parte igual esperando en la Mesa'); return; }
-        const o=pedidoDe('chiva'); s.espera=null; snd('pop',4); banner('¡Chiva armada! Ahora va al Secadero');
-        setCarry(p,{type:'pieza',fig:'chiva',i:Recetas.datos.figuras.chiva.pasos.indexOf('secar'),q:c.q,colores:(o&&o.colores)||Recetas.coloresAzar(),pintados:[]}); return; }
+        s.espera=null; snd('pop',4); banner('¡Chiva armada! Ahora va al Secadero');
+        setCarry(p,{type:'pieza',fig:'chiva',i:Recetas.datos.figuras.chiva.pasos.indexOf('secar'),q:c.q,pintados:[]}); return; }
       if (!esMasa(c)){ if (c) noVa(); else banner('Trae barro amasado'); return; }
       banner(eleccion(s)?'Mantén pulsado para modelar':'Ningún cliente pide eso aquí'); return;
     case 'mostrador':
