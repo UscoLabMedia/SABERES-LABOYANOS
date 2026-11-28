@@ -41,7 +41,7 @@ Videojuego web educativo y cultural sobre la identidad de **Pitalito (Valle de L
 
 | Etapa | Atuendo |
 |---|---|
-| 0 Inicio | Gorra, camiseta, jean, tenis, morral |
+| 0 Inicio | Camiseta, jean, tenis, morral. Él: gorra roja. Ella: sin gorra, se ve el pelo y la cola (28 nov 2026) |
 | 1 Café | Mochila tejida a la espalda y alpargatas |
 | 2 Alfarería | Él: poncho al hombro. Ella: tocado de flores y mochila al costado |
 | 3 Caballos | Sombrero de paja y pañuelo rojo alrededor del cuello (ella lo lleva a la espalda por las flores) |
@@ -69,7 +69,7 @@ Nivel 2: libro → `finca.html?nivel=2` (el taller, 3 pistas) → `alfareria.htm
 | Archivo | Qué hace |
 |---|---|
 | `index.html` | Pantalla de inicio: libro que se abre, mapa de Pitalito con pop-ups. Menú, ajustes, **Mi progreso** (usuario, partida, cambiar de partida y cerrar sesión) y progreso del recorrido. En el ZIP ya trae `<!doctype html>` y `<meta charset>` al inicio, listo para GitHub Pages. |
-| `finca.html` | Exploración del Nivel 1 (y del Nivel 2 con `?nivel=2`, el taller). Elección muñeco o muñeca. 3 NPC dan 3 pistas, cuaderno de saberes, aguacero al final. |
+| `finca.html` | Exploración del Nivel 1 (y del Nivel 2 con `?nivel=2`, el taller). El jugador usa el personaje de la partida. 3 NPC dan 3 pistas, cuaderno de saberes, aguacero al final. |
 | `cosecha.html` | Minijuego (teclado, mando, táctil y **ratón**: clic en el suelo para caminar, clic en una estación para tomar o soltar, mantener el clic para usar): cafetal → despulpadora (manivela, se atasca) → tanques (fermentar 18 s, lavar) → secadero (voltear, marquesina contra la lluvia) → chiva. Pedidos, calidad de taza (>80 = especial), 3 min o modo tranquilo. Reglas en el objeto `R`. |
 | `oleadas.html` | Defensa del cafetal (con **ratón**: clic o mantener para golpear hacia el puntero): 12 cafetos, 5 oleadas de broca, roya (salta al vecino) y ojo de gallo (con lluvia). Ataque con palo. Reglas en `FOE`, `WAVES` y `ATK`. |
 | `trivia.html` | 5 preguntas al azar de `data/trivia1.json` (`?nivel=N` usa `data/triviaN.json`), 20 s cada una. Comodines 50/50, +10 s y Cuaderno. Saberes por acierto, rapidez y racha. |
@@ -155,6 +155,8 @@ Nivel 2: libro → `finca.html?nivel=2` (el taller, 3 pistas) → `alfareria.htm
 - El libro *pop-up* se mantiene como portada y mapa. Los escenarios pasarían a 3D con estilo *Painterly Stylized 3D* (referencia: Kena) y ternura tipo Sky.
 - Se migrará a una versión moderna de Three.js solo en un prototipo aparte (`demo-visual-3d/`); no subir la versión en el juego actual sin preguntar.
 - Personaje principal femenino: **La Orquídera**, versión A para jugar. Ver `arte/personajes/orquidera/README.md`.
+
+**Personaje (28 nov 2026):** se elige al crear la partida (`inicio.js`) con dos retratos **sin etiqueta de género** (nada de «muñeco/muñeca», «hombre/mujer»), y se cambia en Mi progreso. Componente `Muneco.selector()`. Por dentro sigue `avatar: 'muneco' | 'muneca'`. Diseño en `docs/superpowers/specs/2026-11-28-elegir-personaje-design.md`.
 
 ## 6. Reglas de trabajo que pidió el usuario
 

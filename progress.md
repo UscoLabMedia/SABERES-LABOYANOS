@@ -20,11 +20,11 @@ Léelo junto con `LEEME-PRIMERO.md`. Rama de trabajo: `ccr-2b9646ac-ks35za`. **`
 - Sonido real al abrir el libro (Pixabay, `assets/libro-abrir.mp3`, con respaldo sintético). Texturas horneadas en `assets/` (`arte/texturas/`).
 
 ## Pruebas (carpeta `tests/`, Playwright + Chrome del sistema)
-`node tests/<nombre>.js` — ayudas en `tests/lib.js` (servidor local, three.js local, bloquea fuentes remotas). Nombres: `orden`, `trivia_nivel`, `explora`, `cosecha_regresion`, `alfareria`, `carrera`, `mapa_nivel2`, `contenido2`, `tactil_sonido`, `oleadas_horizontal`, `montes`, `nombre`, `girar`, `usabilidad`. Variable `THREE_JS` = ruta a three.min.js r128. Todas pasaban al último commit.
+`node tests/<nombre>.js` — ayudas en `tests/lib.js` (servidor local, three.js local, bloquea fuentes remotas). Nombres: `orden`, `trivia_nivel`, `explora`, `cosecha_regresion`, `alfareria`, `carrera`, `mapa_nivel2`, `contenido2`, `tactil_sonido`, `oleadas_horizontal`, `montes`, `nombre`, `girar`, `usabilidad`, `personaje`. Variable `THREE_JS` = ruta a three.min.js r128. Todas pasaban al último commit.
 
 ## Pendiente (en este orden sugerido)
 1. ~~Bitácora `docs/arreglos.md` y `tests/usabilidad.js`~~ **hecho** (0 problemas en pantalla inicial de las 9 páginas × 3 vistas). Falta ampliarla a pantallas en marcha (banners, diálogos, fin de partida).
-2. **Aviso 3:** elegir personaje al crear la partida (opciones distintas a muñeco/muñeca).
+2. ~~Aviso 3~~ **hecho:** el personaje se elige al crear la partida con dos retratos sin etiqueta de género y se cambia en Mi progreso; ella empieza sin gorra. Prueba `tests/personaje.js`.
 3. **Aviso 4:** joystick en celular en la finca y el taller.
 4. **Aviso 5:** rediseñar la fabricación por **pedidos con receta** (llega un cliente, pide una figura, cada figura tiene pasos distintos, receta en pantalla, se entrega). Necesita boceto PNG antes. Datos de cada figura de fuentes verificadas.
 5. **Nivel 3 Caballos:** referencia del usuario https://youtu.be/Rvs7O4oqgGo?t=168; falta definir qué mecánica tomar.

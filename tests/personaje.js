@@ -38,4 +38,9 @@ const gorra=fem=>`(()=>{ let n=0; Muneco.jugador(0,${fem}).traverse(o=>{ if (o.g
   for (const pg of ['finca','trivia']){ const r=await c.newPage(); r.errs=[]; r.on('pageerror',e=>r.errs.push(e.message)); await r.goto(p.url().replace(/finca\.html.*/,pg+'.html#prueba')); await r.waitForFunction(()=>window.__fems&&window.__fems.length,null,{timeout:30000});
     T.ok(await r.evaluate(()=>window.__fems[0]===true),pg+' usa el personaje de la partida'); T.ok(r.errs.length===0,pg+' sin errores '+JSON.stringify(r.errs)); }
   T.ok(p.errs.length===0&&q.errs.length===0,'sin errores '+JSON.stringify(p.errs.concat(q.errs))); await c.close(); }
+ { // 4. colores del retrato: la gorra roja (#c8101e) se ve roja, no salmón
+  const {p}=await T.abrir('finca.html#prueba'); await p.waitForFunction(()=>window.Muneco&&window.__f,null,{timeout:30000});
+  const d=await p.evaluate(async()=>{ const img=new Image(); img.src=Muneco.retrato(()=>Muneco.jugador(0,false)); await img.decode(); const c=document.createElement('canvas'); c.width=img.width; c.height=img.height; const g=c.getContext('2d'); g.drawImage(img,0,0);
+    const px=g.getImageData(0,0,c.width,c.height).data; let best=-999; for (let i=0;i<px.length;i+=4) if (px[i+3]>200) best=Math.max(best,px[i]-px[i+1]); return best; });
+  T.ok(d>=120,'la gorra del retrato es roja intensa (R−G = '+d+')'); await p.context().close(); }
  await T.fin(); })();
