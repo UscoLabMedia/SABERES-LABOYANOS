@@ -94,8 +94,8 @@ const cuenta = {
     auth = sesionDe(js, u); partida = null; SS.set(K.auth, auth); SS.del(K.partida); return u; },
   salir(){ if (auth && !auth.local) http('/auth/v1/logout', { metodo:'POST' }).catch(() => {}); SS.del(K.auth); SS.del(K.partida); auth = partida = null; },
   async partidas(){ return (await http('/rest/v1/partidas?select=id,nombre,datos,creada,actualizada&order=actualizada.desc')) || []; },
-  async nueva(nombre){ const n = String(nombre || '').trim().slice(0, 40) || nombreAuto();
-    const [fila] = await http('/rest/v1/partidas', { metodo:'POST', pref:'return=representation', cuerpo:{ nombre:n, datos:{ etapa:0, actualizado:Date.now() } } });
+  async nueva(nombre, avatar){ const n = String(nombre || '').trim().slice(0, 40) || nombreAuto();
+    const [fila] = await http('/rest/v1/partidas', { metodo:'POST', pref:'return=representation', cuerpo:{ nombre:n, datos:{ etapa:0, ...(avatar ? { avatar } : {}), actualizado:Date.now() } } });
     return this.abrir(fila); },
   abrir(p){ const local = LS.get(K.datos(p.id), null), nube_ = p.datos || {};
     if (!local || (nube_.actualizado || 0) > (local.actualizado || 0)){ LS.set(K.datos(p.id), nube_); LS.set(K.pend(p.id), false); } else LS.set(K.pend(p.id), true);

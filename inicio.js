@@ -66,13 +66,17 @@ async function pantallaPartidas(msg){
 }
 function pantallaNueva(){
   titulo('Nueva partida');
-  paso.innerHTML = `<form class="in-form" novalidate>${campo('inNom', 'Nombre de la partida (opcional)', 'text', `maxlength="40" placeholder="${esc(Guardado.nombreAuto())}" autocomplete="off"`)}
+  paso.innerHTML = `<form class="in-form" novalidate><p class="in-sub" id="inPjT">¿Con quién quieres jugar?</p><div id="inPj"></div>
+    <span class="in-ayuda">Lo puedes cambiar después en «Mi progreso».</span>
+    ${campo('inNom', 'Nombre de la partida (opcional)', 'text', `maxlength="40" placeholder="${esc(Guardado.nombreAuto())}" autocomplete="off"`)}
     <span class="in-ayuda">Si lo dejas vacío, se llamará como la fecha y la hora de ahora.</span>
     <p class="in-err" id="inErr" role="alert"></p>
     <div class="in-acts"><button type="button" class="btn" id="inVol">Volver</button><button class="btn solid" id="inGo">Empezar</button></div></form>`;
-  $('#inNom').focus(); $('#inVol').onclick = () => pantallaPartidas();
-  paso.querySelector('form').onsubmit = async e => { e.preventDefault(); const b = $('#inGo'); ocupado(b, 'Creando…');
-    try { await C.nueva($('#inNom').value); location.reload(); } catch (x) { $('#inErr').textContent = x.message; libre(b); } };
+  const pj = Muneco.selector($('#inPj'), null, () => { $('#inErr').textContent = ''; });
+  $('#inPj [role=group]').setAttribute('aria-labelledby', 'inPjT'); $('#inPj button').focus(); $('#inVol').onclick = () => pantallaPartidas();
+  paso.querySelector('form').onsubmit = async e => { e.preventDefault(); if (!pj.valor()) return $('#inErr').textContent = 'Elige con quién quieres jugar.';
+    const b = $('#inGo'); ocupado(b, 'Creando…');
+    try { await C.nueva($('#inNom').value, pj.valor()); location.reload(); } catch (x) { $('#inErr').textContent = x.message; libre(b); } };
 }
 function pantallaBorrarPartida(p){
   titulo('Borrar partida');
