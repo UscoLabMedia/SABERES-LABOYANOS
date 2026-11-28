@@ -21,13 +21,13 @@ Léelo junto con `LEEME-PRIMERO.md`. Rama de trabajo: `ccr-2b9646ac-ks35za`. **`
 - Sonido real al abrir el libro (Pixabay, `assets/libro-abrir.mp3`, con respaldo sintético). Texturas horneadas en `assets/` (`arte/texturas/`).
 
 ## Pruebas (carpeta `tests/`, Playwright + Chrome del sistema)
-`node tests/<nombre>.js` — ayudas en `tests/lib.js` (servidor local, three.js local, bloquea fuentes remotas). Nombres: `orden`, `trivia_nivel`, `explora`, `cosecha_regresion`, `alfareria`, `alfareria_red`, `recetas`, `carrera`, `mapa_nivel2`, `contenido2`, `tactil_sonido`, `oleadas_horizontal`, `montes`, `nombre`, `girar`, `usabilidad`, `personaje`, `finca_celular`. Variable `THREE_JS` = ruta a three.min.js r128. Todas pasaban al último commit.
+`node tests/<nombre>.js` — ayudas en `tests/lib.js` (servidor local, three.js local, bloquea fuentes remotas). Nombres: `orden`, `trivia_nivel`, `explora`, `cosecha_regresion`, `alfareria`, `alfareria_red`, `calibra_fabricacion` (jugador automático: estrellas y puntos), `recetas`, `carrera`, `mapa_nivel2`, `contenido2`, `tactil_sonido`, `oleadas_horizontal`, `montes`, `nombre`, `girar`, `usabilidad`, `personaje`, `finca_celular`. Variable `THREE_JS` = ruta a three.min.js r128. Todas pasaban al último commit.
 
 ## Pendiente (en este orden sugerido)
 1. ~~Bitácora `docs/arreglos.md` y `tests/usabilidad.js`~~ **hecho** (0 problemas en pantalla inicial de las 9 páginas × 3 vistas). Falta ampliarla a pantallas en marcha (banners, diálogos, fin de partida).
 2. ~~Aviso 3~~ **hecho:** el personaje se elige al crear la partida con dos retratos sin etiqueta de género y se cambia en Mi progreso; ella empieza sin gorra. Prueba `tests/personaje.js`.
 3. ~~Aviso 4~~ **hecho:** joystick en la finca y el taller, cuadros compactos en horizontal, pantalla completa en el celular (botón ⛶ y primer toque en horizontal; `Papel.pantallaCompleta()`). Prueba `tests/finca_celular.js`. Falta probar en celular real (en iPhone no hay pantalla completa). Notas del Nivel 2 (28 nov, solo anotadas, ver `docs/ideas.md` 4b): pantalla completa no se activa en horizontal; los cuadros de El Taller tapan mucho en horizontal; sin joystick (= este aviso).
-4. ~~Aviso 5~~ **hecho (rama, no en main):** fabricación por pedidos con receta (clientes NPC, 4 figuras, taller en 3 columnas, repisa, red). Pruebas `tests/recetas.js`, `tests/alfareria.js` (tarda ~6 min), `tests/alfareria_red.js`. Las estrellas [30,60,95] son una estimación: validar en una partida real. Falta probar red en celulares reales.
+4. ~~Aviso 5~~ **hecho (rama, no en main):** fabricación por pedidos con receta (clientes NPC, 4 figuras, taller en 3 columnas, repisa, red). Pruebas `tests/recetas.js`, `tests/alfareria.js` (tarda ~6 min), `tests/alfareria_red.js`. Estrellas [15,45,130] calibradas con `tests/calibra_fabricacion.js` (jugador automático experto/medio/novato; solo 300 s, equipo 180 s, secar 6 s, hornear 8 s, chiva 40 puntos). Falta contrastarlas con una partida real. Falta probar red en celulares reales.
 5. **Nivel 3 Caballos:** referencia del usuario https://youtu.be/Rvs7O4oqgGo?t=168; falta definir qué mecánica tomar.
 6. **Nivel 4 Música y Danza** (Zelda ocarina + baile de flechas/Club Penguin, reinado con corona) y **La Orquídera** (personaje 3D, `arte/personajes/orquidera/`; Opus, esfuerzo alto, empezar por la cara).
 7. Menores del revisor del Nivel 2 (en `docs/ideas.md` y abajo): cuenta 3-2-1 invisible para invitados, vuelta contada en `WP[19]` vs línea en `WP[0]`, pistas de trivia que no contienen la respuesta, trivia 2 con textos del café si `nivel2.json` falla, falta bloqueo de nivel en `trivia.html?nivel=2`/`finca.html?nivel=2`, aviso de modo en red de fabricación, condición muerta `&& false` en `carrera.html`, `cambiado()` guarda en cada carga.
@@ -40,7 +40,7 @@ Léelo junto con `LEEME-PRIMERO.md`. Rama de trabajo: `ccr-2b9646ac-ks35za`. **`
 - Texto de las tarjetas ~11 px en horizontal (nombres largos con «…»); en PC las tarjetas van centradas.
 - Clientes (muñecos) pequeños, sin colisión; `finish()` no los limpia ni libera sus mallas.
 - Pruebas faltantes: soltar a medias en la Mesa; repisa → devolver pieza con manos vacías; chiva sin cliente en Pintura; chiva a medio pintar conserva colores; «Receta del juego» en jarrón y frutero.
-- Prueba de red con una sola página (no con un invitado real). Estrellas [30,60,95] estimadas: validar en partida real.
+- Prueba de red con una sola página (no con un invitado real). Estrellas calibradas con jugador automático (`tests/calibra_fabricacion.js`); falta contrastar con una partida real.
 
 ## Decisiones abiertas para el usuario
 - Traje de la etapa 4 cambió por el reordenamiento (muñeca sin sombrero en la cabeza, con flores y mochila; muñeco con poncho): ¿está bien?

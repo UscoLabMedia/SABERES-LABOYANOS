@@ -7,7 +7,7 @@ const j=x=>JSON.stringify(x);
 T.ok(!!R,'window.Recetas existe'); R.usar(datos); T.ok(R.datos===datos,'usar fija datos');
 const rec={ matera:'barro,amasar,torno,secar,hornear,entregar', jarron:'barro,amasar,torno,secar,hornear,pintar,entregar',
   frutero:'barro,amasar,modelar,secar,hornear,pintar,entregar', chiva:'barro,amasar,carroceria,carga,pegar,secar,hornear,pintar,entregar' };
-const pts={matera:8,jarron:10,frutero:12,chiva:25};
+const pts={matera:10,jarron:14,frutero:14,chiva:40};
 for (const f in rec){ const d=R.datos.figuras[f]; T.ok(d&&d.pasos.join()===rec[f],'receta '+f); T.ok(d.puntos===pts[f],'puntos '+f);
   T.ok(d.fuente===(f==='chiva'?'verificada':'juego'),'fuente '+f); T.ok(d.colores===(f==='chiva'),'colores '+f);
   d.pasos.forEach(p=>T.ok(!!R.datos.pasos[p],'nombre visible de '+p)); }

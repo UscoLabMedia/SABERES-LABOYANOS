@@ -6,6 +6,7 @@ const tarjetas=p=>p.evaluate(()=>{ const C=[...document.querySelectorAll('#clien
   const cruz=(a,b)=>Math.min(a.right,b.right)-Math.max(a.left,b.left)>1&&Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top)>1;
   C.forEach((a,i)=>{ C.forEach((b,j)=>{ if (j>i&&cruz(a,b)) o.push('cli'+i+'×cli'+j); }); H.forEach(([n,b])=>{ if (cruz(a,b)) o.push('cli'+i+'×'+n); }); if (a.left<0||a.right>innerWidth||a.top<0||a.bottom>innerHeight) o.push('cli'+i+' fuera'); });
   return {n:C.length,o,w:Math.max(0,...C.map(r=>r.width))}; });
+const puntosDe=(p,f)=>p.evaluate(f=>__a.Recetas.datos.figuras[f].puntos,f);   // los puntos salen de data/recetas2.json
 async function caso(nombre,opt,celular){ const {p,c}=await T.abrir('alfareria.html#prueba',opt); await p.waitForFunction(()=>window.__a&&__a.game.on,null,{timeout:30000}); console.log('== '+nombre);
   const cdp=celular?await c.newCDPSession(p):null;
   await p.evaluate(()=>{ __a.game.mode='tranquilo'; __a.game.nextOrder=1e9; Object.assign(__a.R,{amasar:.8,modelar:.8,pintar:.8}); });
@@ -43,7 +44,7 @@ async function caso(nombre,opt,celular){ const {p,c}=await T.abrir('alfareria.ht
   await en('torno'); T.ok(await p.evaluate(()=>__a.accion(__a.players[0]).t)==='Hacer: Matera','el torno ofrece «Hacer: Matera»'); await mantener(1000); T.ok(await carry()==='matera:3','el torno da una matera');
   await secarHornear(); T.ok(await carry()==='matera:5','la matera sale cocida y va al mostrador');
   await en('pintura',0); await pulsar(); T.ok(await carry()==='matera:5'&&await st('pintura',0)==='vacio'&&/Esta pieza ahora va a: Mostrador/.test(await aviso()),'la matera no entra a Pintura: '+await aviso());
-  let p0=await pts(); await en('mostrador'); await pulsar(); T.ok(await carry()==null&&await pts()>=p0+8&&await p.evaluate(()=>__a.game.orders.length)===0,'entrega la matera y suma ≥ 8');
+  let p0=await pts(); await en('mostrador'); await pulsar(); T.ok(await carry()==null&&await pts()>=p0+await puntosDe(p,'matera')&&await p.evaluate(()=>__a.game.orders.length)===0,'entrega la matera y suma sus puntos');
   // --- soltar Acción a mitad de modelar: el torno vuelve a vacío y la masa sigue en la mano
   await pedidos(['matera']); await p.evaluate(()=>{ __a.R.modelar=6; __a.setCarry(__a.players[0],{type:'pieza',fig:null,i:2,q:90}); }); await en('torno'); await mantener(400);
   { const t=await p.evaluate(()=>{ const s=__a.ST.filter(q=>q.kind==='torno')[0]; return {st:s.state,prog:s.prog}; }); T.ok(t.st==='vacio'&&t.prog===0&&await carry()==='null:2','soltar a mitad: torno vacío, avance 0 y la masa en la mano '+JSON.stringify(t)); }
@@ -61,7 +62,7 @@ async function caso(nombre,opt,celular){ const {p,c}=await T.abrir('alfareria.ht
   await pulsar(); T.ok(/amarillo/i.test(await p.evaluate(()=>__a.accion(__a.players[0]).t)),'tocar cambia el color a amarillo'); await mantener(1000);
   T.ok(/El cliente pidió/.test(await aviso())&&JSON.stringify(await p.evaluate(()=>__a.ST.filter(q=>q.kind==='pintura')[1].pz.pintados))==='["rojo"]','pintar amarillo avisa y no cuenta: '+await aviso());
   await pulsar(); await mantener(1000); T.ok(await st('pintura',1)==='listo','pinta azul y queda lista'); await pulsar(); T.ok(await carry()==='chiva:8','recoge la chiva pintada');
-  p0=await pts(); await en('mostrador'); await pulsar(); T.ok(await carry()==null&&await pts()>=p0+25,'entrega la chiva y suma ≥ 25');
+  p0=await pts(); await en('mostrador'); await pulsar(); T.ok(await carry()==null&&await pts()>=p0+await puntosDe(p,'chiva'),'entrega la chiva y suma sus puntos');
   // --- Mesa con una carrocería esperando no se bloquea: modela frutero
   await pedidos(['chiva',['verde','rojo']],['frutero']); await p.evaluate(()=>{ __a.ST.find(q=>q.kind==='mesa').espera='carroceria'; __a.setCarry(__a.players[0],{type:'pieza',fig:null,i:2,q:90}); });
   await en('mesa'); await pulsar(); T.ok(await p.evaluate(()=>__a.accion(__a.players[0]).t)==='Hacer: Frutero','tocar alterna a «Hacer: Frutero»');
@@ -94,7 +95,7 @@ async function caso(nombre,opt,celular){ const {p,c}=await T.abrir('alfareria.ht
   await en('pintura',1); await pulsar(); T.ok(await st('pintura',1)==='pintando'&&JSON.stringify(await p.evaluate(()=>__a.ST.filter(q=>q.kind==='pintura')[1].pz.colores))==='["verde","amarillo"]','la chiva toma los colores del cliente actual al entrar a Pintura');
   for (const col of ['verde','amarillo']){ await p.evaluate(col=>{ __a.ST.filter(q=>q.kind==='pintura')[1].color=__a.Recetas.datos.colores.indexOf(col); },col); await mantener(1000); }
   T.ok(await st('pintura',1)==='listo','pinta verde y amarillo: queda lista'); await pulsar(); T.ok(await carry()==='chiva:8','recoge la chiva pintada');
-  { const p1=await pts(); await en('mostrador'); await pulsar(); T.ok(await carry()==null&&await pts()>=p1+25,'entrega la chiva al cliente B y suma ≥ 25'); }
+  { const p1=await pts(); await en('mostrador'); await pulsar(); T.ok(await carry()==null&&await pts()>=p1+await puntosDe(p,'chiva'),'entrega la chiva al cliente B y suma sus puntos'); }
   await L(1); { const r=await p.evaluate(()=>{ __a.game.mode='reloj'; __a.pedir('jarron'); __a.game.orders[0].left=.05; const s0=__a.game.score; __a.step(.2); return [__a.game.orders.length,__a.game.score-s0,document.querySelector('#banner').textContent]; }); T.ok(r[0]===0&&r[1]===-5&&/Se fue/.test(r[2]),'cliente que se va: −5 y aviso '+JSON.stringify(r)); }
   await p.evaluate(()=>{ __a.game.mode='tranquilo'; __a.pedir('jarron'); __a.setCarry(__a.players[0],{type:'pieza',fig:'jarron',i:__a.Recetas.datos.figuras.jarron.pasos.indexOf('entregar'),q:90}); });
   { const s0=await pts(); await en('mostrador'); await pulsar(); T.ok((await ord()).length===0&&await pts()>=s0+10,'la pieza que traía el cliente que se fue sirve al siguiente de esa figura'); }

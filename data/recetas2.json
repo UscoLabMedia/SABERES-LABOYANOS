@@ -2,9 +2,9 @@
   "pasos": { "barro":"Barro", "amasar":"Amasar", "torno":"Torno", "modelar":"Modelar", "carroceria":"Carrocería", "carga":"Carga", "pegar":"Pegar", "secar":"Secar", "hornear":"Hornear", "pintar":"Pintar", "entregar":"Entregar" },
   "colores": ["rojo","amarillo","azul","verde"],
   "figuras": {
-    "matera":  { "nombre":"Matera",  "pasos":["barro","amasar","torno","secar","hornear","entregar"], "puntos":8, "colores":false, "fuente":"juego" },
-    "jarron":  { "nombre":"Jarrón",  "pasos":["barro","amasar","torno","secar","hornear","pintar","entregar"], "puntos":10, "colores":false, "fuente":"juego" },
-    "frutero": { "nombre":"Frutero", "pasos":["barro","amasar","modelar","secar","hornear","pintar","entregar"], "puntos":12, "colores":false, "fuente":"juego" },
-    "chiva":   { "nombre":"Chiva",   "pasos":["barro","amasar","carroceria","carga","pegar","secar","hornear","pintar","entregar"], "puntos":25, "colores":true, "fuente":"verificada" }
+    "matera":  { "nombre":"Matera",  "pasos":["barro","amasar","torno","secar","hornear","entregar"], "puntos":10, "colores":false, "fuente":"juego" },
+    "jarron":  { "nombre":"Jarrón",  "pasos":["barro","amasar","torno","secar","hornear","pintar","entregar"], "puntos":14, "colores":false, "fuente":"juego" },
+    "frutero": { "nombre":"Frutero", "pasos":["barro","amasar","modelar","secar","hornear","pintar","entregar"], "puntos":14, "colores":false, "fuente":"juego" },
+    "chiva":   { "nombre":"Chiva",   "pasos":["barro","amasar","carroceria","carga","pegar","secar","hornear","pintar","entregar"], "puntos":40, "colores":true, "fuente":"verificada" }
   }
 }

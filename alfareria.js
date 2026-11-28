@@ -14,12 +14,13 @@ const saveProg=()=>{ Guardado.guardar(PROG); };
 
 /* ---------------- Reglas (fáciles de ajustar) ---------------- */
 const R = {
-  duracion:180, calidadBase:90, especial:80,
-  amasar:1.6, modelar:1.8, secado:10, quema:14, ventana:10, pintar:1.6, pasadaPorSeg:.8, toque:.25,   // toque: menos que esto es tocar (alternar), no mantener
+  duracion:180, duracionSolo:300, calidadBase:90, especial:80,
+  amasar:1.6, modelar:1.8, secado:6, quema:8, ventana:10, pintar:1.6, pasadaPorSeg:.8, toque:.25,   // toque: menos que esto es tocar (alternar), no mantener
   clienteCada:22, bono:5, qPorPunto:4, repisa:2, pts:{perdido:-5},   // bono: puntos extra por rapidez; qPorPunto: calidad perdida por quemado que resta 1 punto
-  estrellas:[30,60,95],
+  estrellas:[15,45,130],
 };
 
+const duracion=()=>players.length<2?R.duracionSolo:R.duracion;   // solo 5 min (hay que hacerlo todo); en equipo 3 min
 /* ---------------- Escena: el taller por dentro ---------------- */
 const canvas=$('#scene'); let renderer;
 try { renderer=new THREE.WebGLRenderer({canvas,antialias:true}); } catch(e){ fail('Este navegador no puede mostrar gráficos 3D (WebGL).'); return; }
@@ -292,7 +293,7 @@ function step(dt){
   });
   vistas(dt);
   // fin
-  if (game.mode==='reloj' && T>=R.duracion) finish();
+  if (game.mode==='reloj' && T>=duracion()) finish();
 }
 
 /* ---------------- Red: estado del anfitrión y vista de los invitados ---------------- */
@@ -339,7 +340,7 @@ function labels(){
     p.el.textContent=p.nombre+(p.slot===mySlot()&&players.length>1?' (tú)':'')+(p.carry?` · ${nom(p.carry)} · sigue ${pasoNom(p.carry)}`:''); });
   Estaciones.colocarLetreros(ST,undefined,players.map(p=>p.el));
   Estaciones.botonAccion(players.find(q=>q.slot===mySlot()),accion,touch);
-  const m=Math.max(0,game.mode==='reloj'?R.duracion-game.t:game.t), mm=Math.floor(m/60), ss=Math.floor(m%60);
+  const m=Math.max(0,game.mode==='reloj'?duracion()-game.t:game.t), mm=Math.floor(m/60), ss=Math.floor(m%60);
   $('#time').textContent=`${mm}:${String(ss).padStart(2,'0')}`; $('#time').classList.toggle('low',game.mode==='reloj'&&m<30);
   $('#pts').textContent=`${game.score} puntos`;
 }
@@ -388,7 +389,7 @@ function reset(list){
 function begin(list){
   reset(list); if (!lob || lob.rol!=='cliente'){ for (let i=players.length===1?2:Recetas.maxClientes(players.length);i>0;i--) addOrder(); game.nextOrder=R.clienteCada; }
   $('#start').hidden=true; $('#end').hidden=true; game.on=true; game.paused=false; $('#touch').hidden=false; $('#touch').classList.toggle('pc',!touch); if (!touch) $('#tDrop').innerHTML='Soltar<br><kbd>G</kbd>';
-  Sound.init(); Sound.apply(); Sound.fast=true; Sound.startMusic(); showBanner(game.mode==='reloj'?'¡A trabajar el barro! Tienen 3 minutos':'Modo tranquilo: sin reloj'); canvas.focus(); }
+  Sound.init(); Sound.apply(); Sound.fast=true; Sound.startMusic(); showBanner(game.mode==='reloj'?'¡A trabajar el barro! Tienen '+(duracion()/60)+' minutos':'Modo tranquilo: sin reloj'); canvas.focus(); }
 $('#goBtn').addEventListener('click',()=>{
   if (lob && lob.rol==='host'){ const list=lob.empezar(); lob.difundir({t:'cfg',mode:MODE}); begin(list); }
   else begin([yo()]); });

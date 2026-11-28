@@ -4,6 +4,7 @@ Un arreglo, una línea: **síntoma → causa → arreglo → prueba**. Anota aqu
 
 | Fecha | Síntoma | Arreglo | Prueba |
 |---|---|---|---|
+| 28 nov 2026 | Fabricación en solitario: tiempo corto para los pasos (el usuario entregó 2 piezas en 180 s y ninguna chiva) | Fabricación en solitario: tiempo corto para los pasos → 300 s solo, secar 6 s, hornear 8 s, chiva 40 puntos, estrellas calibradas con jugador automático | `tests/calibra_fabricacion.js` |
 | 28 nov 2026 | Aviso 5: la fabricación era una cadena única con leña, lluvia y toldo | Fabricación nueva por pedidos con receta (clientes, 4 figuras, taller en 3 columnas). Cierre: prueba de ida y vuelta de la red (`snapshot`→`applySnapshot`) y regla en `contenido2` que prohíbe leña, toldo y lluvia | `tests/alfareria_red.js`, `tests/contenido2.js` |
 | 28 nov 2026 | Inicio y trivia no tenían pantalla completa en horizontal; el botón chocaba con el título y las ayudas | Botón en la esquina inferior derecha en esas pantallas; `usabilidad.js` ahora exige el botón en horizontal | `tests/usabilidad.js` |
 | 28 nov 2026 | Celular: la finca y el taller no tenían joystick; en horizontal los cuadros tapaban la pantalla; no había pantalla completa | Joystick táctil, cuadros compactos (`@media` horizontal), botón ⛶ y primer toque en horizontal | `tests/finca_celular.js` |
