@@ -273,5 +273,19 @@ function wallTex(kind){ const c=mk(512,256), g=c.getContext('2d');
 function hipRoof(w,d,h,mat){ const g=new THREE.ConeGeometry(Math.SQRT1_2,h,4,1); g.rotateY(Math.PI/4); g.translate(0,h/2,0);
   const m=new THREE.Mesh(g,mat); m.scale.set(w,1,d); m.castShadow=true; m.receiveShadow=true; shadowables.push(m); return m; }
 
-window.Papel = { DEFAULTS, S, save, Sound, mk, rnd, FIBER, fiber, cutout, texFrom, card, shadowables, paperMat, boxMesh, D, tileTex, wallTex, hipRoof };
+/* Aviso para girar el celular: en vertical (pantalla táctil) se sugiere jugar en horizontal. No bloquea el juego; se puede cerrar. */
+function avisoGirar(){
+  if (!matchMedia('(pointer: coarse)').matches || document.getElementById('girar')) return;
+  const st=document.createElement('style'); st.textContent='#girar{position:fixed;left:50%;top:38%;transform:translateX(-50%);z-index:60;width:min(18rem,86vw);background:#2a1c11;color:#f2e7d0;border:2px solid #f2c94c;padding:.7rem .9rem;text-align:center;font:600 1rem/1.3 "Alegreya Sans",system-ui,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.5);pointer-events:none}#girar[hidden]{display:none}#girar svg{width:2.6rem;height:2.6rem;display:block;margin:0 auto .3rem;animation:giraCel 2.2s ease-in-out infinite}#girar button{pointer-events:auto;margin-top:.5rem;font:700 .9rem "Alegreya Sans",system-ui,sans-serif;background:#f2c94c;color:#2a1c11;border:0;padding:.4rem .9rem;cursor:pointer}@keyframes giraCel{0%,20%{transform:rotate(0)}60%,100%{transform:rotate(-90deg)}}@media (prefers-reduced-motion:reduce){#girar svg{animation:none}}';
+  document.head.appendChild(st);
+  const e=document.createElement('div'); e.id='girar'; e.setAttribute('role','status'); e.hidden=true;
+  e.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="#f2c94c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M11 18.5h2"/></svg>Gira el celular: se juega mejor en horizontal<br><button type="button" id="girarOk">Seguir así</button>';
+  document.body.appendChild(e);
+  let cerrado=false; try { cerrado=sessionStorage.getItem('laboyos.girar')==='1'; } catch(x){}
+  document.getElementById('girarOk').addEventListener('click',()=>{ cerrado=true; try { sessionStorage.setItem('laboyos.girar','1'); } catch(x){} act(); });
+  const act=()=>{ e.hidden=cerrado || innerWidth>innerHeight; };
+  addEventListener('resize',act); addEventListener('orientationchange',act); act();
+}
+
+window.Papel = { avisoGirar, DEFAULTS, S, save, Sound, mk, rnd, FIBER, fiber, cutout, texFrom, card, shadowables, paperMat, boxMesh, D, tileTex, wallTex, hipRoof };
 })();

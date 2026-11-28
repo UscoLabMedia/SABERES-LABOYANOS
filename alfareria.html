@@ -213,6 +213,7 @@ if (typeof THREE==='undefined' || !window.Papel || !window.Muneco){ fail('No se 
 const { S, save, Sound, cutout, D, texFrom, paperMat, boxMesh, hipRoof, tileTex, mk } = Papel;
 document.documentElement.classList.toggle('big-text', S.text==='grande');
 const touch=matchMedia('(pointer: coarse)').matches;
+Papel.avisoGirar();
 let PROG=Guardado.progreso();
 if (!PROG.taller2 && (location.hash!=='#prueba' || location.search.includes('exigir'))){ location.replace('finca.html?nivel=2'); return; }   // primero la exploración del taller
 const saveProg=()=>{ Guardado.guardar(PROG); };

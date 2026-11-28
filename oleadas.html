@@ -171,6 +171,7 @@ if (typeof THREE==='undefined' || !window.Papel || !window.Muneco){ fail('No se 
 const { S, save, Sound, cutout, D, texFrom, paperMat, mk } = Papel;
 document.documentElement.classList.toggle('big-text', S.text==='grande');
 const touch=matchMedia('(pointer: coarse)').matches;
+Papel.avisoGirar();
 let PROG=Guardado.progreso();
 const saveProg=()=>{ Guardado.guardar(PROG); };
 
