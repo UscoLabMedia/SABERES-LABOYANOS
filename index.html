@@ -763,7 +763,8 @@ function syncProgress(){ PROG=Guardado.progreso(); const done=LEVELS.filter(l=>P
 const CLOUD={local:'Desactivada: el progreso queda solo en este navegador.',sincronizado:'Sincronizado.',pendiente:'Sin internet: se sincroniza al volver la conexión.',error:'No se pudo sincronizar. Se intentará de nuevo.'};
 function syncProfile(){ const p=Guardado.perfil(); PROG=Guardado.progreso();
   $('#pfTitle').textContent=p.nombre; $('#whoHint').textContent=p.nombre; $('#pfUser').textContent=p.nombre; $('#pfPartida').textContent=p.partida;
-  Muneco.selector($('#pfPj'),p.avatar,v=>Guardado.actualizarPerfil({avatar:v})); $('#pfPj [role=group]').setAttribute('aria-labelledby','pfPjT');
+  if (!$('#pfPj [data-pj]')){ Muneco.selector($('#pfPj'),p.avatar,v=>Guardado.actualizarPerfil({avatar:v})); $('#pfPj [role=group]').setAttribute('aria-labelledby','pfPjT'); }
+  else $$('#pfPj [data-pj]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.pj===p.avatar));   // no rehacer: el foco del teclado se perdería
   const st=[PROG.nivel1?'Nivel 1 superado':'Nivel 1 en curso', PROG.cosecha!=null?`cosecha ${PROG.cosecha}★`:null, PROG.oleadas!=null?`defensa ${PROG.oleadas}★`:null, PROG.trivia1!=null?`trivia ${PROG.trivia1}/5`:null,
     PROG.nivel1?(PROG.nivel2?'Nivel 2 superado':'Nivel 2 en curso'):null, PROG.fabrica!=null?`fabricación ${PROG.fabrica}★`:null, PROG.carrera!=null?`carrera ${PROG.carrera}★`:null, PROG.trivia2!=null?`trivia del barro ${PROG.trivia2}/5`:null].filter(Boolean);
   $('#pfSummary').textContent=st.join(' · ')+'.';

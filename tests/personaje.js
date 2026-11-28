@@ -43,4 +43,11 @@ const gorra=fem=>`(()=>{ let n=0; Muneco.jugador(0,${fem}).traverse(o=>{ if (o.g
   const d=await p.evaluate(async()=>{ const img=new Image(); img.src=Muneco.retrato(()=>Muneco.jugador(0,false)); await img.decode(); const c=document.createElement('canvas'); c.width=img.width; c.height=img.height; const g=c.getContext('2d'); g.drawImage(img,0,0);
     const px=g.getImageData(0,0,c.width,c.height).data; let best=-999; for (let i=0;i<px.length;i+=4) if (px[i+3]>200) best=Math.max(best,px[i]-px[i+1]); return best; });
   T.ok(d>=120,'la gorra del retrato es roja intensa (R−G = '+d+')'); await p.context().close(); }
+ { // 5. teclado: el foco no se pierde en Mi progreso cuando la nube avisa que sincronizó
+  const {p}=await T.abrir('index.html#prueba'); await p.waitForFunction(()=>window.Muneco&&window.Guardado);
+  await p.evaluate(()=>document.querySelector('[data-act=perfil]').click()); await p.waitForSelector('#pfPj [data-pj]',{state:'visible'});
+  await p.focus('#pfPj [data-pj=muneca]'); await p.keyboard.press('Enter');
+  await p.evaluate(()=>window.dispatchEvent(new CustomEvent('laboyos:nube',{detail:'sincronizado'}))); await p.waitForTimeout(200);
+  T.ok(await p.evaluate(()=>document.activeElement&&document.activeElement.dataset.pj)==='muneca','el foco sigue en el retrato elegido tras sincronizar');
+  T.ok(await p.getAttribute('#pfPj [data-pj=muneca]','aria-pressed')==='true','sigue marcado'); T.ok(p.errs.length===0,'Mi progreso sin errores '+JSON.stringify(p.errs)); await p.context().close(); }
  await T.fin(); })();
